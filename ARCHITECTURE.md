@@ -2,6 +2,8 @@
 
 > Status: Draft v0.2 (audited 2026‑11‑21) — awaiting approval. Consistent with PROJECT_SPEC.md v0.2.
 >
+> **Changelog v0.2.4:** Sprint 1 reconciliation: SeaweedFS replaces MinIO for local S3 (ADR-0007); Compose `full` profile moved to Phase 4; PHP 8.4 via `php84` locally.
+>
 > **Changelog v0.2.3:** Q20/Q21: no Learning module or audio-analysis component in v1; extension points documented (Practice module, `practice-core` input-agnostic).
 >
 > **Changelog v0.2.2:** Q16: new Laravel module Practice and practice sync (§6a).
@@ -42,7 +44,7 @@
  │ apps/mobile (P8)   │─▶│ apps/api — Laravel 13 (Composer) │──▶│ PostgreSQL 18│
  │ RN UI + native mods │  │ Identity · Library · Documents · │   ├──────────────┤
  │ engine; bearer token│  │ Community · Moderation · Notif.  │──▶│ Redis        │ cache, queues, rate limits, sessions
- └────────────────────┘  └──┬───────────────────────────────┘──▶│ Object store │ S3 / MinIO: documents, uploads, avatars
+ └────────────────────┘  └──┬───────────────────────────────┘──▶│ Object store │ S3 / SeaweedFS (dev): documents, uploads, avatars
                             │ Redis queues                       └──────────────┘
                     ┌───────▼──────────────────────────────┐
                     │ Laravel queue workers (Horizon):      │
@@ -133,7 +135,7 @@ An alternative split was proposed: `music-core`, `music-types`, `music-serializa
 - `pnpm-workspace.yaml` must list `apps/web`, `apps/mobile`, `apps/music-worker` and `packages/*` explicitly, or use `!apps/api`. Done in Sprint 1 (S1-02): the workspace lists members explicitly.
 - Turborepo orchestrates JS/TS only. PHP commands run through Composer scripts (`composer lint`, `composer test`) locally and in a separate CI job.
 - Shared artefacts that cross the language boundary:
-  - `openapi/openapi.yaml`: hand-written contract. Laravel feature tests validate responses against it; TS codegen consumes it.
+  - `openapi/openapi.yaml`: hand-written contract. Laravel feature tests check response shapes now and validate responses against it from Phase 4; TS codegen consumes it.
   - `packages/music-model/dist/mhd-envelope.schema.json`: generated. CI copies/compares it into `apps/api/resources/schemas/` and fails on drift.
 
 ### 3.4 Turborepo pipeline
@@ -216,9 +218,9 @@ Rationale: full snapshots are simple, debuggable and sufficient for single-autho
 
 | Env | Composition |
 |---|---|
-| Local | `infra/docker-compose.yml`: postgres 18 (host port 54320), redis 8, mailpit; S3-compatible storage pending Q22; `api` and `horizon` containers come later. Developers may run Laravel via Herd/`php artisan serve` instead. `pnpm dev` runs Next.js on the host. |
+| Local | `infra/docker-compose.yml`: postgres 18 (host port 54320), redis 8, mailpit; SeaweedFS single node (S3 on 8333, ADR-0007) with an idempotent bucket bootstrap (`seaweedfs-init`). An optional `full` profile with `api` (php-fpm + Caddy) and `horizon` containers is deferred to Phase 4. Laravel runs on the host with PHP 8.4 (`php84` on Herd). Developers may run Laravel via Herd/`php artisan serve` instead. `pnpm dev` runs Next.js on the host. |
 | CI | GitHub Actions. JS job: pnpm + turbo lint/typecheck/test/build. PHP job: Composer, Pint, Larastan, Pest with postgres + redis services. Later: Playwright e2e job. |
-| Staging/Prod | Same images. Single host with Docker Compose or managed services (Q7). CDN for `/alphatab/*` and the SoundFont. Managed S3 in prod (MinIO is dev-only, AGPL). |
+| Staging/Prod | Same images. Single host with Docker Compose or managed services (Q7). CDN for `/alphatab/*` and the SoundFont. Managed S3 in prod; SeaweedFS (Apache-2.0) only for local development and CI (ADR-0007). |
 
 Observability: structured JSON logs, Sentry (web + api), basic metrics (queue depth, failed jobs, client-reported render/playback errors).
 

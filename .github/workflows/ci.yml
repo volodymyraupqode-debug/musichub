@@ -39,7 +39,7 @@ jobs:
         run: pnpm depcruise
 
   php:
-    name: PHP (Pint, Larastan, Pest on PostgreSQL)
+    name: PHP (Pint, Larastan, Pest on PostgreSQL, Redis, SeaweedFS S3)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -67,8 +67,22 @@ jobs:
       DB_PORT: '5432'
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: '6379'
+      # SeaweedFS (ADR-0007) started from infra/docker-compose.yml with CI-only credentials.
+      S3_ACCESS_KEY_ID: ci-musichub
+      S3_SECRET_ACCESS_KEY: ci-musichub-secret
+      S3_BUCKET: musichub-local
+      AWS_ACCESS_KEY_ID: ci-musichub
+      AWS_SECRET_ACCESS_KEY: ci-musichub-secret
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_BUCKET: musichub-local
+      AWS_ENDPOINT: http://127.0.0.1:8333
+      AWS_URL: http://127.0.0.1:8333/musichub-local
+      AWS_USE_PATH_STYLE_ENDPOINT: 'true'
     steps:
       - uses: actions/checkout@v7
+      - name: Start SeaweedFS and create the bucket
+        working-directory: .
+        run: docker compose -f infra/docker-compose.yml up -d --wait seaweedfs seaweedfs-init
       - uses: shivammathur/setup-php@2.40.0
         with:
           php-version: '8.4'
@@ -83,8 +97,16 @@ jobs:
       - run: cp .env.example .env && php artisan key:generate
       - name: Pint + Larastan
         run: composer lint
-      - name: Pest
+      - name: Pest (incl. real S3 integration test)
         run: composer test
+      - name: SeaweedFS logs on failure
+        if: failure()
+        working-directory: .
+        run: docker compose -f infra/docker-compose.yml logs seaweedfs seaweedfs-init
+      - name: Stop SeaweedFS
+        if: always()
+        working-directory: .
+        run: docker compose -f infra/docker-compose.yml down -v
 
   e2e:
     name: E2E (Playwright smoke)

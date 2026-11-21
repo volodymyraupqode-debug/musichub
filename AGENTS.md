@@ -67,10 +67,12 @@ composer test      # Pest on PostgreSQL musichub_test
 php artisan serve --port 8000
 ```
 
-Services: `docker compose -f infra/docker-compose.yml up -d --wait` (see infra/README.md).
+Services: `docker compose -f infra/docker-compose.yml up -d --wait` (PostgreSQL, Redis, Mailpit, SeaweedFS S3 on :8333 with bucket `musichub-local`; see infra/README.md). Pest includes a real S3 integration test, so the stack must be up..
 
 ## Gotchas
 
 - `eslint-plugin-react` needs an explicit React version on ESLint 10 (`packages/config/eslint/react.js`). Keep it in sync with the `react` catalog entry.
 - Peer-range exceptions verified to work are listed in `pnpm-workspace.yaml` → `peerDependencyRules`. Do not add new ones without verifying.
-- Tool versions come from the pnpm `catalog:`; add new shared deps there.
+- Tool versions come from the pnpm `catalog:`; add new shared deps there. One TypeScript (6.0.3) and one ESLint (10.x) for the whole repo (ADR-0006).
+- The health contract test is a shape check, not OpenAPI validation. Do not describe it as full validation.
+- Local object storage is SeaweedFS (ADR-0007). Never add MinIO or a self-built MinIO image.
