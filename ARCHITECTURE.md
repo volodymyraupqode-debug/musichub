@@ -130,7 +130,7 @@ An alternative split was proposed: `music-core`, `music-types`, `music-serializa
 ### 3.3 Laravel and the JS toolchain
 
 - `apps/api` has `composer.json` / `composer.lock` / `vendor/`. It must **not** have a pnpm-managed `package.json`. Laravel's default Vite/Tailwind frontend scaffold is removed because the API is API-only.
-- `pnpm-workspace.yaml` must list `apps/web`, `apps/mobile`, `apps/music-worker` and `packages/*` explicitly, or use `!apps/api`. **Action in Sprint 1, task S1-02:** the current file from T0.1 includes `apps/*`.
+- `pnpm-workspace.yaml` must list `apps/web`, `apps/mobile`, `apps/music-worker` and `packages/*` explicitly, or use `!apps/api`. Done in Sprint 1 (S1-02): the workspace lists members explicitly.
 - Turborepo orchestrates JS/TS only. PHP commands run through Composer scripts (`composer lint`, `composer test`) locally and in a separate CI job.
 - Shared artefacts that cross the language boundary:
   - `openapi/openapi.yaml`: hand-written contract. Laravel feature tests validate responses against it; TS codegen consumes it.
@@ -216,7 +216,7 @@ Rationale: full snapshots are simple, debuggable and sufficient for single-autho
 
 | Env | Composition |
 |---|---|
-| Local | `infra/docker-compose.yml`: postgres 18, redis, minio, mailpit, plus optional `api` (php-fpm + Caddy) and `horizon` containers. Developers may run Laravel via Herd/`php artisan serve` instead. `pnpm dev` runs Next.js on the host. |
+| Local | `infra/docker-compose.yml`: postgres 18 (host port 54320), redis 8, mailpit; S3-compatible storage pending Q22; `api` and `horizon` containers come later. Developers may run Laravel via Herd/`php artisan serve` instead. `pnpm dev` runs Next.js on the host. |
 | CI | GitHub Actions. JS job: pnpm + turbo lint/typecheck/test/build. PHP job: Composer, Pint, Larastan, Pest with postgres + redis services. Later: Playwright e2e job. |
 | Staging/Prod | Same images. Single host with Docker Compose or managed services (Q7). CDN for `/alphatab/*` and the SoundFont. Managed S3 in prod (MinIO is dev-only, AGPL). |
 

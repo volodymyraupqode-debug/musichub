@@ -1,24 +1,44 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "stream",
+  "globalDependencies": [".nvmrc", "pnpm-workspace.yaml"],
   "tasks": {
+    "codegen": {
+      "inputs": ["$TURBO_DEFAULT$", "../../openapi/openapi.yaml"],
+      "outputs": ["src/generated/**"]
+    },
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "dependsOn": ["^build", "codegen"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.test.ts", "!**/*.test.tsx", "!e2e/**"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": ["NEXT_PUBLIC_API_URL"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "codegen"]
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "codegen"]
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "codegen"],
       "outputs": ["coverage/**"]
+    },
+    "test:e2e": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "passThroughEnv": [
+        "E2E_EXPECT_API",
+        "E2E_PORT",
+        "API_INTERNAL_URL",
+        "NEXT_PUBLIC_API_URL",
+        "CI",
+        "PLAYWRIGHT_*"
+      ]
     }
   }
 }

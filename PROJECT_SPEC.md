@@ -4,6 +4,8 @@
 > Product name: **MusicHub** (approved 2026‑11‑21, Q1 resolved). The earlier working name "Guitar Studio" is retired.
 > Documentation language: English. The root `*.md` files are the source of truth. If two of them disagree, fix the docs before writing code.
 >
+> **Changelog v0.2.11:** Q22 added (MinIO images discontinued).
+>
 > **Changelog v0.2.10:** Q20 resolved (courses/LMS post‑v1; personal practice stays; data model ready for future courses). Q21 resolved (microphone guitar analysis → post‑v1 Audio/AI phase; MIDI guitar via spike S8, not committed). Non-goals and F12 updated.
 >
 > **Changelog v0.2.9:** Q16 resolved: practice results stored server-side and synced; F12 extended; Q20 (lessons) and Q21 (guitar correctness) added; R20 added.
@@ -191,7 +193,7 @@ Items from the v0.2 proposal that the Q2 decision did not cover. All are approve
 | next-intl | i18n | MIT | Phase 1 |
 | Storybook | Component workbench | MIT | Phase 1 |
 | Lucide icons (shadcn/ui default); Inter, JetBrains Mono fonts | Icons, fonts | ISC; OFL | Phase 1 |
-| S3-compatible storage (MinIO locally) | Document blobs, uploads | MinIO AGPLv3 (dev only); managed S3 in prod | Sprint 1 (S1-07) |
+| S3-compatible storage (MinIO locally) | Document blobs, uploads | MinIO AGPLv3 (dev only); managed S3 in prod | Sprint 1 (S1-07). ⚠️ MinIO images are no longer published; local replacement pending Q22 |
 | Sentry | Error reporting | SDKs MIT | Phase 4 |
 
 ## 6. Quality attributes
@@ -276,6 +278,7 @@ Probability (P) and Impact (I): Low / Medium / High. Priority: **P1** (address b
 | Q19 | CAPTCHA / bot protection at registration (e.g. a privacy-friendly provider) beyond honeypot + rate limits? | (a) not in v1, revisit if spam appears (recommended); (b) add a provider (needs library/service approval) |
 | Q20 | ~~Lessons/courses system~~ | ✅ **Resolved 2026‑11‑21: post‑v1.** v1 keeps personal practice only: completed fragments, goals, stats, accuracy, BPM, attempts, time, history, resume. No course catalog, course/module/lesson hierarchy, curriculum builder, teachers, certificates or LMS. The learning system gets its own design after v1; the practice data model is ready for it (DATABASE.md §3.15 `source`/`source_ref`) |
 | Q21 | ~~Guitar correctness checking~~ | ✅ **Resolved 2026‑11‑21:** microphone pitch detection and analysis of acoustic/electric guitar playing move to the post‑v1 **Audio/AI phase**. v1 keeps guitar notation/tab display and playback. MIDI-guitar checking is researched in spike S8 and is **not** a v1 commitment without a passing prototype and an owner decision |
+| Q22 | Local S3-compatible storage: MinIO no longer publishes container images (Docker Hub repo removed, quay.io requires auth). Replacement for dev/CI? | (a) SeaweedFS (Apache‑2.0, single container with S3 gateway); (b) RustFS (Apache‑2.0, MinIO-compatible, younger project); (c) build MinIO from source into our own image (AGPLv3, maintenance burden). Production stays managed S3 |
 | Q18 | Mobile libraries chosen by the Phase 2M prototype (e.g. a native 2D drawing library for the visualizer, a native audio/SoundFont engine, an Expo audio package) | Decide after prototype M1–M7; each needs approval like Q2 |
 
 ## 10. Document map

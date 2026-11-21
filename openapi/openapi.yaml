@@ -1,0 +1,81 @@
+openapi: 3.1.0
+info:
+  title: MusicHub API
+  version: 0.1.0
+  description: |
+    MusicHub REST API contract (source of truth). Human-readable spec: API.md.
+    Sprint 1 contains only the system health endpoint.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Service health
+      description: Reports API availability and the status of its dependencies (API.md §2a).
+      tags: [System]
+      security: []
+      responses:
+        '200':
+          description: All checks passed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+        '503':
+          description: At least one dependency check failed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+components:
+  schemas:
+    CheckStatus:
+      type: string
+      enum: [ok, fail]
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, version, checks]
+      properties:
+        status:
+          type: string
+          enum: [ok, fail]
+        version:
+          type: string
+          description: Deployed API version.
+        checks:
+          type: object
+          additionalProperties: false
+          required: [database, redis]
+          properties:
+            database: { $ref: '#/components/schemas/CheckStatus' }
+            redis: { $ref: '#/components/schemas/CheckStatus' }
+    ProblemDetails:
+      type: object
+      description: RFC 9457 problem details (API.md §1).
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          description: Machine-readable error code, e.g. `not_found`, `validation_error`.
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+        requestId:
+          type: string
+  responses:
+    NotFound:
+      description: Resource not found.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }

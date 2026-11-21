@@ -6,5 +6,5 @@
     "checkJs": true,
     "types": []
   },
-  "include": ["eslint.config.js"]
+  "include": ["eslint.config.js", "eslint/**/*.js", "vitest/**/*.js", "types/**/*.d.ts"]
 }

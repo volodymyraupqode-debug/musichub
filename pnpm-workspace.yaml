@@ -1,5 +1,44 @@
+# apps/api (Laravel) is a standalone Composer project and is intentionally
+# NOT a workspace member (ARCHITECTURE.md §3.3).
 packages:
-  - apps/*
+  - apps/web
+  - apps/mobile
+  - apps/music-worker
   - packages/*
 
 engineStrict: true
+
+# Single source of truth for shared tool versions (`catalog:` in package.json).
+catalog:
+  '@eslint/js': 10.0.1
+  '@next/eslint-plugin-next': 16.4.6
+  '@playwright/test': 1.65.1
+  '@types/node': 26.6.6
+  '@types/react': 19.3.0
+  '@types/react-dom': 19.3.0
+  '@vitest/coverage-v8': 5.1.1
+  dependency-cruiser: 18.8.0
+  eslint: 10.15.0
+  eslint-config-prettier: 10.1.8
+  eslint-plugin-jsx-a11y: 6.10.2
+  eslint-plugin-react: 7.37.5
+  eslint-plugin-react-hooks: 7.1.1
+  globals: 17.14.0
+  jsdom: 31.0.1
+  next: 16.4.6
+  openapi-fetch: 0.17.0
+  openapi-typescript: 7.13.0
+  prettier: 3.10.1
+  react: 19.3.1
+  react-dom: 19.3.1
+  turbo: 2.11.13
+  typescript: 6.0.3
+  typescript-eslint: 8.73.0
+  vitest: 5.1.1
+
+# Verified working combinations whose peer ranges lag behind (see AGENTS.md "Toolchain").
+peerDependencyRules:
+  allowedVersions:
+    eslint-plugin-react>eslint: '10'
+    eslint-plugin-jsx-a11y>eslint: '10'
+    openapi-typescript>typescript: '6'

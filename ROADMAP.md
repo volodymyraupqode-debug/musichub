@@ -2,6 +2,8 @@
 
 > Status: Draft v0.2 (audited 2026‑11‑21) — awaiting approval. The order follows the required strategy: **web first → music engine before advanced editing → editor before community → mobile after web → AI after initial release.** Durations are rough estimates for a small team (1–2 developers + AI agents). They will be re-estimated after Phase 0. Sprints are 2 weeks.
 >
+> **Changelog v0.2.7:** Sprint 1 statuses updated after implementation.
+>
 > **Changelog v0.2.6:** Q20/Q21: optional MIDI-guitar spike S8 in Phase 2 (no v1 commitment); Phase 9 split into 9a learning system design, 9b Audio/AI and 9c other deferred items.
 >
 > **Changelog v0.2.5:** Q16: local practice outbox in Phase 2, server sync in Phase 4, data export in Phase 7, synced progress on mobile.
@@ -195,22 +197,22 @@ P0 ─▶ P1 ─▶ P2 ─▶ P2M ─▶ P3 ─▶ P4 ─▶ P5 ─▶ P6 ─▶
 
 **Complexity:** S ≤ ½ day · M 1–2 days · L 3–5 days.
 
-| ID | Title | Depends on | Complexity | Status |
+| ID | Title | Depends on | Complexity | Status (2026‑11‑21, branch `chore/sprint-1-foundation`, uncommitted) |
 |---|---|---|---|---|
-| S1-01 | Monorepo initialisation | — | S | ✅ done in T0.1 (uncommitted, needs review) |
-| S1-02 | pnpm & Turborepo configuration | S1-01 | S | 🟡 partly done; workspace globs must exclude `apps/api` |
-| S1-03 | TypeScript & ESLint presets | S1-02 | M | 🟡 base presets done; React/Next layer + boundaries (dependency-cruiser) pending |
-| S1-04 | Code formatting | S1-01 | S | 🟡 Prettier + EditorConfig done; Pint pending (S1-06) |
-| S1-05 | Next.js application skeleton | S1-03 | M | ⬜ |
-| S1-06 | Laravel API skeleton | S1-01 | M | ⬜ |
-| S1-07 | Docker Compose services | — | M | ⬜ |
-| S1-08 | PostgreSQL & Redis integration | S1-06, S1-07 | M | ⬜ |
-| S1-09 | Test environments | S1-05, S1-08, S1-11 | M | ⬜ |
-| S1-10 | GitHub Actions CI | S1-04, S1-09, S1-12 | M | ⬜ |
-| S1-11 | Base shared package (`music-model` skeleton) + boundary enforcement | S1-03 | S | ⬜ |
-| S1-12 | OpenAPI contract & `api-client` codegen | S1-02, S1-06 | M | ⬜ |
-| S1-13 | Documentation structure & ADRs | — | M | ⬜ |
-| S1-14 | Node.js 26 LTS toolchain (Q12 resolved) | S1-01 | S | ✅ done (uncommitted): Node 26.13.1 verified locally |
+| S1-01 | Monorepo initialisation | — | S | ✅ done |
+| S1-02 | pnpm & Turborepo configuration | S1-01 | S | ✅ done: explicit workspace globs without `apps/api`, pnpm catalog, turbo `codegen`/`test:e2e`/`inputs`/env; second run is a full cache hit |
+| S1-03 | TypeScript & ESLint presets | S1-02 | M | ✅ done: tsconfig `react-library`/`nextjs`, ESLint `react`/`next` layers, dependency-cruiser rules verified with probe violations. ESLint stays on 10 (ESLint 9 is EOL, see ADR‑0006) |
+| S1-04 | Code formatting | S1-01 | S | ✅ done: Prettier, EditorConfig, Pint (`declare_strict_types`) |
+| S1-05 | Next.js application skeleton | S1-03 | M | ✅ done: Next 16.4.6 Turbopack; SSR homepage shows `API: ok/unavailable` via the generated client |
+| S1-06 | Laravel API skeleton | S1-01 | M | ✅ done: Laravel 13.43, API-only, `/api/v1/health`, problem details, Pest 5, Larastan level 8, Pint |
+| S1-07 | Docker Compose services | — | M | 🟡 PostgreSQL 18, Redis 8, Mailpit done. **S3 storage blocked:** MinIO no longer publishes images (Q22) |
+| S1-08 | PostgreSQL & Redis integration | S1-06, S1-07 | M | 🟡 pgsql, Redis cache/queue/session, `citext`/`pg_trgm`, health checks done. S3 disk is configured but untested until Q22 |
+| S1-09 | Test environments | S1-05, S1-08, S1-11 | M | ✅ done: Vitest (node/jsdom, v8), Pest on PostgreSQL `musichub_test`, Playwright with auto-started Next.js |
+| S1-10 | GitHub Actions CI | S1-04, S1-09, S1-12 | M | 🟡 workflow written and passes `actionlint`; not yet run on GitHub (needs a push) |
+| S1-11 | Base shared package (`music-model` skeleton) + boundary enforcement | S1-03 | S | ✅ done (only the `.` export; subpaths arrive with real content in Sprint 2) |
+| S1-12 | OpenAPI contract & `api-client` codegen | S1-02, S1-06 | M | ✅ done: OpenAPI 3.1, openapi-typescript + openapi-fetch, drift check. The Pest contract test asserts the schema shape by hand (no YAML/JSON-Schema validator yet; opis/json-schema is planned from Phase 4) |
+| S1-13 | Documentation structure & ADRs | — | M | ✅ done: README, ADR‑0000…0006, glossary, PR template, AGENTS.md |
+| S1-14 | Node.js 26 LTS toolchain (Q12 resolved) | S1-01 | S | ✅ done |
 
 ### S1-01 Monorepo initialisation
 - **Description:** root `package.json` (private, ESM, `packageManager: pnpm@12.21.0`, engines), `.nvmrc`, `engineStrict: true` in `pnpm-workspace.yaml` (pnpm 12 ignores `engine-strict` in `.npmrc` for the root project), `.editorconfig`, `.gitignore`, directory conventions (`apps/`, `packages/`).

@@ -2,7 +2,7 @@
 
 Entry point for AI coding agents working on **MusicHub** (final product name; see PROJECT_SPEC.md §1.1 naming rules) — a web-first music creation & community platform (tablature + notation editor, multi-track playback, Piano Visualizer, Piano Roll, MIDI, library, community; mobile later).
 
-> Project status: **specification v0.2 (audited), awaiting approval.** Only T0.1 tooling exists (root workspace + `packages/config`, uncommitted). Do not start Sprint 1 tasks until the owner approves ROADMAP.md §Sprint 1.
+> Project status: **Sprint 1 (Foundation) in progress** on branch `chore/sprint-1-foundation`. No music features exist yet. Next: Sprint 2 (spikes + MHD draft) after owner approval.
 
 ## Read first
 
@@ -13,7 +13,7 @@ Entry point for AI coding agents working on **MusicHub** (final product name; se
 
 ## Stack
 
-Node 26 LTS · pnpm 12.21 · Next.js 16 (Turbopack) · React 19 · TypeScript 6.0 strict · Laravel 13 (PHP 8.4) · PostgreSQL 18 · Redis · alphaTab **1.9.0 (pinned)** · Zustand · TanStack Query · Zod · React Hook Form · shadcn/ui (Tailwind v4) · Vitest · Playwright · Web Audio / Web MIDI / Canvas 2D · Expo SDK 58 · Docker Compose · pnpm + Turborepo 2.
+Node 26 LTS · pnpm 12.21 · Next.js 16.4 (Turbopack) · React 19.3 · TypeScript 6.0 strict · ESLint 10 · Laravel 13 (PHP 8.4) · PostgreSQL 18 · Redis · alphaTab **1.9.0 (pinned)** · Zustand · TanStack Query · Zod · React Hook Form · shadcn/ui (Tailwind v4) · Vitest · Playwright · Web Audio / Web MIDI / Canvas 2D · Expo SDK 58 · Docker Compose · pnpm + Turborepo 2.
 
 ## Repository layout (target)
 
@@ -42,17 +42,35 @@ openapi/  infra/  docs/adr/  spikes/
 - Node **26 LTS** from `.nvmrc` (`nvm use`). pnpm 12.21.0 is pinned via `packageManager`. Node 26 does not bundle Corepack: run `npm i -g corepack && corepack enable` once.
 - `engineStrict: true` (in `pnpm-workspace.yaml`) makes `pnpm install` fail on any other Node major.
 - TypeScript is pinned to **6.0.x**: typescript-eslint 8 supports `<6.1`; do not upgrade to TS 7 until it does.
-- Shared presets live in `packages/config`: `@musichub/config/tsconfig/base.json`, `@musichub/config/tsconfig/library.json` (pure packages, no DOM), `@musichub/config/eslint` (includes the alphaTab import restriction — `packages/music-engine` overrides it).
+- Shared presets live in `packages/config`: tsconfig `base`, `library` (pure packages, no DOM), `react-library`, `nextjs`; ESLint `@musichub/config/eslint/base` (strict TS, no `any`, alphaTab import ban; `packages/music-engine` overrides it), `/eslint/react` (React, Hooks, jsx-a11y), `/eslint/next`; Vitest `@musichub/config/vitest/node` and `/vitest/jsdom` (v8 coverage).
 
 ## Commands
 
+JS (repository root):
+
 ```
-pnpm install        # install workspace
-pnpm lint           # turbo run lint
-pnpm typecheck      # turbo run typecheck
-pnpm test           # turbo run test
-pnpm build          # turbo run build
-pnpm format:check   # prettier (Markdown specs are excluded)
+pnpm install --frozen-lockfile
+pnpm dev                                  # all dev servers (web on :3000)
+pnpm format:check                         # Prettier (Markdown specs and generated code excluded)
+pnpm turbo run lint typecheck test build  # all JS packages
+pnpm depcruise                            # package boundary rules (.dependency-cruiser.cjs)
+pnpm codegen                              # openapi/openapi.yaml → packages/api-client/src/generated
+pnpm test:e2e                             # Playwright smoke (builds web first)
 ```
 
-Docker Compose, app dev servers and PHP commands are added by Sprint 1 tasks (ROADMAP.md).
+PHP (`apps/api`, PHP 8.4; with Herd use `php84`):
+
+```
+composer install
+composer lint      # Pint --test + Larastan level 8
+composer test      # Pest on PostgreSQL musichub_test
+php artisan serve --port 8000
+```
+
+Services: `docker compose -f infra/docker-compose.yml up -d --wait` (see infra/README.md).
+
+## Gotchas
+
+- `eslint-plugin-react` needs an explicit React version on ESLint 10 (`packages/config/eslint/react.js`). Keep it in sync with the `react` catalog entry.
+- Peer-range exceptions verified to work are listed in `pnpm-workspace.yaml` → `peerDependencyRules`. Do not add new ones without verifying.
+- Tool versions come from the pnpm `catalog:`; add new shared deps there.

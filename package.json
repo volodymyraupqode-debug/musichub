@@ -13,12 +13,16 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "codegen": "turbo run codegen",
+    "depcruise": "depcruise apps packages --config .dependency-cruiser.cjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@musichub/config": "workspace:*",
-    "prettier": "3.10.1",
-    "turbo": "2.11.13"
+    "dependency-cruiser": "catalog:",
+    "prettier": "catalog:",
+    "turbo": "catalog:"
   }
 }
