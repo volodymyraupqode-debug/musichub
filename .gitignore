@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+vendor/
+
+# build output
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# tooling caches
+.turbo/
+.eslintcache
+.phpunit.result.cache
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# alphaTab assets copied at dev/build time (ARCHITECTURE.md §4)
+apps/web/public/alphatab/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Claude Code local settings
+.claude/settings.local.json
