@@ -4,6 +4,8 @@
 > Product name: **MusicHub** (approved 2026‑11‑21, Q1 resolved). The earlier working name "Guitar Studio" is retired.
 > Documentation language: English. The root `*.md` files are the source of truth. If two of them disagree, fix the docs before writing code.
 >
+> **Changelog v0.2.12:** Q22 resolved (SeaweedFS); D1 (ESLint 10), D2 (single TypeScript 6), D3 (PHP 8.4 via `php84`) recorded in §5 and ADR‑0006/0007.
+>
 > **Changelog v0.2.11:** Q22 added (MinIO images discontinued).
 >
 > **Changelog v0.2.10:** Q20 resolved (courses/LMS post‑v1; personal practice stays; data model ready for future courses). Q21 resolved (microphone guitar analysis → post‑v1 Audio/AI phase; MIDI guitar via spike S8, not committed). Non-goals and F12 updated.
@@ -151,7 +153,7 @@ Only the import of ready-made MIDI **files** is deferred. Work with MIDI **devic
 |---|---|---|
 | Runtime / tooling | Node.js, pnpm | **Node.js 26 LTS** (Active LTS since 2026‑10‑28; `.nvmrc` = 26.13.1, `engines` `>=26.13.0 <27`; CI uses the same major via `.nvmrc`). No Current/odd releases. pnpm 12.21.0 pinned via `packageManager` (`engines` `>=12.21.0 <13`) |
 | Web | Next.js (App Router), React, TypeScript (strict) | Next.js 16.4 (Turbopack default), React 19, TypeScript 6.0.x (typescript-eslint supports < 6.1) |
-| API | Laravel (separate Composer project) | Laravel 13, PHP ≥ 8.3 (use 8.4) |
+| API | Laravel (separate Composer project) | Laravel 13, **PHP 8.4** (`composer.json` `^8.4`; locally `php84` with Laravel Herd, no `herd isolate`; CI `setup-php` 8.4) |
 | Database | PostgreSQL | 18.x (19.0 was released 2026‑11‑19; adopt after its first minor) |
 | Cache / queues | Redis | 7.4+/8.x (Redis 8 is tri-licensed incl. AGPLv3; unmodified server use is fine; Valkey is a drop-in BSD alternative, Q13) |
 | Notation & playback | alphaTab (`@coderline/alphatab`) | **1.9.0 exactly** (MPL‑2.0) |
@@ -175,7 +177,7 @@ Only the import of ready-made MIDI **files** is deferred. Work with MIDI **devic
 | Web Audio API | Audio beyond alphaTab: monitoring sampler fallback, calibration clicks, latency estimation (`outputLatency`) | platform API | `music-engine`, `midi-engine` |
 | Web MIDI API | MIDI devices in the browser | platform API | `midi-engine` only |
 | Canvas 2D | Falling notes, keyboard, piano roll | platform API | `piano-visualizer`, studio piano roll |
-| ESLint 10 + typescript-eslint 8, Prettier 3 | Lint/format | MIT | in use since T0.1 |
+| ESLint 10 + typescript-eslint 8, Prettier 3 | Lint/format. ESLint 9 is EOL since 2026‑08‑06, so ESLint 10 is kept (D1, ADR‑0006) | MIT | in use since T0.1 |
 
 **Not approved for now:** Three.js (3D visualisation). Revisit only if a 3D view is requested. WebGL in general needs an ADR (PIANO_VISUALIZER §3).
 
@@ -193,7 +195,7 @@ Items from the v0.2 proposal that the Q2 decision did not cover. All are approve
 | next-intl | i18n | MIT | Phase 1 |
 | Storybook | Component workbench | MIT | Phase 1 |
 | Lucide icons (shadcn/ui default); Inter, JetBrains Mono fonts | Icons, fonts | ISC; OFL | Phase 1 |
-| S3-compatible storage (MinIO locally) | Document blobs, uploads | MinIO AGPLv3 (dev only); managed S3 in prod | Sprint 1 (S1-07). ⚠️ MinIO images are no longer published; local replacement pending Q22 |
+| S3-compatible storage: **SeaweedFS** locally (single node), managed S3 in prod | Document blobs, uploads | SeaweedFS Apache‑2.0 | Sprint 1 (S1-07). Q22 resolved: replaces MinIO, whose images are discontinued (ADR-0007) |
 | Sentry | Error reporting | SDKs MIT | Phase 4 |
 
 ## 6. Quality attributes
@@ -244,7 +246,7 @@ Probability (P) and Impact (I): Low / Medium / High. Priority: **P1** (address b
 | R10 | Practice one-hand playback: alphaTab mutes per Track only, but a grand staff is one Track | Certain | Medium | P2 | Playback-only score with staves split into separate tracks/channels (MUSIC_ENGINE §5.2); spike S7 | MUSIC_ENGINE §5.2 |
 | R11 | Sustain pedal: stored in alphaTab model (`Bar.sustainPedals`) but apparently not played back by the MIDI generator | Medium | Medium | P2 | Spike S7; fallback: playback-only lengthening of pedalled notes in the playback score | MUSIC_ENGINE §5.2 |
 | R12 | Code reuse Web ↔ Mobile: no alphaTab on iOS/RN, so notation needs a WebView component; mobile audio latency and A/V sync are unproven | Medium | High | P2 | Expo native-first (Q11): shared TS logic runs in RN; WebView only for notation; native MIDI/audio modules; mobile prototype M1–M7 in Phase 2M (right after Phase 2) | MOBILE.md §6 |
-| R13 | Licenses: alphaTab future CPAL, attribution request, SoundFont/fonts redistribution, Redis 8 / MinIO AGPL | Medium | High | P1 | Pin versions, license gate for dependencies (AGENT_RULES §8), notices page, managed S3 in prod | §7 |
+| R13 | Licenses: alphaTab future CPAL, attribution request, SoundFont/fonts redistribution, Redis 8 tri-license (AGPL option) | Medium | High | P1 | Pin versions, license gate for dependencies (AGENT_RULES §8), notices page, managed S3 in prod | §7 |
 | R14 | Copyright claims and spam/abuse in community content | High | High | P2 (before P6) | ToS, reports with auto-hide threshold, blocks, takedown workflow, moderation tools; verified email for comments/publishing/uploads; new-account limits and rate limits (API.md §1.1, §10.1) | API.md §8 |
 | R15 | Sync conflicts between devices / tabs | Medium | Medium | P2 | Revisions + `409` + "save as copy"; single editing tab via Web Locks | ARCHITECTURE §6 |
 | R16 | Revision storage growth from autosave snapshots | Medium | Medium | P2 | Autosave interval ≥ 30 s idle, tiered thinning, dedupe by hash | ARCHITECTURE §6 |
@@ -278,7 +280,7 @@ Probability (P) and Impact (I): Low / Medium / High. Priority: **P1** (address b
 | Q19 | CAPTCHA / bot protection at registration (e.g. a privacy-friendly provider) beyond honeypot + rate limits? | (a) not in v1, revisit if spam appears (recommended); (b) add a provider (needs library/service approval) |
 | Q20 | ~~Lessons/courses system~~ | ✅ **Resolved 2026‑11‑21: post‑v1.** v1 keeps personal practice only: completed fragments, goals, stats, accuracy, BPM, attempts, time, history, resume. No course catalog, course/module/lesson hierarchy, curriculum builder, teachers, certificates or LMS. The learning system gets its own design after v1; the practice data model is ready for it (DATABASE.md §3.15 `source`/`source_ref`) |
 | Q21 | ~~Guitar correctness checking~~ | ✅ **Resolved 2026‑11‑21:** microphone pitch detection and analysis of acoustic/electric guitar playing move to the post‑v1 **Audio/AI phase**. v1 keeps guitar notation/tab display and playback. MIDI-guitar checking is researched in spike S8 and is **not** a v1 commitment without a passing prototype and an owner decision |
-| Q22 | Local S3-compatible storage: MinIO no longer publishes container images (Docker Hub repo removed, quay.io requires auth). Replacement for dev/CI? | (a) SeaweedFS (Apache‑2.0, single container with S3 gateway); (b) RustFS (Apache‑2.0, MinIO-compatible, younger project); (c) build MinIO from source into our own image (AGPLv3, maintenance burden). Production stays managed S3 |
+| Q22 | ~~Local S3-compatible storage~~ | ✅ **Resolved 2026‑11‑21: SeaweedFS** (Apache‑2.0, single node, S3 API on 8333). MinIO is no longer the default; a self-built MinIO image needs a separate decision; RustFS stays the fallback (ADR-0007) |
 | Q18 | Mobile libraries chosen by the Phase 2M prototype (e.g. a native 2D drawing library for the visualizer, a native audio/SoundFont engine, an Expo audio package) | Decide after prototype M1–M7; each needs approval like Q2 |
 
 ## 10. Document map

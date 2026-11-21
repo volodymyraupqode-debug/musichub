@@ -11,6 +11,8 @@
 > - `summary` and the track rows now come from client-computed `derived` data (the server does not compute music).
 > - `import_jobs` is used from Phase 8 only.
 >
+> **Changelog v0.2.3:** documented why the standard queue migration is kept (§3.14).
+>
 > **Changelog v0.2.2:** Q20/Q21: forward-compatible practice columns `source`, `source_ref`, `input_source`. No course tables in v1.
 >
 > **Changelog v0.2.1:** Q16 resolved: practice results are stored server-side. New tables `practice_sessions`, `practice_progress`, `practice_goals` (§3.15–3.17); `users.practice_sync_enabled`; data export/deletion lifecycle (§5).
@@ -170,7 +172,9 @@ Denormalised per head revision, rewritten on each save from the client's `derive
 `id`, `reporter_id FK users SET NULL`, `subject_type` (composition, comment, user), `subject_id uuid`, `reason` (copyright, spam, abuse, other), `details text`, `status` (open, actioned, dismissed), `handled_by FK users NULL`, `handled_at`, `created_at`. Index (status, created_at).
 
 ### 3.14 Laravel standard tables
-`personal_access_tokens` (Sanctum, mobile), `sessions` (if DB driver; default Redis), `password_reset_tokens`, `notifications`, `jobs`/`failed_jobs` (Horizon uses Redis; failed jobs in DB), `cache` not used (Redis).
+`personal_access_tokens` (Sanctum, mobile), `sessions` (if DB driver; default Redis), `password_reset_tokens`, `notifications`, `cache` not used (Redis).
+
+**Queue tables:** Laravel's standard queue migration (`0001_01_01_000002_create_jobs_table`) is kept on purpose. It creates `jobs`, `job_batches` and `failed_jobs`. With `QUEUE_CONNECTION=redis`, `jobs` stays unused (jobs live in Redis). `failed_jobs` stores failed jobs for inspection and retry. `job_batches` is used only if job batching is introduced. The migration is not removed, so switching the driver (e.g. in tests) needs no schema change.
 
 ### 3.15 practice_sessions (Phase 4; collected locally from Phase 2)
 
