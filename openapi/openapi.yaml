@@ -42,7 +42,7 @@ components:
           enum: [ok, fail]
         version:
           type: string
-          description: Deployed API version.
+          description: Deployed API version (S2-00 codegen drift probe).
         checks:
           type: object
           additionalProperties: false
