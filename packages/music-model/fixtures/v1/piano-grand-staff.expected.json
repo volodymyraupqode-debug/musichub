@@ -1,0 +1,17 @@
+{
+  "fixture": "piano-grand-staff.mhd.json",
+  "schemaVersion": 1,
+  "validation": { "valid": true, "issueCodes": [] },
+  "counts": {
+    "tracks": 1,
+    "staves": 2,
+    "masterBars": 3,
+    "voices": 7,
+    "beats": 15,
+    "rests": 1,
+    "notes": 21,
+    "graceBeats": 0,
+    "tiedNotes": 2,
+    "sustainPedalEvents": 6
+  }
+}

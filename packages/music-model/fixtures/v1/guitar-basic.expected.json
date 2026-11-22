@@ -1,0 +1,17 @@
+{
+  "fixture": "guitar-basic.mhd.json",
+  "schemaVersion": 1,
+  "validation": { "valid": true, "issueCodes": [] },
+  "counts": {
+    "tracks": 1,
+    "staves": 1,
+    "masterBars": 4,
+    "voices": 5,
+    "beats": 16,
+    "rests": 2,
+    "notes": 18,
+    "graceBeats": 1,
+    "tiedNotes": 2,
+    "sustainPedalEvents": 0
+  }
+}

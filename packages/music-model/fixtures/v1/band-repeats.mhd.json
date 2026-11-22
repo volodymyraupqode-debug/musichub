@@ -1,0 +1,669 @@
+{
+  "format": "musichub",
+  "schemaVersion": 1,
+  "id": "0195f2a4-7c3e-7a10-9b2d-00000000c001",
+  "meta": {
+    "title": "MusicHub fixture C — band with repeats and D.S. al Coda",
+    "copyright": "MusicHub test fixture"
+  },
+  "masterBars": [
+    {
+      "id": "BCM000000000",
+      "timeSignature": { "numerator": 4, "denominator": 4 },
+      "keySignature": { "fifths": 1, "mode": "major" },
+      "tempoChanges": [{ "position": [0, 1], "bpm": 120 }],
+      "isAnacrusis": true
+    },
+    { "id": "BCM100000000", "repeatStart": true, "section": { "letter": "A", "text": "Verse" } },
+    { "id": "BCM200000000", "alternateEndings": [1], "repeatEnd": { "count": 2 } },
+    { "id": "BCM300000000", "alternateEndings": [2] },
+    { "id": "BCM400000000", "direction": "segno", "section": { "letter": "B", "text": "Bridge" } },
+    { "id": "BCM500000000", "direction": "toCoda" },
+    {
+      "id": "BCM600000000",
+      "timeSignature": { "numerator": 3, "denominator": 4 },
+      "direction": "dalSegnoAlCoda"
+    },
+    {
+      "id": "BCM700000000",
+      "timeSignature": { "numerator": 4, "denominator": 4 },
+      "direction": "coda",
+      "fermata": true
+    }
+  ],
+  "tracks": [
+    {
+      "id": "BCT100000000",
+      "name": "Guitar",
+      "color": "track.3",
+      "instrument": { "family": "guitar", "midiProgram": 29, "percussion": false },
+      "mixer": { "volume": 0.7, "pan": -0.3, "mute": false, "solo": false },
+      "staves": [
+        {
+          "id": "BCS100000000",
+          "display": { "standard": true, "tab": true, "slash": false, "numbered": false },
+          "stringed": { "tuning": [64, 59, 55, 50, 45, 40], "capo": 0, "fretCount": 24 },
+          "transpositionPitch": -12,
+          "bars": [
+            {
+              "id": "BC1000000000",
+              "voices": [
+                {
+                  "id": "BC1010000000",
+                  "beats": [
+                    {
+                      "id": "BC1020000000",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC1030000000", "string": 3, "fret": 0 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC1100000000",
+              "voices": [
+                {
+                  "id": "BC1110000000",
+                  "beats": [
+                    {
+                      "id": "BC1120000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC1130000000", "string": 6, "fret": 3 },
+                        { "id": "BC1140000000", "string": 5, "fret": 2 },
+                        { "id": "BC1150000000", "string": 1, "fret": 3 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC1200000000",
+              "voices": [
+                {
+                  "id": "BC1210000000",
+                  "beats": [
+                    {
+                      "id": "BC1220000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC1230000000", "string": 4, "fret": 2 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC1300000000",
+              "voices": [
+                {
+                  "id": "BC1310000000",
+                  "beats": [
+                    {
+                      "id": "BC1320000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC1330000000", "string": 5, "fret": 0 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC1400000000",
+              "voices": [
+                {
+                  "id": "BC1410000000",
+                  "beats": [
+                    {
+                      "id": "BC1420000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC1430000000", "string": 4, "fret": 0 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC1500000000",
+              "voices": [
+                {
+                  "id": "BC1510000000",
+                  "beats": [
+                    {
+                      "id": "BC1520000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC1530000000", "string": 3, "fret": 2 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC1600000000",
+              "voices": [
+                {
+                  "id": "BC1610000000",
+                  "beats": [
+                    {
+                      "id": "BC1620000000",
+                      "duration": { "value": 2, "dots": 1 },
+                      "rest": false,
+                      "notes": [{ "id": "BC1630000000", "string": 5, "fret": 2 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC1700000000",
+              "voices": [
+                {
+                  "id": "BC1710000000",
+                  "beats": [
+                    {
+                      "id": "BC1720000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC1730000000", "string": 6, "fret": 3 }]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BCT200000000",
+      "name": "Bass",
+      "color": "track.4",
+      "instrument": { "family": "bass", "midiProgram": 33, "percussion": false },
+      "mixer": { "volume": 0.8, "pan": 0, "mute": false, "solo": false },
+      "staves": [
+        {
+          "id": "BCS200000000",
+          "display": { "standard": false, "tab": true, "slash": false, "numbered": false },
+          "stringed": { "tuning": [43, 38, 33, 28], "capo": 0, "fretCount": 20 },
+          "transpositionPitch": -12,
+          "bars": [
+            {
+              "id": "BC2000000000",
+              "voices": [
+                {
+                  "id": "BC2010000000",
+                  "beats": [
+                    {
+                      "id": "BC2020000000",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": true,
+                      "notes": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC2100000000",
+              "voices": [
+                {
+                  "id": "BC2110000000",
+                  "beats": [
+                    {
+                      "id": "BC2120000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC2130000000", "string": 4, "fret": 3 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC2200000000",
+              "voices": [
+                {
+                  "id": "BC2210000000",
+                  "beats": [
+                    {
+                      "id": "BC2220000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC2230000000", "string": 3, "fret": 0 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC2300000000",
+              "voices": [
+                {
+                  "id": "BC2310000000",
+                  "beats": [
+                    {
+                      "id": "BC2320000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC2330000000", "string": 3, "fret": 2 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC2400000000",
+              "voices": [
+                {
+                  "id": "BC2410000000",
+                  "beats": [
+                    {
+                      "id": "BC2420000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC2430000000", "string": 2, "fret": 0 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC2500000000",
+              "voices": [
+                {
+                  "id": "BC2510000000",
+                  "beats": [
+                    {
+                      "id": "BC2520000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC2530000000", "string": 2, "fret": 2 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC2600000000",
+              "voices": [
+                {
+                  "id": "BC2610000000",
+                  "beats": [
+                    {
+                      "id": "BC2620000000",
+                      "duration": { "value": 2, "dots": 1 },
+                      "rest": false,
+                      "notes": [{ "id": "BC2630000000", "string": 3, "fret": 0 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC2700000000",
+              "voices": [
+                {
+                  "id": "BC2710000000",
+                  "beats": [
+                    {
+                      "id": "BC2720000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "BC2730000000", "string": 4, "fret": 3 }]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BCT300000000",
+      "name": "Drums",
+      "color": "track.5",
+      "instrument": { "family": "drums", "midiProgram": 0, "percussion": true },
+      "mixer": { "volume": 0.9, "pan": 0, "mute": false, "solo": false },
+      "staves": [
+        {
+          "id": "BCS300000000",
+          "display": { "standard": true, "tab": false, "slash": false, "numbered": false },
+          "bars": [
+            {
+              "id": "BC3000000000",
+              "voices": [
+                {
+                  "id": "BC3010000000",
+                  "beats": [
+                    {
+                      "id": "BC3020000000",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC3030000000", "pitch": 36 },
+                        { "id": "BC3040000000", "pitch": 42, "drumTechnique": "halfOpen" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC3100000000",
+              "voices": [
+                {
+                  "id": "BC3110000000",
+                  "beats": [
+                    {
+                      "id": "BC3120000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC3130000000", "pitch": 36 },
+                        { "id": "BC3140000000", "pitch": 42 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC3200000000",
+              "voices": [
+                {
+                  "id": "BC3210000000",
+                  "beats": [
+                    {
+                      "id": "BC3220000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC3230000000", "pitch": 38, "drumTechnique": "rimshot" },
+                        { "id": "BC3240000000", "pitch": 42 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC3300000000",
+              "voices": [
+                {
+                  "id": "BC3310000000",
+                  "beats": [
+                    {
+                      "id": "BC3320000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC3330000000", "pitch": 36 },
+                        { "id": "BC3340000000", "pitch": 49 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC3400000000",
+              "voices": [
+                {
+                  "id": "BC3410000000",
+                  "beats": [
+                    {
+                      "id": "BC3420000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC3430000000", "pitch": 36 },
+                        { "id": "BC3440000000", "pitch": 51, "drumTechnique": "edge" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC3500000000",
+              "voices": [
+                {
+                  "id": "BC3510000000",
+                  "beats": [
+                    {
+                      "id": "BC3520000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC3530000000", "pitch": 38 },
+                        { "id": "BC3540000000", "pitch": 51 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC3600000000",
+              "voices": [
+                {
+                  "id": "BC3610000000",
+                  "beats": [
+                    {
+                      "id": "BC3620000000",
+                      "duration": { "value": 2, "dots": 1 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC3630000000", "pitch": 36 },
+                        { "id": "BC3640000000", "pitch": 46 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC3700000000",
+              "voices": [
+                {
+                  "id": "BC3710000000",
+                  "beats": [
+                    {
+                      "id": "BC3720000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC3730000000", "pitch": 36 },
+                        { "id": "BC3740000000", "pitch": 55, "drumTechnique": "choke" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BCT400000000",
+      "name": "Keys",
+      "color": "track.6",
+      "instrument": { "family": "synth", "midiProgram": 4, "percussion": false },
+      "mixer": { "volume": 0.6, "pan": 0.3, "mute": false, "solo": false },
+      "staves": [
+        {
+          "id": "BCS400000000",
+          "display": { "standard": true, "tab": false, "slash": false, "numbered": false },
+          "hand": "right",
+          "bars": [
+            {
+              "id": "BC4000000000",
+              "voices": [
+                {
+                  "id": "BC4010000000",
+                  "beats": [
+                    {
+                      "id": "BC4020000000",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": true,
+                      "notes": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC4100000000",
+              "voices": [
+                {
+                  "id": "BC4110000000",
+                  "beats": [
+                    {
+                      "id": "BC4120000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC4130000000", "pitch": 67 },
+                        { "id": "BC4140000000", "pitch": 71 },
+                        { "id": "BC4150000000", "pitch": 74 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC4200000000",
+              "voices": [
+                {
+                  "id": "BC4210000000",
+                  "beats": [
+                    {
+                      "id": "BC4220000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC4230000000", "pitch": 66 },
+                        { "id": "BC4240000000", "pitch": 69 },
+                        { "id": "BC4250000000", "pitch": 74 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC4300000000",
+              "voices": [
+                {
+                  "id": "BC4310000000",
+                  "beats": [
+                    {
+                      "id": "BC4320000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC4330000000", "pitch": 64 },
+                        { "id": "BC4340000000", "pitch": 67 },
+                        { "id": "BC4350000000", "pitch": 72 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC4400000000",
+              "voices": [
+                {
+                  "id": "BC4410000000",
+                  "beats": [
+                    {
+                      "id": "BC4420000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC4430000000", "pitch": 62 },
+                        { "id": "BC4440000000", "pitch": 67 },
+                        { "id": "BC4450000000", "pitch": 71 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC4500000000",
+              "voices": [
+                {
+                  "id": "BC4510000000",
+                  "beats": [
+                    {
+                      "id": "BC4520000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC4530000000", "pitch": 64 },
+                        { "id": "BC4540000000", "pitch": 69 },
+                        { "id": "BC4550000000", "pitch": 72 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC4600000000",
+              "voices": [
+                {
+                  "id": "BC4610000000",
+                  "beats": [
+                    {
+                      "id": "BC4620000000",
+                      "duration": { "value": 2, "dots": 1 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC4630000000", "pitch": 62 },
+                        { "id": "BC4640000000", "pitch": 66 },
+                        { "id": "BC4650000000", "pitch": 69 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "BC4700000000",
+              "voices": [
+                {
+                  "id": "BC4710000000",
+                  "beats": [
+                    {
+                      "id": "BC4720000000",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "BC4730000000", "pitch": 67 },
+                        { "id": "BC4740000000", "pitch": 71 },
+                        { "id": "BC4750000000", "pitch": 74 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
