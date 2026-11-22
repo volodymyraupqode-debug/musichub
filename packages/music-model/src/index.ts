@@ -1,12 +1,72 @@
 /**
- * @musichub/music-model — MusicHub Document (MHD) model.
- *
- * Sprint 1 skeleton: only the format identity is public. Types, Zod schema,
- * timeline and contracts arrive in Sprint 2 (MUSIC_ENGINE.md §3).
+ * @musichub/music-model — MusicHub Document (MHD) v1 model: Zod schemas, types, ids,
+ * validation and JSON Schema (MUSIC_ENGINE.md §3, README.md). Pure TypeScript, no DOM.
  */
-
-/** Value of `MhdDocument.format` for every MusicHub document. */
-export const MHD_FORMAT = 'musichub';
-
-/** Current MHD schema version (MUSIC_ENGINE.md §3.4). */
-export const MHD_SCHEMA_VERSION = 1;
+export { MHD_FORMAT, MHD_SCHEMA_VERSION, PPQ } from './constants.js';
+export {
+  MHD_ID_ALPHABET,
+  MHD_ID_LENGTH,
+  MHD_ID_PATTERN,
+  createIdGenerator,
+  generateId,
+  isMhdId,
+  type RandomBytesSource,
+} from './ids/id.js';
+export {
+  BarSchema,
+  BeatEffectsSchema,
+  BeatSchema,
+  BendPointSchema,
+  DIRECTIONS,
+  DURATION_VALUES,
+  DurationSchema,
+  EXTENSION_KEY_PATTERN,
+  ExtensionsSchema,
+  INSTRUMENT_FAMILIES,
+  KEYBOARD_FAMILIES,
+  KeySignatureSchema,
+  MAX_MASTER_BARS,
+  MAX_REPEAT_COUNT,
+  MAX_TRACKS,
+  MasterBarSchema,
+  MetaSchema,
+  MhdDocumentSchema,
+  MhdIdSchema,
+  NoteEffectsSchema,
+  NoteSchema,
+  PositionSchema,
+  StaffSchema,
+  SustainPedalSchema,
+  TRACK_COLORS,
+  TempoChangeSchema,
+  TimeSignatureSchema,
+  TrackSchema,
+  VoiceSchema,
+  type Bar,
+  type Beat,
+  type BendPoint,
+  type Duration,
+  type Extensions,
+  type InstrumentFamily,
+  type KeySignature,
+  type MasterBar,
+  type Meta,
+  type MhdDocument,
+  type Note,
+  type Position,
+  type Staff,
+  type SustainPedal,
+  type TempoChange,
+  type TimeSignature,
+  type Track,
+  type Voice,
+} from './schema/document.js';
+export { createMhdJsonSchema } from './schema/json-schema.js';
+export {
+  ISSUE_CODES,
+  type IssueCode,
+  type IssuePath,
+  type IssueSeverity,
+  type ValidationIssue,
+} from './validate/issues.js';
+export { validateDocument, type ValidationResult } from './validate/validate-document.js';

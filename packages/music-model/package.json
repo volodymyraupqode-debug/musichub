@@ -19,6 +19,9 @@
     "lint": "eslint .",
     "test": "vitest run --coverage"
   },
+  "dependencies": {
+    "zod": "catalog:"
+  },
   "devDependencies": {
     "@musichub/config": "workspace:*",
     "@vitest/coverage-v8": "catalog:",
