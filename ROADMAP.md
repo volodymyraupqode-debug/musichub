@@ -2,6 +2,8 @@
 
 > Status: Draft v0.2 (audited 2026‑11‑21) — awaiting approval. The order follows the required strategy: **web first → music engine before advanced editing → editor before community → mobile after web → AI after initial release.** Durations are rough estimates for a small team (1–2 developers + AI agents). They will be re-estimated after Phase 0. Sprints are 2 weeks.
 >
+> **Changelog v0.2.9:** Sprint 1 closed: first GitHub Actions run green on `main` (`3e19d87`, run 45060685119).
+>
 > **Changelog v0.2.8:** Sprint 1 reconciliation. Statuses re-checked against the code; Q22 (SeaweedFS); OpenAPI response validation and the Compose `full` profile moved to Phase 4; technical debt listed.
 >
 > **Changelog v0.2.7:** Sprint 1 statuses updated after implementation.
@@ -202,7 +204,7 @@ P0 ─▶ P1 ─▶ P2 ─▶ P2M ─▶ P3 ─▶ P4 ─▶ P5 ─▶ P6 ─▶
 
 **Complexity:** S ≤ ½ day · M 1–2 days · L 3–5 days.
 
-| ID | Title | Depends on | Complexity | Status (2026‑11‑21, branch `chore/sprint-1-foundation`, commit `3f9a720`) |
+| ID | Title | Depends on | Complexity | Status (2026‑11‑22, `main` at `3e19d87`) |
 |---|---|---|---|---|
 | S1-01 | Monorepo initialisation | — | S | ✅ done |
 | S1-02 | pnpm & Turborepo configuration | S1-01 | S | ✅ done: explicit workspace members without `apps/api`, pnpm catalog, turbo `codegen`/`test:e2e`/`inputs`/env; second run is a full cache hit |
@@ -213,20 +215,21 @@ P0 ─▶ P1 ─▶ P2 ─▶ P2M ─▶ P3 ─▶ P4 ─▶ P5 ─▶ P6 ─▶
 | S1-07 | Docker Compose services | — | M | ✅ done: PostgreSQL 18, Redis 8, Mailpit, SeaweedFS 4.54 (ADR‑0007) with idempotent bucket bootstrap `seaweedfs-init`. The `full` profile is deferred to Phase 4 |
 | S1-08 | PostgreSQL & Redis integration | S1-06, S1-07 | M | ✅ done: pgsql, Redis cache/queue/session, `citext`/`pg_trgm`, health checks, S3 disk on SeaweedFS verified by a real Pest integration test (put/get/delete, presigned URL) |
 | S1-09 | Test environments | S1-05, S1-08, S1-11 | M | ✅ done: Vitest (node/jsdom, v8), Pest on PostgreSQL `musichub_test`, Playwright with auto-started Next.js |
-| S1-10 | GitHub Actions CI | S1-04, S1-09, S1-12 | M | 🟡 **partial:** workflow written and passes `actionlint`; **not yet run on GitHub** (branch not pushed) |
+| S1-10 | GitHub Actions CI | S1-04, S1-09, S1-12 | M | ✅ done: first run on GitHub green (push to `main`, run 45060685119): `js` 37 s, `php` with PostgreSQL/Redis/SeaweedFS 51 s, `e2e` 45 s; total ≈ 1.5 min. Not yet verified: a run triggered by a PR, and that a deliberate lint error / failing test / codegen drift turns CI red (→ first Sprint 2 PR) |
 | S1-11 | Base shared package (`music-model` skeleton) + boundary enforcement | S1-03 | S | ✅ done (only the `.` export; subpaths arrive with real content in Sprint 2) |
 | S1-12 | OpenAPI contract & `api-client` codegen | S1-02, S1-06 | M | ✅ done: OpenAPI 3.1, openapi-typescript + openapi-fetch, deterministic codegen, drift check. **Note:** the Pest health test checks the response *shape* by hand; it is **not** OpenAPI/JSON Schema validation (that is a Phase 4 task) |
 | S1-13 | Documentation structure & ADRs | — | M | ✅ done: README, ADR‑0000…0007, glossary, PR template, AGENTS.md |
 | S1-14 | Node.js 26 LTS toolchain (Q12 resolved) | S1-01 | S | ✅ done |
 
 **Summary:**
-- Done: S1-01…S1-09, S1-11…S1-14.
-- Partial: S1-10 (first GitHub run pending).
+- Done: S1-01…S1-14.
 - Deferred to Phase 4: the Compose `full` profile (API + Horizon containers) and OpenAPI schema validation of API responses.
 
 **Remaining to close Sprint 1:**
 1. ~~Add the SeaweedFS service, bucket bootstrap and Pest S3 integration test~~ (done).
-2. Push the branch and get a green CI run on GitHub.
+2. ~~Push the branch and get a green CI run on GitHub~~ (done: merged to `main`, run 45060685119 green).
+
+Sprint 1 is closed pending owner review.
 
 **Non-blocking technical debt:**
 - The health contract test is a hand-written shape check, not OpenAPI validation (→ Phase 4).
@@ -283,7 +286,7 @@ P0 ─▶ P1 ─▶ P2 ─▶ P2M ─▶ P3 ─▶ P4 ─▶ P5 ─▶ P6 ─▶
 ### S1-10 GitHub Actions CI
 - **Description:** `.github/workflows/ci.yml` on PR and `main`, with concurrency cancel.
   - Job `js`: Node from `.nvmrc`, corepack, pnpm cache, `pnpm install --frozen-lockfile`, `format:check`, `turbo run lint typecheck test build`, depcruise, codegen drift check (`git diff --exit-code`).
-  - Job `php`: `shivammathur/setup-php` 8.4, Composer cache, Pint `--test`, Larastan, Pest with `postgres:18` and `redis` services.
+  - Job `php`: `shivammathur/setup-php` 8.4, Composer cache, Pint `--test`, Larastan, Pest with `postgres:18` and `redis` services, plus SeaweedFS started from `infra/docker-compose.yml` for the S3 integration test.
   - Job `e2e`: Playwright smoke (Chromium) after `js`.
 - **Acceptance:** all jobs are green on a PR. A lint error, a failing test and a codegen drift each make CI red (verified on a throw-away branch). Runtime < 10 min.
 - **Tests:** the workflow itself; `actionlint` locally (optional).
