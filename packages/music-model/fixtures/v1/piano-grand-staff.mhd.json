@@ -1,0 +1,234 @@
+{
+  "format": "musichub",
+  "schemaVersion": 1,
+  "id": "0195f2a4-7c3e-7a10-9b2d-00000000b001",
+  "meta": {
+    "title": "MusicHub fixture B — piano grand staff with sustain pedal",
+    "copyright": "MusicHub test fixture"
+  },
+  "masterBars": [
+    {
+      "id": "PB0000000001",
+      "timeSignature": { "numerator": 4, "denominator": 4 },
+      "keySignature": { "fifths": 0, "mode": "major" },
+      "tempoChanges": [{ "position": [0, 1], "bpm": 90 }]
+    },
+    {
+      "id": "PB0000000002",
+      "tempoChanges": [{ "position": [1, 2], "bpm": 72, "label": "rit." }]
+    },
+    { "id": "PB0000000003" }
+  ],
+  "tracks": [
+    {
+      "id": "PB0000000010",
+      "name": "Piano",
+      "color": "track.2",
+      "instrument": { "family": "piano", "midiProgram": 0, "percussion": false },
+      "mixer": { "volume": 0.9, "pan": 0, "mute": false, "solo": false },
+      "staves": [
+        {
+          "id": "PB0000000100",
+          "display": { "standard": true, "tab": false, "slash": false, "numbered": false },
+          "hand": "right",
+          "bars": [
+            {
+              "id": "PB0000000110",
+              "clef": "G2",
+              "voices": [
+                {
+                  "id": "PB0000000111",
+                  "beats": [
+                    {
+                      "id": "PB0000000112",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "PB0000000113", "pitch": 72 }]
+                    },
+                    {
+                      "id": "PB0000000114",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "PB0000000115", "pitch": 74 }]
+                    },
+                    {
+                      "id": "PB0000000116",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "PB0000000117", "pitch": 76 }]
+                    },
+                    {
+                      "id": "PB0000000118",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "PB0000000119", "pitch": 77 }]
+                    }
+                  ]
+                },
+                {
+                  "id": "PB0000000120",
+                  "beats": [
+                    {
+                      "id": "PB0000000121",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "PB0000000122", "pitch": 64 },
+                        { "id": "PB0000000123", "pitch": 67 }
+                      ]
+                    },
+                    {
+                      "id": "PB0000000124",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "PB0000000125", "pitch": 65 },
+                        { "id": "PB0000000126", "pitch": 69 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "PB0000000130",
+              "ottava": "8va",
+              "voices": [
+                {
+                  "id": "PB0000000131",
+                  "beats": [
+                    {
+                      "id": "PB0000000132",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "PB0000000133", "pitch": 79 }]
+                    },
+                    {
+                      "id": "PB0000000134",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "PB0000000135", "pitch": 79, "tiedFromPrevious": true }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "PB0000000140",
+              "voices": [
+                {
+                  "id": "PB0000000141",
+                  "beats": [
+                    {
+                      "id": "PB0000000142",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "PB0000000143", "pitch": 72 },
+                        { "id": "PB0000000144", "pitch": 76 },
+                        { "id": "PB0000000145", "pitch": 79 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PB0000000200",
+          "display": { "standard": true, "tab": false, "slash": false, "numbered": false },
+          "hand": "left",
+          "bars": [
+            {
+              "id": "PB0000000210",
+              "clef": "F4",
+              "sustainPedal": [
+                { "position": [0, 1], "type": "down" },
+                { "position": [1, 2], "type": "up" },
+                { "position": [9, 16], "type": "down" }
+              ],
+              "voices": [
+                {
+                  "id": "PB0000000211",
+                  "beats": [
+                    {
+                      "id": "PB0000000212",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "PB0000000213", "pitch": 48 },
+                        { "id": "PB0000000214", "pitch": 55 }
+                      ]
+                    },
+                    {
+                      "id": "PB0000000215",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "PB0000000216", "pitch": 53 },
+                        { "id": "PB0000000217", "pitch": 57 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "PB0000000220",
+              "sustainPedal": [
+                { "position": [1, 2], "type": "up" },
+                { "position": [3, 4], "type": "down" }
+              ],
+              "voices": [
+                {
+                  "id": "PB0000000221",
+                  "beats": [
+                    {
+                      "id": "PB0000000222",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "PB0000000223", "pitch": 43 }]
+                    },
+                    {
+                      "id": "PB0000000224",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "PB0000000225", "pitch": 62, "hand": "right" }]
+                    },
+                    {
+                      "id": "PB0000000226",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": true,
+                      "notes": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "PB0000000230",
+              "sustainPedal": [{ "position": [0, 1], "type": "up" }],
+              "voices": [
+                {
+                  "id": "PB0000000231",
+                  "beats": [
+                    {
+                      "id": "PB0000000232",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "PB0000000233", "pitch": 36 },
+                        { "id": "PB0000000234", "pitch": 43 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

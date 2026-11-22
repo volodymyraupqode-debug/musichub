@@ -1,0 +1,252 @@
+{
+  "format": "musichub",
+  "schemaVersion": 1,
+  "id": "0195f2a4-7c3e-7a10-9b2d-00000000a001",
+  "meta": {
+    "title": "MusicHub fixture A — guitar techniques",
+    "copyright": "MusicHub test fixture"
+  },
+  "masterBars": [
+    {
+      "id": "GA0000000001",
+      "timeSignature": { "numerator": 4, "denominator": 4 },
+      "keySignature": { "fifths": 0, "mode": "major" },
+      "tempoChanges": [{ "position": [0, 1], "bpm": 100 }]
+    },
+    { "id": "GA0000000002" },
+    { "id": "GA0000000003" },
+    { "id": "GA0000000004" }
+  ],
+  "tracks": [
+    {
+      "id": "GA0000000010",
+      "name": "Guitar",
+      "color": "track.1",
+      "instrument": { "family": "guitar", "midiProgram": 25, "percussion": false },
+      "mixer": { "volume": 0.8, "pan": 0, "mute": false, "solo": false },
+      "staves": [
+        {
+          "id": "GA0000000011",
+          "display": { "standard": true, "tab": true, "slash": false, "numbered": false },
+          "stringed": { "tuning": [64, 59, 55, 50, 45, 40], "capo": 2, "fretCount": 24 },
+          "transpositionPitch": -12,
+          "bars": [
+            {
+              "id": "GA0000000100",
+              "voices": [
+                {
+                  "id": "GA0000000101",
+                  "beats": [
+                    {
+                      "id": "GA0000000102",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "GA0000000103",
+                          "string": 3,
+                          "fret": 2,
+                          "effects": { "hammerPullOrigin": true }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "GA0000000104",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "GA0000000105", "string": 3, "fret": 4 }]
+                    },
+                    {
+                      "id": "GA0000000106",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "GA0000000107",
+                          "string": 2,
+                          "fret": 3,
+                          "effects": {
+                            "bend": [
+                              { "offset": 0, "value": 0 },
+                              { "offset": 30, "value": 4 },
+                              { "offset": 60, "value": 0 }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "GA0000000108",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        { "id": "GA0000000109", "string": 1, "fret": 0 },
+                        { "id": "GA0000000110", "string": 2, "fret": 1 },
+                        { "id": "GA0000000111", "string": 3, "fret": 0 },
+                        { "id": "GA0000000112", "string": 4, "fret": 2 },
+                        { "id": "GA0000000113", "string": 5, "fret": 3 }
+                      ],
+                      "effects": {
+                        "brush": { "direction": "down", "duration": { "value": 32, "dots": 0 } }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "GA0000000200",
+              "voices": [
+                {
+                  "id": "GA0000000201",
+                  "beats": [
+                    {
+                      "id": "GA0000000202",
+                      "duration": { "value": 8, "dots": 0, "tuplet": { "actual": 3, "normal": 2 } },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "GA0000000203",
+                          "string": 6,
+                          "fret": 0,
+                          "effects": { "palmMute": true }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "GA0000000204",
+                      "duration": { "value": 8, "dots": 0, "tuplet": { "actual": 3, "normal": 2 } },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "GA0000000205",
+                          "string": 6,
+                          "fret": 0,
+                          "effects": { "palmMute": true }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "GA0000000206",
+                      "duration": { "value": 8, "dots": 0, "tuplet": { "actual": 3, "normal": 2 } },
+                      "rest": false,
+                      "notes": [{ "id": "GA0000000207", "string": 6, "fret": 3 }]
+                    },
+                    {
+                      "id": "GA0000000208",
+                      "duration": { "value": 4, "dots": 1 },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "GA0000000209",
+                          "string": 5,
+                          "fret": 5,
+                          "effects": { "slideOut": "shift" }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "GA0000000210",
+                      "duration": { "value": 8, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "GA0000000211", "string": 5, "fret": 7 }]
+                    },
+                    {
+                      "id": "GA0000000212",
+                      "duration": { "value": 4, "dots": 0 },
+                      "rest": true,
+                      "notes": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "GA0000000300",
+              "voices": [
+                {
+                  "id": "GA0000000301",
+                  "beats": [
+                    {
+                      "id": "GA0000000302",
+                      "duration": { "value": 16, "dots": 0 },
+                      "rest": false,
+                      "grace": "beforeBeat",
+                      "notes": [{ "id": "GA0000000303", "string": 2, "fret": 5 }]
+                    },
+                    {
+                      "id": "GA0000000304",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "GA0000000305",
+                          "string": 2,
+                          "fret": 7,
+                          "effects": { "vibrato": "slight" }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "GA0000000306",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "GA0000000307",
+                          "string": 1,
+                          "fret": 12,
+                          "effects": { "harmonic": { "type": "natural" } }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "GA0000000310",
+                  "beats": [
+                    {
+                      "id": "GA0000000311",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": true,
+                      "notes": []
+                    },
+                    {
+                      "id": "GA0000000312",
+                      "duration": { "value": 2, "dots": 0 },
+                      "rest": false,
+                      "notes": [{ "id": "GA0000000313", "string": 6, "fret": 3 }]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "GA0000000400",
+              "voices": [
+                {
+                  "id": "GA0000000401",
+                  "beats": [
+                    {
+                      "id": "GA0000000402",
+                      "duration": { "value": 1, "dots": 0 },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "GA0000000403",
+                          "string": 1,
+                          "fret": 12,
+                          "tiedFromPrevious": true
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

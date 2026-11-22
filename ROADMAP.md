@@ -2,6 +2,8 @@
 
 > Status: Draft v0.2 (audited 2026‑11‑21) — awaiting approval. The order follows the required strategy: **web first → music engine before advanced editing → editor before community → mobile after web → AI after initial release.** Durations are rough estimates for a small team (1–2 developers + AI agents). They will be re-estimated after Phase 0. Sprints are 2 weeks.
 >
+> **Changelog v0.2.12:** S2-03 done: three canonical MHD v1 fixtures (guitar, piano grand staff with pedal, band with repeats) with expected-result sidecars and fixture tests in `packages/music-model`. S2-04…S2-13 stay TBD.
+>
 > **Changelog v0.2.11:** Sprint 2 formalised (§Sprint 2): S2-00…S2-02 recorded as done, S2-03 planned, S2-04…S2-13 TBD. The design-token skeleton is removed from Sprint 2 and stays in Phase 1 (decision C1).
 >
 > **Changelog v0.2.10:** S2-00 CI verification recorded in S1-10: the PR trigger and red checks (lint, test, codegen drift) are confirmed on GitHub; merge protection on `main` is not configured yet; intermittent SeaweedFS start failures in the `php` job are listed as technical debt.
@@ -346,14 +348,14 @@ Sprint 1 is closed pending owner review.
 
 **Goal:** answer the Phase 0 spike questions (MUSIC_ENGINE.md §10, S1–S7), draft MHD v1 in `music-model` with hand-written fixtures, collect legally usable import fixtures, and record the results in ADR‑0002 and ADR‑0004 (Phase 0 scope above). Design tokens are not part of Sprint 2 (Phase 1, decision C1).
 
-**Status (2026‑11‑23, `main` at `b61dac9`):** in progress. Done: S2-00, S2-01, S2-02. Planned: S2-03. TBD: S2-04…S2-13.
+**Status (2026‑11‑23):** in progress. Done: S2-00, S2-01, S2-02, S2-03. TBD: S2-04…S2-13.
 
 | ID | Title | Depends on | Status | Result / scope |
 |---|---|---|---|---|
 | S2-00 | CI pull-request verification | Sprint 1 | ✅ done (PR #1, #2, #3) | PR trigger confirmed; JS, PHP and E2E green on a neutral PR; a lint error, a failing test and a codegen drift each turn `js` red (runs in §S1-10 *Verification results*). Open: merge protection on `main` (ruleset not enforced) and intermittent SeaweedFS start failures (technical debt, §Sprint 1) |
 | S2-01 | Spike workspace infrastructure | S2-00 | ✅ done (PR #4) | `spikes/*` workspace glob and `spikes/README.md`; catalog entries `@coderline/alphatab` 1.9.0 and `zod` 4.6.7; ESLint preset `@musichub/config/eslint/spike` (alphaTab allowed only in `spikes/`); dependency-cruiser rules for spikes and the `exclude` fix that restored checks on `node_modules` targets; import boundaries verified with probes |
 | S2-02 | MHD v1 schema and validation | S2-01 | ✅ done (PR #5) | Strict Zod schemas and types in `packages/music-model`; UUIDv7 document id and 12-character base62 element ids; `validateDocument` with the cross-field invariants of MUSIC_ENGINE.md §3.3; JSON Schema `json-schema/mhd-v1.schema.json`; `fixtures/v1/` reserved and documented; versioning rule (every structural change bumps `schemaVersion` after the first public release or saved document). Follow-up D1: `drumTechnique` replaces `drumArticulation` |
-| S2-03 | Hand-written MHD v1 fixtures | S2-02 | 📋 planned | Three fixtures in `packages/music-model/fixtures/v1/`: guitar, piano grand staff with pedal, band with repeats/endings (Phase 0 scope). Each passes `validateDocument`. Open decisions before start: D3 (how tests read fixture JSON) and D4 (where expected derived data lives) |
+| S2-03 | Hand-written MHD v1 fixtures | S2-02 | ✅ done | `packages/music-model/fixtures/v1/`: `guitar-basic`, `piano-grand-staff`, `band-repeats` (`.mhd.json`), original synthetic content, each valid with zero issues. Sidecars `<name>.expected.json` hold the validation result and structural counts only (D4); `src/fixtures.test.ts` imports both as JSON modules (D3) and runs negative mutations. Conventions O1–O5 in `fixtures/v1/README.md` |
 | S2-04 | TBD | — | ❔ TBD | Not defined in the repository yet. Phase 0 also requires legally usable GP3–8 / MusicXML import fixtures; which task covers it is to be confirmed |
 | S2-05 | TBD | — | ❔ TBD | Not defined yet. The spikes S1–S7 (MUSIC_ENGINE.md §10) are Phase 0 scope; their assignment to S2-05…S2-11 is to be confirmed |
 | S2-06 | TBD | — | ❔ TBD | Not defined yet (see S2-05) |
@@ -367,9 +369,9 @@ Sprint 1 is closed pending owner review.
 
 A numbering for S2-03…S2-13 was proposed in the Sprint 2 planning audit (2026‑11‑22). Only S2-00…S2-03 are confirmed; the other ids get a scope when the owner approves them.
 
+**Decisions taken for S2-03:** D3 native JSON module imports (`with { type: 'json' }`, no `@types/node`); D4 sidecars with validation result and structural counts only (playback order follows with the Phase 1 timeline).
+
 **Open decisions:**
-- D3: how `music-model` tests read `fixtures/v1/*.mhd.json` (JSON import with import attributes, or `node:fs` with `@types/node` as a dev dependency). Blocks S2-03.
-- D4: where expected derived data of fixtures (playback order, event counts) is kept, outside the MHD documents. Needed for S2-03.
 - Document id ownership (client UUIDv7 as composition id) and a UUIDv7 generator: before Phase 1, not blocking S2-03.
 
 **Open infrastructure items:** enforce the GitHub ruleset for `main` (owner action); root cause of the SeaweedFS start failures in the `php` job.

@@ -1,0 +1,17 @@
+{
+  "fixture": "band-repeats.mhd.json",
+  "schemaVersion": 1,
+  "validation": { "valid": true, "issueCodes": [] },
+  "counts": {
+    "tracks": 4,
+    "staves": 4,
+    "masterBars": 8,
+    "voices": 32,
+    "beats": 32,
+    "rests": 2,
+    "notes": 54,
+    "graceBeats": 0,
+    "tiedNotes": 0,
+    "sustainPedalEvents": 0
+  }
+}
