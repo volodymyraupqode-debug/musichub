@@ -2,6 +2,8 @@
 
 > Status: Draft v0.2 (audited 2026‑11‑21) — awaiting approval. The order follows the required strategy: **web first → music engine before advanced editing → editor before community → mobile after web → AI after initial release.** Durations are rough estimates for a small team (1–2 developers + AI agents). They will be re-estimated after Phase 0. Sprints are 2 weeks.
 >
+> **Changelog v0.2.10:** S2-00 CI verification recorded in S1-10: the PR trigger and red checks (lint, test, codegen drift) are confirmed on GitHub; merge protection on `main` is not configured yet; intermittent SeaweedFS start failures in the `php` job are listed as technical debt.
+>
 > **Changelog v0.2.9:** Sprint 1 closed: first GitHub Actions run green on `main` (`3e19d87`, run 45060685119).
 >
 > **Changelog v0.2.8:** Sprint 1 reconciliation. Statuses re-checked against the code; Q22 (SeaweedFS); OpenAPI response validation and the Compose `full` profile moved to Phase 4; technical debt listed.
@@ -215,7 +217,7 @@ P0 ─▶ P1 ─▶ P2 ─▶ P2M ─▶ P3 ─▶ P4 ─▶ P5 ─▶ P6 ─▶
 | S1-07 | Docker Compose services | — | M | ✅ done: PostgreSQL 18, Redis 8, Mailpit, SeaweedFS 4.54 (ADR‑0007) with idempotent bucket bootstrap `seaweedfs-init`. The `full` profile is deferred to Phase 4 |
 | S1-08 | PostgreSQL & Redis integration | S1-06, S1-07 | M | ✅ done: pgsql, Redis cache/queue/session, `citext`/`pg_trgm`, health checks, S3 disk on SeaweedFS verified by a real Pest integration test (put/get/delete, presigned URL) |
 | S1-09 | Test environments | S1-05, S1-08, S1-11 | M | ✅ done: Vitest (node/jsdom, v8), Pest on PostgreSQL `musichub_test`, Playwright with auto-started Next.js |
-| S1-10 | GitHub Actions CI | S1-04, S1-09, S1-12 | M | ✅ done: first run on GitHub green (push to `main`, run 45060685119): `js` 37 s, `php` with PostgreSQL/Redis/SeaweedFS 51 s, `e2e` 45 s; total ≈ 1.5 min. Not yet verified: a run triggered by a PR, and that a deliberate lint error / failing test / codegen drift turns CI red (→ first Sprint 2 PR) |
+| S1-10 | GitHub Actions CI | S1-04, S1-09, S1-12 | M | ✅ done: first run on GitHub green (push to `main`, run 45060685119): `js` 37 s, `php` with PostgreSQL/Redis/SeaweedFS 51 s, `e2e` 45 s; total ≈ 1.5 min. PR trigger and red checks verified in S2-00 (see §S1-10 *Verification results*). ⚠️ **Open:** merge protection on `main` (no ruleset / required checks yet) |
 | S1-11 | Base shared package (`music-model` skeleton) + boundary enforcement | S1-03 | S | ✅ done (only the `.` export; subpaths arrive with real content in Sprint 2) |
 | S1-12 | OpenAPI contract & `api-client` codegen | S1-02, S1-06 | M | ✅ done: OpenAPI 3.1, openapi-typescript + openapi-fetch, deterministic codegen, drift check. **Note:** the Pest health test checks the response *shape* by hand; it is **not** OpenAPI/JSON Schema validation (that is a Phase 4 task) |
 | S1-13 | Documentation structure & ADRs | — | M | ✅ done: README, ADR‑0000…0007, glossary, PR template, AGENTS.md |
@@ -237,6 +239,8 @@ Sprint 1 is closed pending owner review.
 - The `openapi-typescript` peer exception for TypeScript 6 (ADR‑0006 D2).
 - The standard Laravel queue migration is kept: `jobs` is unused with Redis, `failed_jobs` is used (DATABASE.md §3.14).
 - PHP 8.4 must be invoked as `php84` on Herd machines (ADR‑0006 D3).
+- Intermittent CI failure: the `php` job failed at "Start SeaweedFS and create the bucket" in runs [45061294454](https://github.com/volodymyraupqode-debug/musichub/actions/runs/45061294454) and [45066980858](https://github.com/volodymyraupqode-debug/musichub/actions/runs/45066980858). The cause is not established; the job logs need to be analysed and the fix is a separate task.
+- Merge protection on `main` is not configured (see S1-10 *Verification results*); owner action in the GitHub repository settings.
 
 ### S1-01 Monorepo initialisation
 - **Description:** root `package.json` (private, ESM, `packageManager: pnpm@12.21.0`, engines), `.nvmrc`, `engineStrict: true` in `pnpm-workspace.yaml` (pnpm 12 ignores `engine-strict` in `.npmrc` for the root project), `.editorconfig`, `.gitignore`, directory conventions (`apps/`, `packages/`).
@@ -290,6 +294,20 @@ Sprint 1 is closed pending owner review.
   - Job `e2e`: Playwright smoke (Chromium) after `js`.
 - **Acceptance:** all jobs are green on a PR. A lint error, a failing test and a codegen drift each make CI red (verified on a throw-away branch). Runtime < 10 min.
 - **Tests:** the workflow itself; `actionlint` locally (optional).
+- **Verification results (S2-00, 2026‑11‑22).** All runs below were triggered by `pull_request` on the throw-away branches `ci/verify-red-checks` (PR #1) and `ci/verify-red-checks-2` (PR #2).
+
+  | Scenario | Commit | Run | JS | PHP | E2E |
+  |---|---|---|---|---|---|
+  | Neutral PR | `08b6b32` | [45064056816](https://github.com/volodymyraupqode-debug/musichub/actions/runs/45064056816) | success | success | success |
+  | A. Lint failure | `70068df` | [45065440359](https://github.com/volodymyraupqode-debug/musichub/actions/runs/45065440359) | failure (`@typescript-eslint/no-explicit-any`) | success | skipped |
+  | Revert A | `b643a0b` | [45065762506](https://github.com/volodymyraupqode-debug/musichub/actions/runs/45065762506) | success | success | success |
+  | B. Test failure | `8b3b9bc` | [45066120753](https://github.com/volodymyraupqode-debug/musichub/actions/runs/45066120753) | failure (Vitest assertion) | success | skipped |
+  | Revert B | `75ce9b4` | [45066667253](https://github.com/volodymyraupqode-debug/musichub/actions/runs/45066667253) | success | success | success |
+  | C. Codegen drift | `6131bd0` | [45066980858](https://github.com/volodymyraupqode-debug/musichub/actions/runs/45066980858) | failure (codegen drift check) | failure (SeaweedFS start; unrelated to the OpenAPI change, see technical debt) | skipped |
+  | Revert C | `1fa26ce` | [45067148932](https://github.com/volodymyraupqode-debug/musichub/actions/runs/45067148932) | success | success | success |
+
+  - **Confirmed:** CI runs on pull requests; a lint error, a failing test and a codegen drift each turn the `js` job red at the expected step; a red `js` is not masked by a green `php`; `e2e` is skipped when `js` fails (`needs: js`). Runtime ≈ 1.5 min.
+  - **Not confirmed — merge protection.** At verification time `main` had no ruleset or branch protection with required checks. PR #1 was merged before its CI run finished, and PR #2 was merged after the run on its last commit was green (PR #1 added only a README comment, removed again by the S2-00 results change; PR #2 contained only probe/revert pairs and left the `main` tree unchanged). CI therefore detects errors but does **not block merging** until the owner configures a GitHub ruleset for `main` (pull request required; required checks JS, PHP and E2E, all three, because a skipped `e2e` counts as passing).
 
 ### S1-11 Base shared package (`music-model` skeleton) + boundary enforcement
 - **Description:** `packages/music-model` with the `library` tsconfig, ESLint base, Vitest, `build` (tsc), subpath export layout (`.`, `./schema`, `./timeline`, `./contracts`) and only the public constant `MHD_FORMAT = 'musichub'` / `MHD_SCHEMA_VERSION = 1`. The real schema comes in Sprint 2. `apps/web` imports it once to prove the wiring. dependency-cruiser rules are active in CI.

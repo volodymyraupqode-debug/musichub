@@ -61,5 +61,3 @@ pnpm test:e2e
 ```
 
 CI runs the same checks (`.github/workflows/ci.yml`).
-
-<!-- CI verification probe (S2-00): neutral change on branch ci/verify-red-checks; this branch is never merged. -->
