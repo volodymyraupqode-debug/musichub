@@ -9,5 +9,5 @@
       "@/*": ["apps/web/src/*"]
     }
   },
-  "include": ["apps/*/src", "apps/*/app", "packages/*/src"]
+  "include": ["apps/*/src", "apps/*/app", "packages/*/src", "spikes/*/src"]
 }

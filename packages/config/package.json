@@ -7,6 +7,7 @@
     "./eslint/base": "./eslint/base.js",
     "./eslint/react": "./eslint/react.js",
     "./eslint/next": "./eslint/next.js",
+    "./eslint/spike": "./eslint/spike.js",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/library.json": "./tsconfig/library.json",
     "./tsconfig/react-library.json": "./tsconfig/react-library.json",

@@ -5,12 +5,15 @@ packages:
   - apps/mobile
   - apps/music-worker
   - packages/*
+  # Throw-away Sprint 2 spikes (MUSIC_ENGINE.md §10, spikes/README.md). Never imported by apps or packages.
+  - spikes/*
 
 engineStrict: true
 
 # Single source of truth for shared tool versions (`catalog:` in package.json).
 catalog:
   '@eslint/js': 10.0.1
+  '@coderline/alphatab': 1.9.0
   '@next/eslint-plugin-next': 16.4.6
   '@playwright/test': 1.65.1
   '@types/node': 26.6.6
@@ -35,6 +38,7 @@ catalog:
   typescript: 6.0.3
   typescript-eslint: 8.73.0
   vitest: 5.1.1
+  zod: 4.6.7
 
 # Verified working combinations whose peer ranges lag behind (see AGENTS.md "Toolchain").
 peerDependencyRules:

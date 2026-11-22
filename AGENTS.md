@@ -42,7 +42,7 @@ openapi/  infra/  docs/adr/  spikes/
 - Node **26 LTS** from `.nvmrc` (`nvm use`). pnpm 12.21.0 is pinned via `packageManager`. Node 26 does not bundle Corepack: run `npm i -g corepack && corepack enable` once.
 - `engineStrict: true` (in `pnpm-workspace.yaml`) makes `pnpm install` fail on any other Node major.
 - TypeScript is pinned to **6.0.x**: typescript-eslint 8 supports `<6.1`; do not upgrade to TS 7 until it does.
-- Shared presets live in `packages/config`: tsconfig `base`, `library` (pure packages, no DOM), `react-library`, `nextjs`; ESLint `@musichub/config/eslint/base` (strict TS, no `any`, alphaTab import ban; `packages/music-engine` overrides it), `/eslint/react` (React, Hooks, jsx-a11y), `/eslint/next`; Vitest `@musichub/config/vitest/node` and `/vitest/jsdom` (v8 coverage).
+- Shared presets live in `packages/config`: tsconfig `base`, `library` (pure packages, no DOM), `react-library`, `nextjs`; ESLint `@musichub/config/eslint/base` (strict TS, no `any`, alphaTab import ban; `packages/music-engine` overrides it), `/eslint/react` (React, Hooks, jsx-a11y), `/eslint/next`, `/eslint/spike` (base without the alphaTab ban; only for `spikes/*`, see spikes/README.md); Vitest `@musichub/config/vitest/node` and `/vitest/jsdom` (v8 coverage).
 
 ## Commands
 

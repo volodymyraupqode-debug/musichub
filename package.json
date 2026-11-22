@@ -15,7 +15,7 @@
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
     "codegen": "turbo run codegen",
-    "depcruise": "depcruise apps packages --config .dependency-cruiser.cjs",
+    "depcruise": "depcruise apps packages spikes --config .dependency-cruiser.cjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
