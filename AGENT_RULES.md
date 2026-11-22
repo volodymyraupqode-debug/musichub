@@ -45,7 +45,7 @@
 
 ## 5. Music model rules
 
-- Every structural change to MHD requires: schema update, `schemaVersion` bump if not additive, migration, fixtures, MUSIC_ENGINE.md update.
+- Every structural change to MHD, including a new optional field or a new enum value, requires: schema update, `schemaVersion` bump, migration, fixtures, MUSIC_ENGINE.md update. MHD schemas are strict and reject unknown keys, so an additive change is not compatible with older clients (MUSIC_ENGINE.md §3.4). Exception until the first public release of MHD v1: see MUSIC_ENGINE.md §3.4.
 - All edits go through `editor-core` commands with inverses; no direct mutation from UI code.
 - Documents are immutable values (structural sharing). No in-place mutation outside command implementations' internal builders.
 - Editor state lives in the `editor-core` Zustand vanilla store. UI code reads it through selectors and changes the document only by dispatching commands. Never put per-frame playback data (clock, active notes) into Zustand or React state.

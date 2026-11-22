@@ -136,11 +136,11 @@ An alternative split was proposed: `music-core`, `music-types`, `music-serializa
 - Turborepo orchestrates JS/TS only. PHP commands run through Composer scripts (`composer lint`, `composer test`) locally and in a separate CI job.
 - Shared artefacts that cross the language boundary:
   - `openapi/openapi.yaml`: hand-written contract. Laravel feature tests check response shapes now and validate responses against it from Phase 4; TS codegen consumes it.
-  - `packages/music-model/dist/mhd-envelope.schema.json`: generated. CI copies/compares it into `apps/api/resources/schemas/` and fails on drift.
+  - `packages/music-model/json-schema/mhd-v1.schema.json`: the full MHD v1 JSON Schema, generated from Zod (`createMhdJsonSchema()`) and kept in sync by a `music-model` test (file snapshot; `pnpm --filter @musichub/music-model test -u` regenerates it). Structure only; the invariants are runtime-only. From Phase 4 Laravel validates the envelope against a schema derived from it (`mhd-envelope.schema.json` in `apps/api/resources/schemas/`), and CI fails on drift.
 
 ### 3.4 Turborepo pipeline
 
-Tasks `build`, `lint`, `typecheck`, `test`, `test:e2e`, `codegen` (OpenAPI → api-client, Zod → JSON Schema). `codegen` inputs include `openapi/openapi.yaml`. The configuration already exists from T0.1 (`turbo.json`).
+Tasks `build`, `lint`, `typecheck`, `test`, `test:e2e`, `codegen` (OpenAPI → api-client). The MHD JSON Schema is produced by the `music-model` tests, not by `codegen` (§3.3). `codegen` inputs include `openapi/openapi.yaml`. The configuration already exists from T0.1 (`turbo.json`).
 
 ## 4. Web application (apps/web)
 
