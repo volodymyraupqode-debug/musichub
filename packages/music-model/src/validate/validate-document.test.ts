@@ -149,11 +149,19 @@ describe('invariant 1: ids are unique within the document', () => {
     expectIssue(doc, ISSUE_CODES.duplicateId, [...NOTE_0, 'id']);
   });
 
-  it('includes the document id', () => {
+  it('uses a UUIDv7 for the document and 12-character base62 ids for elements', () => {
     const doc = minimalDocument();
+    expect(doc.id).toMatch(/^[0-9a-f-]{36}$/);
+    expectClean(doc);
+    // An element may not use the document id format, and the document may not use an element id.
+    expect(issuesOf({ ...doc, id: doc.masterBars[0]?.id })).toContainEqual(
+      expect.objectContaining({ code: 'schema.invalid_format', path: ['id'] }),
+    );
     const first = doc.masterBars[0];
     if (first) first.id = doc.id;
-    expectIssue(doc, ISSUE_CODES.duplicateId, ['masterBars', 0, 'id']);
+    expect(issuesOf(doc)).toContainEqual(
+      expect.objectContaining({ code: 'schema.invalid_format', path: ['masterBars', 0, 'id'] }),
+    );
   });
 });
 
@@ -748,5 +756,359 @@ describe('invariant 13: percussion notes have no string and fret', () => {
 
   it('reports a percussion note without a pitch', () => {
     expectIssue(drums(note({})), ISSUE_CODES.notePitchMissing, [...NOTE_0, 'pitch']);
+  });
+});
+
+// ── Corrective decisions after the S2-02 architecture review ──────────────────
+
+describe('regression: adjacent alternate-ending groups (audit finding 2)', () => {
+  // |: A |1. B :|(2) |2. C, and C opens the next repeat |: … |1.2. D :|(3) |3. E |
+  const adjacent = (dEndings: number[], eEndings: number[]) =>
+    masterBars(minimalDocument(), [
+      { repeatStart: true },
+      { alternateEndings: [1], repeatEnd: { count: 2 } },
+      { alternateEndings: [2], repeatStart: true },
+      { alternateEndings: dEndings, repeatEnd: { count: 3 } },
+      { alternateEndings: eEndings },
+    ]);
+
+  it('accepts the bar that ends group 1 and opens the next repeat', () => {
+    expectClean(adjacent([1, 2], [3]));
+  });
+
+  it('accepts a one-bar repeat section with its own first ending after another group', () => {
+    expectClean(
+      masterBars(minimalDocument(), [
+        { repeatStart: true },
+        { alternateEndings: [1], repeatEnd: { count: 2 } },
+        { alternateEndings: [2] },
+        { repeatStart: true, alternateEndings: [1], repeatEnd: { count: 2 } },
+        { alternateEndings: [2] },
+      ]),
+    );
+  });
+
+  it('still reports an ending above the count of its own repeat', () => {
+    expectIssue(adjacent([1, 2], [4]), ISSUE_CODES.alternateEndingExceedsCount, [
+      'masterBars',
+      4,
+      'alternateEndings',
+    ]);
+  });
+
+  it('rejects an invalid ending number (0 or above 99) in the schema', () => {
+    expectIssue(adjacent([0], [3]), 'schema.too_small', ['masterBars', 3, 'alternateEndings', 0]);
+    expectIssue(adjacent([100], [3]), 'schema.too_big', ['masterBars', 3, 'alternateEndings', 0]);
+  });
+
+  it('reports a number reused by another bracket of the same group', () => {
+    const doc = masterBars(minimalDocument(), [
+      { repeatStart: true },
+      { alternateEndings: [1], repeatEnd: { count: 3 } },
+      { alternateEndings: [2], repeatEnd: { count: 3 } },
+      { alternateEndings: [1] },
+    ]);
+    expectIssue(doc, ISSUE_CODES.alternateEndingDuplicate, ['masterBars', 3, 'alternateEndings']);
+  });
+
+  it('allows the same numbers on consecutive bars of one multi-bar bracket', () => {
+    expectClean(
+      masterBars(minimalDocument(), [
+        { repeatStart: true },
+        { alternateEndings: [1] },
+        { alternateEndings: [1], repeatEnd: { count: 2 } },
+        { alternateEndings: [2] },
+      ]),
+    );
+  });
+});
+
+describe('repeat counts and ending numbers allow up to 99', () => {
+  it('accepts count 99 and ending 99', () => {
+    expectClean(
+      masterBars(minimalDocument(), [
+        { repeatStart: true },
+        { alternateEndings: [1], repeatEnd: { count: 99 } },
+        { alternateEndings: [99] },
+      ]),
+    );
+  });
+
+  it('rejects count 100', () => {
+    expectIssue(masterBars(minimalDocument(), [{ repeatEnd: { count: 100 } }]), 'schema.too_big', [
+      'masterBars',
+      0,
+      'repeatEnd',
+      'count',
+    ]);
+  });
+});
+
+describe('invariant 5 (both directions): rest ⇔ no notes', () => {
+  it('reports a non-rest beat without notes', () => {
+    const doc = documentWith([track('guitar', [guitarStaff([bar([beat(1, [])])])])]);
+    expectIssue(doc, ISSUE_CODES.beatWithoutNotes, [...VOICE_0, 'beats', 0, 'notes']);
+  });
+});
+
+describe('brush duration uses the MHD rhythmic duration', () => {
+  const strum = (brush: object) =>
+    documentWith([
+      track('guitar', [
+        guitarStaff([
+          bar([
+            beat(1, [note({ string: 1, fret: 0 }), note({ string: 2, fret: 1 })], {
+              effects: { brush: brush as never },
+            }),
+          ]),
+        ]),
+      ]),
+    ]);
+  const BRUSH = [...VOICE_0, 'beats', 0, 'effects', 'brush'];
+
+  it('accepts a brush with a rhythmic duration or without one (engine default)', () => {
+    expectClean(strum({ direction: 'down', duration: { value: 32, dots: 0 } }));
+    expectClean(strum({ direction: 'up' }));
+  });
+
+  it('rejects the removed durationTicks field', () => {
+    expectIssue(strum({ direction: 'down', durationTicks: 60 }), 'schema.unrecognized_keys', BRUSH);
+  });
+
+  it('rejects a brush longer than its beat', () => {
+    const doc = documentWith([
+      track('guitar', [
+        guitarStaff([
+          bar([
+            beat(4, [note({ string: 1, fret: 0 })], {
+              effects: { brush: { direction: 'down', duration: { value: 2, dots: 0 } } },
+            }),
+            beat(4, [note({ string: 1, fret: 0 })]),
+            beat(2, [note({ string: 1, fret: 0 })]),
+          ]),
+        ]),
+      ]),
+    ]);
+    expectIssue(doc, ISSUE_CODES.brushLongerThanBeat, [...BRUSH, 'duration']);
+  });
+});
+
+describe('drum articulations', () => {
+  const drumsWith = (...notes: ReturnType<typeof note>[]) =>
+    documentWith([track('drums', [pitchStaff([bar([beat(1, notes)])])], true)]);
+
+  it.each([
+    ['hihat.closed', 42],
+    ['hihat.half', 46],
+    ['hihat.open', 46],
+    ['hihat.pedal', 44],
+    ['snare.rimshot', 38],
+    ['snare.sidestick', 37],
+    ['ride.edge', 51],
+    ['ride.bell', 53],
+    ['crash.choke', 57],
+  ] as const)('accepts %s with General MIDI key %i', (drumArticulation, pitch) => {
+    expectClean(drumsWith(note({ pitch, drumArticulation })));
+  });
+
+  it('keeps pitch required next to the articulation', () => {
+    expectIssue(drumsWith(note({ drumArticulation: 'ride.bell' })), ISSUE_CODES.notePitchMissing, [
+      ...NOTE_0,
+      'pitch',
+    ]);
+  });
+
+  it('reports an articulation that does not match the GM key', () => {
+    expectIssue(
+      drumsWith(note({ pitch: 38, drumArticulation: 'hihat.open' })),
+      ISSUE_CODES.drumArticulationPitchMismatch,
+      [...NOTE_0, 'drumArticulation'],
+    );
+  });
+
+  it('rejects an unknown articulation id', () => {
+    expectIssue(
+      drumsWith(note({ pitch: 42, drumArticulation: 'cowbell.more' as never })),
+      'schema.invalid_value',
+      [...NOTE_0, 'drumArticulation'],
+    );
+  });
+
+  it('reports an articulation on a non-percussion track', () => {
+    const doc = documentWith([
+      piano([[[beat(1, [note({ pitch: 42, drumArticulation: 'hihat.closed' })])]]]),
+    ]);
+    expectIssue(doc, ISSUE_CODES.drumArticulationNotPercussion, [...NOTE_0, 'drumArticulation']);
+  });
+});
+
+describe('percussion flag and the drums family', () => {
+  it('requires percussion: true for drums', () => {
+    const doc = documentWith([
+      track('drums', [pitchStaff([bar([beat(1, [note({ pitch: 36 })])])])], false),
+    ]);
+    expectIssue(doc, ISSUE_CODES.drumsNotPercussion, ['tracks', 0, 'instrument', 'percussion']);
+  });
+
+  it('allows other families to be percussion tracks', () => {
+    expectClean(
+      documentWith([track('other', [pitchStaff([bar([beat(1, [note({ pitch: 56 })])])])], true)]),
+    );
+  });
+});
+
+describe('keyboard families: piano and synth', () => {
+  const synth = (staves: ReturnType<typeof pitchStaff>[]) => ({
+    ...track('synth', staves),
+    instrument: { family: 'synth' as const, midiProgram: 81, percussion: false },
+  });
+
+  it('allows hand and sustain pedal on a synth track', () => {
+    const staff = pitchStaff(
+      [
+        bar([beat(1, [note({ pitch: 60, hand: 'left' })])], {
+          sustainPedal: [{ position: [0, 1], type: 'down' }],
+        }),
+      ],
+      {
+        hand: 'right',
+      },
+    );
+    expectClean(documentWith([synth([staff])]));
+  });
+
+  it('limits a synth track to two staves', () => {
+    const staves = [1, 2, 3].map(() => pitchStaff([bar([rest()])]));
+    expectIssue(documentWith([synth(staves)]), ISSUE_CODES.keyboardStaffCount, [
+      'tracks',
+      0,
+      'staves',
+    ]);
+  });
+
+  it('still rejects hand and pedal on a bass track', () => {
+    const staff = pitchStaff(
+      [bar([rest()], { sustainPedal: [{ position: [0, 1], type: 'down' }] })],
+      { hand: 'left' },
+    );
+    const doc = documentWith([track('bass', [staff])]);
+    expectIssue(doc, ISSUE_CODES.keyboardOnlyHand, ['tracks', 0, 'staves', 0, 'hand']);
+    expectIssue(doc, ISSUE_CODES.keyboardOnlyPedal, [
+      'tracks',
+      0,
+      'staves',
+      0,
+      'bars',
+      0,
+      'sustainPedal',
+    ]);
+  });
+});
+
+describe('canonical optional flags: true or absent', () => {
+  it.each([
+    ['repeatStart', ['masterBars', 0, 'repeatStart']],
+    ['fermata', ['masterBars', 0, 'fermata']],
+    ['isAnacrusis', ['masterBars', 0, 'isAnacrusis']],
+  ] as const)('rejects %s: false', (key, path) => {
+    const doc = minimalDocument();
+    Object.assign(doc.masterBars[0] ?? {}, { [key]: false });
+    expectIssue(doc, 'schema.invalid_value', path);
+  });
+
+  it('rejects false on note flags and effect flags', () => {
+    const flags = documentWith([
+      track('guitar', [
+        guitarStaff([
+          bar([
+            beat(
+              1,
+              [
+                note({
+                  string: 1,
+                  fret: 0,
+                  tiedFromPrevious: false as never,
+                  effects: { palmMute: false as never },
+                }),
+              ],
+              {
+                effects: { tap: false as never },
+              },
+            ),
+          ]),
+        ]),
+      ]),
+    ]);
+    expectIssue(flags, 'schema.invalid_value', [...NOTE_0, 'tiedFromPrevious']);
+    expectIssue(flags, 'schema.invalid_value', [...NOTE_0, 'effects', 'palmMute']);
+    expectIssue(flags, 'schema.invalid_value', [...VOICE_0, 'beats', 0, 'effects', 'tap']);
+  });
+
+  it('accepts true flags', () => {
+    const doc = documentWith([
+      track('guitar', [
+        guitarStaff([
+          bar([
+            beat(1, [note({ string: 1, fret: 0, effects: { palmMute: true, letRing: true } })], {
+              effects: { tap: true },
+            }),
+          ]),
+        ]),
+      ]),
+    ]);
+    Object.assign(doc.masterBars[0] ?? {}, { fermata: true });
+    expectClean(doc);
+  });
+
+  it('keeps true/false for required booleans with their own meaning', () => {
+    const doc = minimalDocument();
+    const firstTrack = doc.tracks[0];
+    if (firstTrack) firstTrack.mixer = { volume: 1, pan: 0, mute: false, solo: true };
+    expectClean(doc);
+    expectClean(documentWith([track('guitar', [guitarStaff([bar([rest()])])])]));
+  });
+});
+
+describe('invariant 7: more direction combinations', () => {
+  it('allows a repeat end without a repeat start (repeat from the beginning)', () => {
+    expectClean(masterBars(minimalDocument(), [{}, { repeatEnd: { count: 2 } }]));
+  });
+
+  it.each([
+    [
+      'daCapoAlCoda without toCoda',
+      [{ direction: 'coda' as const }, { direction: 'daCapoAlCoda' as const }],
+      'toCoda',
+    ],
+    [
+      'dalSegnoAlCoda without coda',
+      [
+        { direction: 'segno' as const },
+        { direction: 'toCoda' as const },
+        { direction: 'dalSegnoAlCoda' as const },
+      ],
+      'coda',
+    ],
+    ['daCapoAlFine without fine', [{}, { direction: 'daCapoAlFine' as const }], 'fine'],
+  ])('reports %s', (_name, bars, target) => {
+    const issues = issuesOf(masterBars(minimalDocument(), bars));
+    const last = bars.length - 1;
+    const issue = issues.find(
+      (candidate) =>
+        candidate.code === ISSUE_CODES.directionTargetMissing && candidate.path[1] === last,
+    );
+    expect(issue?.path).toEqual(['masterBars', last, 'direction']);
+    expect(issue?.message).toContain(target);
+  });
+});
+
+describe('invariant 8: tempo is not checked for redundancy', () => {
+  it('accepts the same bpm again in a later bar', () => {
+    expectClean(
+      masterBars(minimalDocument(), [
+        {},
+        { tempoChanges: [{ position: [0, 1], bpm: 120, label: 'a tempo' }] },
+      ]),
+    );
   });
 });

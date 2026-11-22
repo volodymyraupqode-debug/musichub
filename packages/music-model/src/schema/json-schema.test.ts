@@ -84,6 +84,40 @@ describe('createMhdJsonSchema', () => {
     expect(extensions?.additionalProperties).toEqual({ $ref: '#/$defs/JsonValue' });
   });
 
+  it('reflects the corrective decisions', () => {
+    expect(schema.$defs.MhdDocument?.properties?.id).toEqual({ $ref: '#/$defs/DocumentId' });
+    expect(schema.$defs.DocumentId).toMatchObject({
+      type: 'string',
+      pattern: expect.stringContaining('-7[0-9a-f]{3}-') as unknown,
+    });
+    expect(schema.$defs.Note?.properties?.drumArticulation).toMatchObject({
+      enum: [
+        'hihat.closed',
+        'hihat.half',
+        'hihat.open',
+        'hihat.pedal',
+        'snare.rimshot',
+        'snare.sidestick',
+        'ride.edge',
+        'ride.bell',
+        'crash.choke',
+      ],
+    });
+    const brush = schema.$defs.BeatEffects?.properties?.brush;
+    expect(brush?.properties).not.toHaveProperty('durationTicks');
+    expect(brush?.properties?.duration).toEqual({ $ref: '#/$defs/Duration' });
+    expect(schema.$defs.MasterBar?.properties?.repeatStart).toEqual({
+      type: 'boolean',
+      const: true,
+    });
+    expect(schema.$defs.Note?.properties?.tiedFromPrevious).toEqual({
+      type: 'boolean',
+      const: true,
+    });
+    expect(schema.$defs.Beat?.properties?.rest).toEqual({ type: 'boolean' });
+    expect(JSON.stringify(schema.$defs.MasterBar?.properties?.repeatEnd)).toContain('"maximum":99');
+  });
+
   it('only references definitions that exist', () => {
     const refs = JSON.stringify(schema).match(/"#\/\$defs\/[^"]+"/g) ?? [];
     for (const ref of refs) {

@@ -9,6 +9,12 @@ export function testId(): string {
   return `T${String(counter).padStart(11, '0')}`;
 }
 
+/** Deterministic lowercase UUIDv7 for document ids, e.g. `0195f2a4-7c3e-7a10-9b2d-000000000042`. */
+export function testDocumentId(): string {
+  counter += 1;
+  return `0195f2a4-7c3e-7a10-9b2d-${String(counter).padStart(12, '0')}`;
+}
+
 export const STANDARD_TUNING = [64, 59, 55, 50, 45, 40];
 
 export function note(fields: Omit<Note, 'id'>): Note {
@@ -70,7 +76,7 @@ export function minimalDocument(): MhdDocument {
   return {
     format: 'musichub',
     schemaVersion: 1,
-    id: testId(),
+    id: testDocumentId(),
     meta: { title: 'Minimal' },
     masterBars: [
       {

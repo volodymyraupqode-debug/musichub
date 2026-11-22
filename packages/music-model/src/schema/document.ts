@@ -16,6 +16,25 @@ export const MhdIdSchema = z
   .regex(MHD_ID_PATTERN, 'Expected a 12-character base62 MHD id')
   .meta({ id: 'MhdId' });
 
+/** Lowercase RFC 9562 UUID version 7, the form PostgreSQL and Laravel `Str::uuid7()` produce. */
+export const DOCUMENT_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+/**
+ * Id of the whole document: the composition id (UUIDv7, DATABASE.md §1) once synced, a
+ * client-generated UUIDv7 before. Element ids inside the document use `MhdIdSchema`.
+ */
+export const DocumentIdSchema = z
+  .string()
+  .regex(DOCUMENT_ID_PATTERN, 'Expected a lowercase UUIDv7 document id')
+  .meta({ id: 'DocumentId' });
+
+/**
+ * Optional flag. Only `true` or an absent key: `false` would be a second spelling of the
+ * same state, so it is rejected. Required booleans (`rest`, `mute`, …) keep `true`/`false`.
+ */
+const flag = z.literal(true).optional();
+
 function greatestCommonDivisor(a: number, b: number): number {
   return b === 0 ? a : greatestCommonDivisor(b, a % b);
 }
@@ -93,8 +112,11 @@ export const DIRECTIONS = [
   'toCoda',
 ] as const;
 
-/** Highest repeat count and alternate ending number (alphaTab stores endings as a 32-bit flag). */
-export const MAX_REPEAT_COUNT = 32;
+/**
+ * Highest repeat count and alternate ending number. An MHD sanity limit, not an engine limit;
+ * engine-specific limits are handled by the adapter in music-engine.
+ */
+export const MAX_REPEAT_COUNT = 99;
 
 export const MasterBarSchema = z
   .strictObject({
@@ -105,7 +127,7 @@ export const MasterBarSchema = z
     tripletFeel: z
       .enum(['none', '8th', '16th', 'dotted8th', 'dotted16th', 'scottish8th', 'scottish16th'])
       .optional(),
-    repeatStart: z.boolean().optional(),
+    repeatStart: flag,
     /** `count` is the total number of plays of the repeated section (≥ 2). */
     repeatEnd: z.strictObject({ count: z.int().min(2).max(MAX_REPEAT_COUNT) }).optional(),
     /** Passes (1-based) in which this bar is played, e.g. `[1]` or `[2, 3]`. */
@@ -114,9 +136,9 @@ export const MasterBarSchema = z
       .strictObject({ letter: z.string().min(1).max(3).optional(), text: label })
       .optional(),
     direction: z.enum(DIRECTIONS).optional(),
-    fermata: z.boolean().optional(),
+    fermata: flag,
     /** Pickup bar; only allowed on bar 0. */
-    isAnacrusis: z.boolean().optional(),
+    isAnacrusis: flag,
   })
   .meta({ id: 'MasterBar' });
 
@@ -137,12 +159,12 @@ export const NoteEffectsSchema = z
     bend: z.array(BendPointSchema).min(1).optional(),
     slideOut: z.enum(['shift', 'legato', 'outUp', 'outDown']).optional(),
     slideIn: z.enum(['intoFromBelow', 'intoFromAbove']).optional(),
-    hammerPullOrigin: z.boolean().optional(),
-    palmMute: z.boolean().optional(),
-    letRing: z.boolean().optional(),
-    deadNote: z.boolean().optional(),
-    ghost: z.boolean().optional(),
-    staccato: z.boolean().optional(),
+    hammerPullOrigin: flag,
+    palmMute: flag,
+    letRing: flag,
+    deadNote: flag,
+    ghost: flag,
+    staccato: flag,
     accent: z.enum(['normal', 'heavy']).optional(),
     harmonic: z
       .strictObject({
@@ -160,6 +182,30 @@ export const NoteEffectsSchema = z
       .optional(),
   })
   .meta({ id: 'NoteEffects' });
+
+/**
+ * MusicHub drum articulations and the General MIDI percussion keys each one may use.
+ * The note's `pitch` stays the GM key (playback); the articulation keeps distinctions GM
+ * has no key for. The vocabulary is MusicHub's own; mapping to engines lives in music-engine.
+ */
+export const DRUM_ARTICULATIONS = {
+  'hihat.closed': [42],
+  'hihat.half': [42, 46],
+  'hihat.open': [46],
+  'hihat.pedal': [44],
+  'snare.rimshot': [38, 40],
+  'snare.sidestick': [37],
+  'ride.edge': [51, 59],
+  'ride.bell': [53],
+  'crash.choke': [49, 57],
+} as const satisfies Record<string, readonly number[]>;
+
+export type DrumArticulation = keyof typeof DRUM_ARTICULATIONS;
+
+const drumArticulationIds = Object.keys(DRUM_ARTICULATIONS) as [
+  DrumArticulation,
+  ...DrumArticulation[],
+];
 
 /**
  * One pitch. Exactly one pitch authority (checked by `validateDocument`):
@@ -183,7 +229,9 @@ export const NoteSchema = z
     velocity: z.int().min(1).max(127).optional(),
     hand: z.enum(['left', 'right']).optional(),
     /** Tie destination: continues a note of the previous beat in the same voice. */
-    tiedFromPrevious: z.boolean().optional(),
+    tiedFromPrevious: flag,
+    /** Percussion tracks only; must match `pitch` (`DRUM_ARTICULATIONS`). */
+    drumArticulation: z.enum(drumArticulationIds).optional(),
     effects: NoteEffectsSchema.optional(),
   })
   .meta({ id: 'Note' });
@@ -205,13 +253,14 @@ export const BeatEffectsSchema = z
     vibrato: z.enum(['slight', 'wide']).optional(),
     tremoloPicking: z.literal([8, 16, 32]).optional(),
     pickStroke: z.enum(['up', 'down']).optional(),
+    /** Strum; `duration` is the rhythmic span of the strum, absent = engine default. */
     brush: z
-      .strictObject({ direction: z.enum(['up', 'down']), durationTicks: z.int().min(0).max(3840) })
+      .strictObject({ direction: z.enum(['up', 'down']), duration: DurationSchema.optional() })
       .optional(),
-    tap: z.boolean().optional(),
-    slap: z.boolean().optional(),
-    pop: z.boolean().optional(),
-    fadeIn: z.boolean().optional(),
+    tap: flag,
+    slap: flag,
+    pop: flag,
+    fadeIn: flag,
     whammy: z.array(BendPointSchema).min(1).optional(),
     crescendo: z.enum(['crescendo', 'decrescendo']).optional(),
   })
@@ -294,7 +343,10 @@ export const INSTRUMENT_FAMILIES = [
 ] as const;
 
 /** Families whose tracks may use hands and the sustain pedal (keyboard tracks). */
-export const KEYBOARD_FAMILIES: readonly (typeof INSTRUMENT_FAMILIES)[number][] = ['piano'];
+export const KEYBOARD_FAMILIES: readonly (typeof INSTRUMENT_FAMILIES)[number][] = [
+  'piano',
+  'synth',
+];
 
 export const TRACK_COLORS = [
   'track.1',
@@ -355,7 +407,7 @@ export const MhdDocumentSchema = z
   .strictObject({
     format: z.literal(MHD_FORMAT),
     schemaVersion: z.literal(MHD_SCHEMA_VERSION),
-    id: MhdIdSchema,
+    id: DocumentIdSchema,
     meta: MetaSchema,
     masterBars: z.array(MasterBarSchema).min(1).max(MAX_MASTER_BARS),
     tracks: z.array(TrackSchema).min(1).max(MAX_TRACKS),

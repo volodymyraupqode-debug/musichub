@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { minimalDocument } from '../test-support/builders.js';
-import { MhdDocumentSchema, PositionSchema } from './document.js';
+import { DocumentIdSchema, MhdDocumentSchema, MhdIdSchema, PositionSchema } from './document.js';
 
 type Mutable = Record<string, unknown>;
 
@@ -321,5 +321,29 @@ describe('PositionSchema', () => {
 
   it.each([[[1, 0]], [[-1, 2]], [[0.5, 1]], [[1, 2, 3]]])('rejects malformed %j', (value) => {
     expect(PositionSchema.safeParse(value).success).toBe(false);
+  });
+});
+
+describe('DocumentIdSchema (UUIDv7, DATABASE.md §1)', () => {
+  it.each(['0195f2a4-7c3e-7a10-9b2d-3f4e5a6b7c8d', '01960000-0000-7000-8000-000000000000'])(
+    'accepts %s',
+    (value) => {
+      expect(DocumentIdSchema.safeParse(value).success).toBe(true);
+    },
+  );
+
+  it.each([
+    ['a UUIDv4', '0195f2a4-7c3e-4a10-9b2d-3f4e5a6b7c8d'],
+    ['uppercase', '0195F2A4-7C3E-7A10-9B2D-3F4E5A6B7C8D'],
+    ['a wrong variant', '0195f2a4-7c3e-7a10-cb2d-3f4e5a6b7c8d'],
+    ['no dashes', '0195f2a47c3e7a109b2d3f4e5a6b7c8d'],
+    ['an element id', 'T00000000001'],
+  ])('rejects %s', (_name, value) => {
+    expect(DocumentIdSchema.safeParse(value).success).toBe(false);
+  });
+
+  it('element ids keep the 12-character base62 format and reject UUIDs', () => {
+    expect(MhdIdSchema.safeParse('T00000000001').success).toBe(true);
+    expect(MhdIdSchema.safeParse('0195f2a4-7c3e-7a10-9b2d-3f4e5a6b7c8d').success).toBe(false);
   });
 });

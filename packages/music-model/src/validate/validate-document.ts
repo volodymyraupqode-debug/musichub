@@ -1,5 +1,6 @@
 import { MHD_SCHEMA_VERSION } from '../constants.js';
 import {
+  DRUM_ARTICULATIONS,
   KEYBOARD_FAMILIES,
   MhdDocumentSchema,
   type Beat,
@@ -241,31 +242,40 @@ function checkRepeats(masterBars: readonly MasterBar[], issues: Collector): void
 
 /**
  * Invariant 9. Consecutive bars with alternate endings form one group (e.g. `|1. … :|2. …|`).
- * The group belongs to the repeat closed inside it; ending numbers must not exceed its count.
+ * A bar that carries an ending and opens the next repeat (`|2. C |: …`) closes the group; a
+ * one-bar repeat section with endings (`|:1. A :|`) opens a new one. The group
+ * belongs to the repeat closed inside it; ending numbers must not exceed its count. A bracket is
+ * a run of consecutive bars with the same ending set (a multi-bar ending); a number may appear
+ * in only one bracket of a group.
  */
 function checkAlternateEndings(masterBars: readonly MasterBar[], issues: Collector): void {
-  let index = 0;
-  while (index < masterBars.length) {
-    if (!masterBars[index]?.alternateEndings) {
-      index += 1;
-      continue;
-    }
-    const groupStart = index;
-    while (masterBars[index]?.alternateEndings) index += 1;
-    const group = masterBars.slice(groupStart, index);
-
-    const closing = group.findIndex((bar) => bar.repeatEnd);
-    const count = closing === -1 ? undefined : group[closing]?.repeatEnd?.count;
-    group.forEach((bar, offset) => {
-      const barIndex = groupStart + offset;
+  for (const group of endingGroups(masterBars)) {
+    const closing = group.find(({ bar }) => bar.repeatEnd);
+    const count = closing?.bar.repeatEnd?.count;
+    const usedIn = new Map<number, string>();
+    let previousKey: string | undefined;
+    for (const { bar, index } of group) {
       const endings = bar.alternateEndings ?? [];
-      const path = ['masterBars', barIndex, 'alternateEndings'];
+      const path = ['masterBars', index, 'alternateEndings'];
+      const key = [...endings].sort((a, b) => a - b).join(',');
+      const sameBracket = key === previousKey;
+      previousKey = key;
       if (new Set(endings).size !== endings.length) {
         issues.error(
           ISSUE_CODES.alternateEndingDuplicate,
           path,
           'Alternate ending numbers must be unique',
         );
+      } else if (!sameBracket) {
+        const reused = endings.filter((ending) => usedIn.has(ending));
+        if (reused.length > 0) {
+          issues.error(
+            ISSUE_CODES.alternateEndingDuplicate,
+            path,
+            `Alternate endings ${reused.join(', ')} are already used in this ending group`,
+          );
+        }
+        for (const ending of endings) usedIn.set(ending, key);
       }
       if (count === undefined) {
         issues.error(
@@ -273,12 +283,12 @@ function checkAlternateEndings(masterBars: readonly MasterBar[], issues: Collect
           path,
           'Alternate endings need a repeat end in the same ending group',
         );
-        return;
+        continue;
       }
       if (bar.repeatEnd && bar.repeatEnd.count !== count) {
         issues.error(
           ISSUE_CODES.alternateEndingCountMismatch,
-          ['masterBars', barIndex, 'repeatEnd', 'count'],
+          ['masterBars', index, 'repeatEnd', 'count'],
           `Repeat ends in one ending group must share the count ${count}`,
         );
       }
@@ -290,8 +300,32 @@ function checkAlternateEndings(masterBars: readonly MasterBar[], issues: Collect
           `Alternate endings ${tooHigh.join(', ')} exceed the repeat count ${count}`,
         );
       }
-    });
+    }
   }
+}
+
+type IndexedBar = { bar: MasterBar; index: number };
+
+function endingGroups(masterBars: readonly MasterBar[]): IndexedBar[][] {
+  const groups: IndexedBar[][] = [];
+  let current: IndexedBar[] = [];
+  const flush = (): void => {
+    if (current.length > 0) groups.push(current);
+    current = [];
+  };
+  masterBars.forEach((bar, index) => {
+    if (!bar.alternateEndings) {
+      flush();
+      return;
+    }
+    // A one-bar repeat section (`|:1. A :|`) opens its own group.
+    if (bar.repeatStart === true && bar.repeatEnd) flush();
+    current.push({ bar, index });
+    // A bar that opens the next repeat (`|2. C |: …`) is the last ending of the current group.
+    if (bar.repeatStart === true && !bar.repeatEnd) flush();
+  });
+  flush();
+  return groups;
 }
 
 /** Jump directions need their targets (invariant 7). */
@@ -358,6 +392,13 @@ function checkTrack(
   issues: Collector,
 ): void {
   const keyboard = isKeyboard(track);
+  if (track.instrument.family === 'drums' && !track.instrument.percussion) {
+    issues.error(
+      ISSUE_CODES.drumsNotPercussion,
+      [...path, 'instrument', 'percussion'],
+      'A drums track must be a percussion track',
+    );
+  }
   if (keyboard && track.staves.length > 2) {
     issues.error(
       ISSUE_CODES.keyboardStaffCount,
@@ -512,6 +553,21 @@ function checkBeat(
   if (beat.rest && beat.notes.length > 0) {
     issues.error(ISSUE_CODES.restWithNotes, [...beatPath, 'notes'], 'A rest has no notes');
   }
+  if (!beat.rest && beat.notes.length === 0) {
+    issues.error(
+      ISSUE_CODES.beatWithoutNotes,
+      [...beatPath, 'notes'],
+      'A beat that is not a rest needs at least one note; use rest: true for silence',
+    );
+  }
+  const brushDuration = beat.effects?.brush?.duration;
+  if (brushDuration && compare(durationTicks(brushDuration), durationTicks(beat.duration)) > 0) {
+    issues.error(
+      ISSUE_CODES.brushLongerThanBeat,
+      [...beatPath, 'effects', 'brush', 'duration'],
+      'A brush cannot be longer than its beat',
+    );
+  }
   const usedStrings = new Set<number>();
   beat.notes.forEach((note, noteIndex) => {
     const notePath = [...beatPath, 'notes', noteIndex];
@@ -561,7 +617,25 @@ function checkPitchAuthority(
         'Percussion notes need a pitch (General MIDI key)',
       );
     }
+    const articulation = note.drumArticulation;
+    if (articulation !== undefined && note.pitch !== undefined) {
+      const keys: readonly number[] = DRUM_ARTICULATIONS[articulation];
+      if (!keys.includes(note.pitch)) {
+        issues.error(
+          ISSUE_CODES.drumArticulationPitchMismatch,
+          [...notePath, 'drumArticulation'],
+          `"${articulation}" is played with General MIDI key ${keys.join(' or ')}, not ${note.pitch}`,
+        );
+      }
+    }
     return;
+  }
+  if (note.drumArticulation !== undefined) {
+    issues.error(
+      ISSUE_CODES.drumArticulationNotPercussion,
+      [...notePath, 'drumArticulation'],
+      'Drum articulations are allowed only on percussion tracks',
+    );
   }
   const stringed = staff.stringed;
   if (!stringed) {

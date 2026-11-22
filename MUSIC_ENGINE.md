@@ -10,6 +10,8 @@
 > - Added §5.2 (playback-score variants) and spike S7.
 > - MIDI devices moved to `midi-engine`.
 >
+> **Changelog v0.2.2:** MHD v1 decisions after the S2-02 review: UUIDv7 document id, `true`-only optional flags, brush duration as `Duration`, `drumArticulation` vocabulary, `synth` as a keyboard family, repeat/ending limit 99, `rest ⇔ no notes`, every schema change bumps `schemaVersion`, invariants 3/7/8 defined precisely (§3.2–3.4, §4.2).
+>
 > **Changelog v0.2.1:** Q21. Microphone pitch/performance analysis is post‑v1 (Audio/AI phase, §11a). The MIDI guitar is researched in spike S8, not committed for v1. Guitar notation, tab and playback are unchanged.
 
 ## 1. Role of alphaTab
@@ -146,107 +148,129 @@ Defined in `packages/music-model` as TypeScript types + Zod schemas. JSON file e
 type MhdDocument = {
   format: 'musichub';
   schemaVersion: 1;
-  id: string;                         // = composition id when synced; local uuid before
+  id: DocumentId;                     // lowercase UUIDv7: composition id when synced, client-generated before
   meta: { title: string; subtitle?: string; artist?: string; album?: string;
           composer?: string; lyricist?: string; transcriber?: string; copyright?: string;
           notes?: string };
-  masterBars: MasterBar[];            // shared bar-level data, index = bar number
-  tracks: Track[];
-  extensions?: Record<string, unknown>; // namespaced, ignored by older clients, preserved on save
+  masterBars: MasterBar[];            // shared bar-level data, index = bar number (1..5000)
+  tracks: Track[];                    // 1..64
+  extensions?: Record<string, JsonValue>; // keys `vendor.name`; preserved verbatim on save
 };
 
 type MasterBar = {
-  id: string;
-  timeSignature?: { numerator: number; denominator: 1|2|4|8|16|32 }; // only when it changes
+  id: MhdId;
+  timeSignature?: { numerator: number /* 1..32 */; denominator: 1|2|4|8|16|32 }; // only when it changes
   keySignature?: { fifths: number /* -7..7 */; mode: 'major' | 'minor' };
-  tempoChanges?: { position: Fraction /* 0..1 within bar */; bpm: number; label?: string }[];
+  tempoChanges?: { position: Position; bpm: number /* quarter notes, 20..400 */; label?: string }[];
   tripletFeel?: 'none' | '8th' | '16th' | 'dotted8th' | 'dotted16th' | 'scottish8th' | 'scottish16th';
-  repeatStart?: boolean;
-  repeatEnd?: { count: number };      // total plays
-  alternateEndings?: number[];        // e.g. [1], [2,3]
+  repeatStart?: true;
+  repeatEnd?: { count: number };      // total plays, 2..99
+  alternateEndings?: number[];        // passes 1..99, e.g. [1], [2,3]
   section?: { letter?: string; text: string };
   direction?: 'segno' | 'segnoSegno' | 'coda' | 'doubleCoda' | 'fine' | 'daCapo' | 'daCapoAlFine'
             | 'daCapoAlCoda' | 'dalSegno' | 'dalSegnoAlFine' | 'dalSegnoAlCoda' | 'toCoda';
-  fermata?: boolean;
-  isAnacrusis?: boolean;              // pickup bar (only bar 0)
+  fermata?: true;
+  isAnacrusis?: true;                 // pickup bar (only bar 0)
 };
 
 type Track = {
-  id: string; name: string; shortName?: string; color: string; // design-token color id
-  instrument: { family: InstrumentFamily; midiProgram: number /*0-127*/; bank?: number; percussion: boolean };
+  id: MhdId; name: string; shortName?: string;
+  color: `track.${1|2|3|4|5|6|7|8|9|10|11|12}`; // design-token palette id, never hex
+  instrument: { family: InstrumentFamily; midiProgram: number /*0-127*/; bank?: number /*0-16383*/; percussion: boolean };
   mixer: { volume: number /*0..1*/; pan: number /*-1..1*/; mute: boolean; solo: boolean };
   staves: Staff[];                    // 1 for guitar, 2 for piano grand staff, …
 };
 
 type Staff = {
-  id: string;
+  id: MhdId;
   display: { standard: boolean; tab: boolean; slash: boolean; numbered: boolean };
-  stringed?: { tuning: number[] /* MIDI pitches, highest string first */; capo: number; fretCount: number };
+  stringed?: { tuning: number[] /* 4..10 MIDI pitches, highest string first */; capo: number; fretCount: number };
   transpositionPitch?: number;        // e.g. -12 for guitar written an octave higher
   hand?: 'left' | 'right';            // keyboard staves; default for a 2-staff keyboard track: upper = right, lower = left
   bars: Bar[];                        // length === masterBars.length (invariant)
 };
 
-type Bar = { id: string; clef?: 'G2' | 'F4' | 'C3' | 'C4' | 'neutral'; ottava?: '15ma'|'8va'|'8vb'|'15mb';
-             sustainPedal?: { position: Fraction; type: 'down' | 'up' }[]; // keyboard staves
+type Bar = { id: MhdId; clef?: 'G2' | 'F4' | 'C3' | 'C4' | 'neutral'; ottava?: '15ma'|'8va'|'8vb'|'15mb';
+             sustainPedal?: { position: Position; type: 'down' | 'up' }[]; // keyboard staves
              voices: Voice[] /* 1..4, voice 0 primary */ };
 
-type Voice = { id: string; beats: Beat[] };
+type Voice = { id: MhdId; beats: Beat[] };
+
+type Duration = { value: 1|2|4|8|16|32|64|128; dots: 0|1|2; tuplet?: { actual: number /*2..15*/; normal: number /*1..15*/ } };
 
 type Beat = {
-  id: string;
-  duration: { value: 1|2|4|8|16|32|64|128; dots: 0|1|2; tuplet?: { actual: number; normal: number } };
-  rest: boolean;                      // true ⇒ notes = []
-  notes: Note[];
+  id: MhdId;
+  duration: Duration;
+  rest: boolean;                      // true ⇔ notes = []
+  notes: Note[];                      // a chord is several notes in one beat
   grace?: 'beforeBeat' | 'onBeat';
   dynamic?: 'ppp'|'pp'|'p'|'mp'|'mf'|'f'|'ff'|'fff';
-  text?: string; lyrics?: string[]; chordId?: string;
+  text?: string; lyrics?: string[];
   effects?: { vibrato?: 'slight'|'wide'; tremoloPicking?: 8|16|32; pickStroke?: 'up'|'down';
-              brush?: { direction: 'up'|'down'; durationTicks: number }; tap?: boolean; slap?: boolean; pop?: boolean;
-              fadeIn?: boolean; whammy?: BendPoint[]; crescendo?: 'crescendo'|'decrescendo' };
+              brush?: { direction: 'up'|'down'; duration?: Duration /* rhythmic span; absent = engine default */ };
+              tap?: true; slap?: true; pop?: true; fadeIn?: true; whammy?: BendPoint[]; crescendo?: 'crescendo'|'decrescendo' };
 };
 
 type Note = {
-  id: string;
+  id: MhdId;
   // Pitch: exactly one authority. Stringed staves: string+fret is authoritative, pitch derived from tuning+capo.
   string?: number;                    // 1 = highest string
-  fret?: number;
-  pitch?: number;                     // MIDI 0-127, authoritative on non-stringed staves
+  fret?: number;                      // 0..36
+  pitch?: number;                     // MIDI 0-127; authoritative on non-stringed staves; GM percussion key on percussion tracks
   spelling?: { step: 'C'|'D'|'E'|'F'|'G'|'A'|'B'; alter: -2|-1|0|1|2 }; // optional, for notation accidentals
-  percussionArticulation?: number;    // drum kit mapping
-  velocity?: number;                  // default from dynamic
+  drumArticulation?: DrumArticulation; // percussion only; must match pitch (see below)
+  velocity?: number;                  // 1..127, default from dynamic
   hand?: 'left' | 'right';            // overrides Staff.hand (cross-staff passages)
-  tiedFromPrevious?: boolean;         // continues the previous note of the same pitch (tie destination)
+  tiedFromPrevious?: true;            // continues the previous note of the same pitch (tie destination)
   effects?: { bend?: BendPoint[]; slideOut?: 'shift'|'legato'|'outUp'|'outDown'; slideIn?: 'intoFromBelow'|'intoFromAbove';
-              hammerPullOrigin?: boolean; palmMute?: boolean; letRing?: boolean; deadNote?: boolean; ghost?: boolean;
-              staccato?: boolean; accent?: 'normal'|'heavy'; harmonic?: { type: 'natural'|'artificial'|'pinch'|'tap'|'semi'|'feedback'; fret?: number };
+              hammerPullOrigin?: true; palmMute?: true; letRing?: true; deadNote?: true; ghost?: true;
+              staccato?: true; accent?: 'normal'|'heavy'; harmonic?: { type: 'natural'|'artificial'|'pinch'|'tap'|'semi'|'feedback'; fret?: number };
               vibrato?: 'slight'|'wide'; trill?: { fret: number; speed: 16|32|64 }; fingering?: { left?: number; right?: 'p'|'i'|'m'|'a'|'c' } };
 };
 
-type BendPoint = { offset: number /*0..60*/; value: number /* quarter tones */ };
-type Fraction = [number, number];
+type MhdId = string;                  // 12 characters base62, unique in the document
+type DocumentId = string;             // lowercase UUIDv7
+type Position = [number, number];     // reduced fraction of the bar length in [0, 1); zero is [0, 1]
+type BendPoint = { offset: number /*0..60, 60ths of the note duration*/; value: number /* quarter tones */ };
 type InstrumentFamily = 'guitar'|'bass'|'piano'|'drums'|'vocals'|'strings'|'brass'|'woodwinds'|'synth'|'other';
+type DrumArticulation = 'hihat.closed'|'hihat.half'|'hihat.open'|'hihat.pedal'|'snare.rimshot'|'snare.sidestick'
+                      | 'ride.edge'|'ride.bell'|'crash.choke';
 ```
 
-Chords (diagrams) and score-wide styling are added in schema v1 only if the editor supports them in Phase 3; otherwise they live in `extensions['alphatab.unmapped']` (see §4.2).
+- **Optional flags** are `true` or absent; `false` is rejected so a state has one spelling. Required booleans (`rest`, `percussion`, `mute`, `solo`, `display.*`) keep `true`/`false`.
+- **Keyboard tracks** are the families `piano` and `synth`: only they may use `hand` and `sustainPedal`, with one or two staves.
+- **Percussion:** `pitch` is always the General MIDI percussion key (playback). `drumArticulation` is an optional id from MusicHub's own vocabulary and must be one of the GM keys listed for it: `hihat.closed` 42, `hihat.half` 42/46, `hihat.open` 46, `hihat.pedal` 44, `snare.rimshot` 38/40, `snare.sidestick` 37, `ride.edge` 51/59, `ride.bell` 53, `crash.choke` 49/57. Absent means the plain GM sound. A `drums` track has `percussion: true`; other families may also be percussion tracks.
+- **Brush** duration is an MHD `Duration`, so it does not depend on PPQ or an engine.
+- Numeric limits not listed here are documented in `packages/music-model/README.md`. They are MHD sanity limits, never engine limits.
+- Chord diagrams (`Beat.chordId`, `Track.chords`) and score-wide styling are not part of v1. They are decided with the Phase 3 editor; until then they live in `extensions['alphatab.unmapped']` (see §4.2).
 
 ### 3.3 Invariants (checked by `validateDocument(doc)` in music-model)
 
-1. All `id`s unique within the document (nanoid, 12 chars).
+Each invariant has stable issue codes (`ISSUE_CODES`); see `packages/music-model/README.md`.
+
+1. All element `id`s (12 characters base62, generated with `crypto.getRandomValues`) are unique within the document. The document `id` is a UUIDv7 (§3.2).
 2. Every staff has `bars.length === masterBars.length`.
-3. A bar's voices may be *incomplete* (sum < time signature) while editing; overfull voices are invalid. Incompleteness is reported as a warning, playback fills with rests.
-4. Stringed staff notes have `string` ∈ [1, tuning.length] and `fret` ∈ [0, fretCount]; no two notes on the same string in one beat.
-5. `rest === true ⇒ notes.length === 0`.
-6. `tiedFromPrevious` only if the previous beat in the same voice contains the same pitch.
-7. Repeat/alternate ending structure is well-formed (checked by the timeline builder).
-8. `masterBars[0]` defines `timeSignature`, `keySignature` and a tempo change at position `[0,1]`; every staff's bar 0 defines `clef` (or it is derived from the instrument). Later bars only carry changes.
+3. A bar's voices may be *incomplete* (sum < time signature) while editing; overfull voices are invalid. Incompleteness is reported as a warning, playback fills with rests. Grace beats take no time of their own; empty secondary voices (index ≥ 1) produce no warning; a pickup bar 0 (`isAnacrusis`) is not incomplete.
+4. Stringed staff notes have `string` ∈ [1, tuning.length] and `fret` ∈ [0, fretCount]; no two notes on the same string in one beat; `capo` ≤ `fretCount`; every note has exactly one pitch authority.
+5. `rest === true ⇔ notes.length === 0`.
+6. `tiedFromPrevious` only if the previous beat in the same voice contains the same pitch. The previous beat may be in the previous bar.
+7. Repeat and direction structure is well-formed: repeats are not nested (a repeat start must be closed before the next one); a `repeatEnd` without `repeatStart` is allowed and repeats from the start of the piece or the previous repeat end; jump targets exist: `dalSegno*` needs `segno`, `*AlCoda` needs `toCoda` and `coda`, `toCoda` needs `coda`, `*AlFine` needs `fine`.
+8. `masterBars[0]` defines `timeSignature`, `keySignature` and a tempo change at position `[0,1]`; a staff's bar 0 may omit `clef` (it is derived from the instrument). Later bars only carry changes: repeating the current time signature or key signature is an error. Tempo is not checked by this rule (the same bpm may come with a new label). Only bar 0 may be a pickup.
+9. Alternate endings belong to the repeat closed in their group (consecutive bars with endings; a bar that opens the next repeat ends the group). Numbers are unique within the group (a multi-bar ending repeats its numbers on consecutive bars) and do not exceed the repeat count.
+10. `hand` and `sustainPedal` only on keyboard tracks (`piano`, `synth`); a keyboard track has one or two staves.
+11. Tempo change and pedal positions strictly increase within a bar; the pedal alternates down/up across the staff (it may stay down to the end).
+12. A tie on a stringed staff keeps the same `string` and `fret`.
+13. Percussion notes have no `string` or `fret`; `drumArticulation` only on percussion tracks and only with a matching GM key.
+
+Further checks: a `drums` track has `percussion: true`; a brush is not longer than its beat.
 
 ### 3.4 Versioning & migrations
 
-- `schemaVersion` is an integer. Each change that is not purely additive increments it.
+- `schemaVersion` is an integer. **Every change to the schema structure increments it, including a new optional field or enum value.** MHD schemas are strict and clients reject unknown keys, so an "additive" change without a new version would make older clients fail with a schema error instead of the update prompt.
 - `music-model/migrations/vN_to_vN+1.ts` pure functions; `migrate(doc)` upgrades step-by-step on load. Downgrades are not supported; older clients receive `422 unsupported_schema_version` style errors locally and are prompted to update.
 - `extensions` are preserved verbatim through load/save by every client.
-- Golden fixtures for each schema version live in `music-model/fixtures/`.
+- Golden fixtures for each schema version live in `music-model/fixtures/v<N>/`.
+- The JSON Schema of each version is generated from Zod (`createMhdJsonSchema()`) and committed as `packages/music-model/json-schema/mhd-v<N>.schema.json`. It describes structure only; refinements and the invariants of §3.3 are runtime-only (`validateDocument`).
 
 ### 3.4a Templates
 
@@ -297,6 +321,8 @@ Options: `toAlphaTab(doc, { purpose: 'render' | 'playback' | 'export', tracks, p
 
 - A **feature coverage matrix** (`music-engine/COVERAGE.md`, created in Phase 1) lists each alphaTab model property: mapped / unmapped-preserved / dropped.
 - Unmapped alphaTab data needed for faithful re-export is stored in `extensions['alphatab.unmapped']` keyed by MHD id only if it is round-trippable; otherwise dropped with an `ImportWarning`.
+- Engine limits and engine units stay in the adapter, never in MHD. Examples: alphaTab stores alternate endings as a 32-bit flag (MHD allows up to 99), so endings above 32 produce an `ImportWarning`/export warning; brush durations are converted between MHD `Duration` and alphaTab ticks in `music-engine` (`PPQ × 4 / value` with dots and tuplet; imported tick values are rounded to the nearest MHD duration with a warning when not exact).
+- Drum articulations are mapped between alphaTab and the MusicHub vocabulary (`DRUM_ARTICULATIONS`) in `music-engine`. An articulation without a MusicHub id keeps the GM `pitch`, stores the original alphaTab data in `extensions['alphatab.unmapped']` keyed by the note id, and produces an `ImportWarning`.
 - The original uploaded file is retained server-side (DATABASE.md §3.11).
 - Golden tests: for each fixture `x.gp`: `import → MHD → export GP7 → import → MHD'`, assert `MHD ≈ MHD'` (ids excluded).
 

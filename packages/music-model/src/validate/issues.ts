@@ -17,6 +17,7 @@ export const ISSUE_CODES = {
   notePitchConflict: 'note-pitch-conflict',
   // Invariant 5
   restWithNotes: 'rest-with-notes',
+  beatWithoutNotes: 'beat-without-notes',
   // Invariants 6 and 12
   tieWithoutOrigin: 'tie-without-origin',
   tieStringFretMismatch: 'tie-string-fret-mismatch',
@@ -44,6 +45,11 @@ export const ISSUE_CODES = {
   pedalSequenceInvalid: 'pedal-sequence-invalid',
   // Invariant 13
   percussionNoteWithString: 'percussion-note-with-string',
+  // Instrument and effect rules
+  drumsNotPercussion: 'drums-not-percussion',
+  drumArticulationPitchMismatch: 'drum-articulation-pitch-mismatch',
+  drumArticulationNotPercussion: 'drum-articulation-not-percussion',
+  brushLongerThanBeat: 'brush-longer-than-beat',
 } as const;
 
 export type IssueCode = (typeof ISSUE_CODES)[keyof typeof ISSUE_CODES] | `schema.${string}`;

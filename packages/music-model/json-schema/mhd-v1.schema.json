@@ -14,7 +14,7 @@
           "const": 1
         },
         "id": {
-          "$ref": "#/$defs/MhdId"
+          "$ref": "#/$defs/DocumentId"
         },
         "meta": {
           "$ref": "#/$defs/Meta"
@@ -50,9 +50,9 @@
       "additionalProperties": false,
       "title": "MusicHub Document (MHD) v1"
     },
-    "MhdId": {
+    "DocumentId": {
       "type": "string",
-      "pattern": "^[0-9A-Za-z]{12}$"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
     },
     "Meta": {
       "type": "object",
@@ -140,7 +140,8 @@
           ]
         },
         "repeatStart": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "repeatEnd": {
           "type": "object",
@@ -148,7 +149,7 @@
             "count": {
               "type": "integer",
               "minimum": 2,
-              "maximum": 32
+              "maximum": 99
             }
           },
           "required": [
@@ -162,7 +163,7 @@
           "items": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 32
+            "maximum": 99
           }
         },
         "section": {
@@ -202,16 +203,22 @@
           ]
         },
         "fermata": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "isAnacrusis": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         }
       },
       "required": [
         "id"
       ],
       "additionalProperties": false
+    },
+    "MhdId": {
+      "type": "string",
+      "pattern": "^[0-9A-Za-z]{12}$"
     },
     "TimeSignature": {
       "type": "object",
@@ -768,7 +775,22 @@
           ]
         },
         "tiedFromPrevious": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
+        },
+        "drumArticulation": {
+          "type": "string",
+          "enum": [
+            "hihat.closed",
+            "hihat.half",
+            "hihat.open",
+            "hihat.pedal",
+            "snare.rimshot",
+            "snare.sidestick",
+            "ride.edge",
+            "ride.bell",
+            "crash.choke"
+          ]
         },
         "effects": {
           "$ref": "#/$defs/NoteEffects"
@@ -806,22 +828,28 @@
           ]
         },
         "hammerPullOrigin": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "palmMute": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "letRing": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "deadNote": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "ghost": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "staccato": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "accent": {
           "type": "string",
@@ -964,29 +992,30 @@
                 "down"
               ]
             },
-            "durationTicks": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 3840
+            "duration": {
+              "$ref": "#/$defs/Duration"
             }
           },
           "required": [
-            "direction",
-            "durationTicks"
+            "direction"
           ],
           "additionalProperties": false
         },
         "tap": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "slap": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "pop": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "fadeIn": {
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
         "whammy": {
           "minItems": 1,
