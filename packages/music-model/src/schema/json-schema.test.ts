@@ -90,19 +90,11 @@ describe('createMhdJsonSchema', () => {
       type: 'string',
       pattern: expect.stringContaining('-7[0-9a-f]{3}-') as unknown,
     });
-    expect(schema.$defs.Note?.properties?.drumArticulation).toMatchObject({
-      enum: [
-        'hihat.closed',
-        'hihat.half',
-        'hihat.open',
-        'hihat.pedal',
-        'snare.rimshot',
-        'snare.sidestick',
-        'ride.edge',
-        'ride.bell',
-        'crash.choke',
-      ],
+    expect(schema.$defs.Note?.properties?.drumTechnique).toMatchObject({
+      type: 'string',
+      enum: ['halfOpen', 'rimshot', 'edge', 'choke'],
     });
+    expect(schema.$defs.Note?.properties).not.toHaveProperty('drumArticulation');
     const brush = schema.$defs.BeatEffects?.properties?.brush;
     expect(brush?.properties).not.toHaveProperty('durationTicks');
     expect(brush?.properties?.duration).toEqual({ $ref: '#/$defs/Duration' });

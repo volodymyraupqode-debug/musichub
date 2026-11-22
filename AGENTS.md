@@ -2,7 +2,7 @@
 
 Entry point for AI coding agents working on **MusicHub** (final product name; see PROJECT_SPEC.md §1.1 naming rules) — a web-first music creation & community platform (tablature + notation editor, multi-track playback, Piano Visualizer, Piano Roll, MIDI, library, community; mobile later).
 
-> Project status: **Sprint 1 (Foundation) done** (merged to `main`, CI green); awaiting owner review. No music features exist yet. Next: Sprint 2 (spikes + MHD draft) after owner approval.
+> Project status: **Sprint 2 (Spikes & model draft) in progress** (ROADMAP.md §Sprint 2). Done: Sprint 1, S2-00…S2-02 (MHD v1 schema in `packages/music-model`). Next: S2-03 (hand-written MHD fixtures) after owner approval. No playback, rendering or editor features exist yet.
 
 ## Read first
 

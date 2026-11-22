@@ -1,6 +1,6 @@
 import { MHD_SCHEMA_VERSION } from '../constants.js';
 import {
-  DRUM_ARTICULATIONS,
+  DRUM_TECHNIQUES,
   KEYBOARD_FAMILIES,
   MhdDocumentSchema,
   type Beat,
@@ -617,24 +617,24 @@ function checkPitchAuthority(
         'Percussion notes need a pitch (General MIDI key)',
       );
     }
-    const articulation = note.drumArticulation;
-    if (articulation !== undefined && note.pitch !== undefined) {
-      const keys: readonly number[] = DRUM_ARTICULATIONS[articulation];
+    const technique = note.drumTechnique;
+    if (technique !== undefined && note.pitch !== undefined) {
+      const keys: readonly number[] = DRUM_TECHNIQUES[technique];
       if (!keys.includes(note.pitch)) {
         issues.error(
-          ISSUE_CODES.drumArticulationPitchMismatch,
-          [...notePath, 'drumArticulation'],
-          `"${articulation}" is played with General MIDI key ${keys.join(' or ')}, not ${note.pitch}`,
+          ISSUE_CODES.drumTechniquePitchMismatch,
+          [...notePath, 'drumTechnique'],
+          `Technique "${technique}" applies to General MIDI keys ${keys.join(', ')}, not ${note.pitch}`,
         );
       }
     }
     return;
   }
-  if (note.drumArticulation !== undefined) {
+  if (note.drumTechnique !== undefined) {
     issues.error(
-      ISSUE_CODES.drumArticulationNotPercussion,
-      [...notePath, 'drumArticulation'],
-      'Drum articulations are allowed only on percussion tracks',
+      ISSUE_CODES.drumTechniqueNotPercussion,
+      [...notePath, 'drumTechnique'],
+      'Drum techniques are allowed only on percussion tracks',
     );
   }
   const stringed = staff.stringed;

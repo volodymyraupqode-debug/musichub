@@ -21,21 +21,16 @@ MhdDocument  format 'musichub', schemaVersion 1, id (UUIDv7), meta, masterBars[1
 
 ### Percussion
 
-`pitch` is always the General MIDI percussion key and is required. `drumArticulation` is optional and comes from MusicHub's own vocabulary (`DRUM_ARTICULATIONS`); it must use one of the GM keys listed for it:
+`pitch` is always the General MIDI percussion key and is required; it selects the instrument and sound. `drumTechnique` is optional (`DRUM_TECHNIQUES`) and adds only what GM has no key for. Each technique is allowed for these GM keys:
 
-| Articulation | GM keys |
+| Technique | GM keys |
 |---|---|
-| `hihat.closed` | 42 |
-| `hihat.half` | 42, 46 |
-| `hihat.open` | 46 |
-| `hihat.pedal` | 44 |
-| `snare.rimshot` | 38, 40 |
-| `snare.sidestick` | 37 |
-| `ride.edge` | 51, 59 |
-| `ride.bell` | 53 |
-| `crash.choke` | 49, 57 |
+| `halfOpen` | 42, 46 (hi-hat) |
+| `rimshot` | 38, 40 (snare) |
+| `edge` | 51, 59 (ride 1, ride 2) |
+| `choke` | 49, 52, 55, 57 (crash 1, china, splash, crash 2) |
 
-No articulation means the plain GM sound. A `drums` track must have `percussion: true`; other families may also be percussion tracks. Mapping to and from alphaTab lives in `music-engine` (MUSIC_ENGINE.md §4.2), never here.
+No technique means the plain GM sound: 42 is a closed hi-hat, 46 an open hi-hat, 44 a pedal hi-hat, 37 a side stick, 53 a ride bell. Examples: 42 + `halfOpen` = half-open hi-hat, 38 + `rimshot`, 51 + `edge`, 55 + `choke` = splash choke, 52 + `choke` = china choke. A `drums` track must have `percussion: true`; other families may also be percussion tracks. Mapping to and from alphaTab lives in `music-engine` (MUSIC_ENGINE.md §4.2), never here.
 
 ## Time
 
@@ -85,7 +80,7 @@ const { valid, issues, document } = validateDocument(json);
 | 10 | Hands and sustain pedal only on keyboard tracks (`piano`, `synth`); a keyboard track has 1–2 staves | `keyboard-only-hand`, `keyboard-only-pedal`, `keyboard-staff-count` |
 | 11 | Tempo and pedal positions strictly increase; pedal alternates down/up (a pedal may stay down to the end) | `positions-not-increasing`, `pedal-sequence-invalid` |
 | 12 | Ties on stringed staves keep string and fret | `tie-string-fret-mismatch` |
-| 13 | Percussion notes have no string or fret; `drumArticulation` only on percussion tracks, with a matching GM key | `percussion-note-with-string`, `drum-articulation-*` |
+| 13 | Percussion notes have no string or fret; `drumTechnique` only on percussion tracks, with a GM key allowed for it | `percussion-note-with-string`, `drum-technique-*` |
 | — | A `drums` track has `percussion: true`; a brush is not longer than its beat | `drums-not-percussion`, `brush-longer-than-beat` |
 
 `validateDocument` is pure: it does not mutate the input, generate ids, normalise data or touch `extensions`.
@@ -111,7 +106,7 @@ MHD sanity limits, independent of any engine (engine limits are handled by the a
 
 `createMhdJsonSchema()` generates a draft 2020-12 schema with Zod's built-in `z.toJSONSchema`. The committed copy `json-schema/mhd-v1.schema.json` is checked by a test (`toMatchFileSnapshot`); run `pnpm --filter @musichub/music-model test -u` after an intended schema change.
 
-It contains structure, types, enums (including `drumArticulation`), ranges, required keys, `const: true` for optional flags, the UUIDv7 pattern for the document id and strict objects. It cannot express Zod refinements or cross-field rules, so it **accepts** documents that `validateDocument` rejects: non-reduced or ≥ 1 positions (`[2, 4]`, `[1, 1]`) and every rule in the table above. Use it as an envelope check for non-TS consumers; the authority is `validateDocument`. The tests assert strictness, references, key properties and determinism; they do not validate the schema against the JSON Schema meta-schema (that needs a validator library, not approved yet).
+It contains structure, types, enums (including `drumTechnique`), ranges, required keys, `const: true` for optional flags, the UUIDv7 pattern for the document id and strict objects. It cannot express Zod refinements or cross-field rules, so it **accepts** documents that `validateDocument` rejects: non-reduced or ≥ 1 positions (`[2, 4]`, `[1, 1]`) and every rule in the table above. Use it as an envelope check for non-TS consumers; the authority is `validateDocument`. The tests assert strictness, references, key properties and determinism; they do not validate the schema against the JSON Schema meta-schema (that needs a validator library, not approved yet).
 
 ## Versioning
 
