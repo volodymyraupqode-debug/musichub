@@ -30,10 +30,39 @@ module.exports = {
     },
     {
       name: 'alphatab-only-in-music-engine',
-      comment: 'Only packages/music-engine may import alphaTab (AGENT_RULES.md §4).',
+      comment:
+        'Only packages/music-engine may import alphaTab (AGENT_RULES.md §4). Throw-away spikes (spikes/*) may too.',
       severity: 'error',
-      from: { pathNot: '^packages/music-engine/' },
+      from: { pathNot: '^(packages/music-engine|spikes/[^/]+)/' },
       to: { path: 'node_modules/@coderline/alphatab' },
+    },
+    {
+      name: 'no-import-of-spikes',
+      comment: 'Spike code is never imported by apps or packages (MUSIC_ENGINE.md §10).',
+      severity: 'error',
+      from: { pathNot: '^spikes/' },
+      to: { path: '^spikes/' },
+    },
+    {
+      name: 'no-spike-to-spike',
+      comment: 'Spikes are independent experiments and never import each other.',
+      severity: 'error',
+      from: { path: '^spikes/([^/]+)/' },
+      to: { path: '^spikes/', pathNot: '^spikes/$1/' },
+    },
+    {
+      name: 'no-spike-to-app',
+      comment: 'Spikes may use shared packages but never import apps.',
+      severity: 'error',
+      from: { path: '^spikes/' },
+      to: { path: '^apps/' },
+    },
+    {
+      name: 'spike-eslint-preset-only-in-spikes',
+      comment: 'The spike ESLint preset lifts the alphaTab ban, so only spikes may use it.',
+      severity: 'error',
+      from: { pathNot: '^spikes/[^/]+/' },
+      to: { path: '^packages/config/eslint/spike\\.js$' },
     },
     {
       name: 'pure-packages-no-ui-frameworks',
@@ -82,7 +111,9 @@ module.exports = {
     exclude: {
       path: [
         '^apps/api/',
-        '(^|/)(dist|\\.next|coverage|node_modules|playwright-report|test-results)/',
+        // Our own build output only. node_modules stays in the graph as leaf modules (doNotFollow),
+        // otherwise rules on node_modules targets (alphaTab, React, zustand) could never match.
+        '^(apps|packages|spikes)/[^/]+/(dist|\\.next|coverage|playwright-report|test-results|node_modules)/',
       ],
     },
     tsPreCompilationDeps: true,
