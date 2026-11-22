@@ -108,6 +108,16 @@ MHD sanity limits, independent of any engine (engine limits are handled by the a
 
 It contains structure, types, enums (including `drumTechnique`), ranges, required keys, `const: true` for optional flags, the UUIDv7 pattern for the document id and strict objects. It cannot express Zod refinements or cross-field rules, so it **accepts** documents that `validateDocument` rejects: non-reduced or ≥ 1 positions (`[2, 4]`, `[1, 1]`) and every rule in the table above. Use it as an envelope check for non-TS consumers; the authority is `validateDocument`. The tests assert strictness, references, key properties and determinism; they do not validate the schema against the JSON Schema meta-schema (that needs a validator library, not approved yet).
 
+## Fixtures
+
+Canonical MHD v1 fixtures live in `fixtures/v1/` (details: `fixtures/v1/README.md`):
+
+- `guitar-basic.mhd.json`: stringed model, tablature and guitar techniques.
+- `piano-grand-staff.mhd.json`: grand staff with hands and the sustain pedal.
+- `band-repeats.mhd.json`: four tracks, pickup, repeat with two endings, D.S. al Coda, drum techniques.
+
+Each fixture has a `<name>.expected.json` sidecar with its validation result and structural counts (no playback data). `src/fixtures.test.ts` imports both as JSON modules, requires zero validation issues, compares the counts and runs negative mutations on in-memory copies. Run them with `pnpm --filter @musichub/music-model test`.
+
 ## Versioning
 
-`schemaVersion` is an integer. Every change to the schema structure increments it, including a new optional field or enum value: the schemas are strict, so older clients would otherwise reject new documents with a schema error instead of the update prompt (MUSIC_ENGINE.md §3.4). Until the first public release of MHD v1, while no saved documents exist, v1 may still change without a bump. Each version bump adds a migration (`migrations/vN_to_vN+1`, not implemented in v1). Golden fixtures per version live in `fixtures/v<N>/` (v1 fixtures arrive in S2-03).
+`schemaVersion` is an integer. Every change to the schema structure increments it, including a new optional field or enum value: the schemas are strict, so older clients would otherwise reject new documents with a schema error instead of the update prompt (MUSIC_ENGINE.md §3.4). Until the first public release of MHD v1, while no saved documents exist, v1 may still change without a bump. Each version bump adds a migration (`migrations/vN_to_vN+1`, not implemented in v1). Golden fixtures per version live in `fixtures/v<N>/`.
