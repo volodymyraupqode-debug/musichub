@@ -267,6 +267,7 @@ Further checks: a `drums` track has `percussion: true`; a brush is not longer th
 ### 3.4 Versioning & migrations
 
 - `schemaVersion` is an integer. **Every change to the schema structure increments it, including a new optional field or enum value.** MHD schemas are strict and clients reject unknown keys, so an "additive" change without a new version would make older clients fail with a schema error instead of the update prompt.
+- **Before the first public release of MHD v1**, while no saved documents exist, the v1 schema may still change without a version bump. From the first public release (or the first saved document, whichever comes first) the rule above applies to every structural change.
 - `music-model/migrations/vN_to_vN+1.ts` pure functions; `migrate(doc)` upgrades step-by-step on load. Downgrades are not supported; older clients receive `422 unsupported_schema_version` style errors locally and are prompted to update.
 - `extensions` are preserved verbatim through load/save by every client.
 - Golden fixtures for each schema version live in `music-model/fixtures/v<N>/`.

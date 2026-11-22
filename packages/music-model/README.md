@@ -115,4 +115,4 @@ It contains structure, types, enums (including `drumArticulation`), ranges, requ
 
 ## Versioning
 
-`schemaVersion` is an integer. Every change to the schema structure increments it, including a new optional field or enum value: the schemas are strict, so older clients would otherwise reject new documents with a schema error instead of the update prompt (MUSIC_ENGINE.md §3.4). Each version bump adds a migration (`migrations/vN_to_vN+1`, not implemented in v1). Golden fixtures per version live in `fixtures/v<N>/` (v1 fixtures arrive in S2-03).
+`schemaVersion` is an integer. Every change to the schema structure increments it, including a new optional field or enum value: the schemas are strict, so older clients would otherwise reject new documents with a schema error instead of the update prompt (MUSIC_ENGINE.md §3.4). Until the first public release of MHD v1, while no saved documents exist, v1 may still change without a bump. Each version bump adds a migration (`migrations/vN_to_vN+1`, not implemented in v1). Golden fixtures per version live in `fixtures/v<N>/` (v1 fixtures arrive in S2-03).
