@@ -778,18 +778,13 @@
           "type": "boolean",
           "const": true
         },
-        "drumArticulation": {
+        "drumTechnique": {
           "type": "string",
           "enum": [
-            "hihat.closed",
-            "hihat.half",
-            "hihat.open",
-            "hihat.pedal",
-            "snare.rimshot",
-            "snare.sidestick",
-            "ride.edge",
-            "ride.bell",
-            "crash.choke"
+            "halfOpen",
+            "rimshot",
+            "edge",
+            "choke"
           ]
         },
         "effects": {

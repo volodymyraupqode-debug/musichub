@@ -184,28 +184,22 @@ export const NoteEffectsSchema = z
   .meta({ id: 'NoteEffects' });
 
 /**
- * MusicHub drum articulations and the General MIDI percussion keys each one may use.
- * The note's `pitch` stays the GM key (playback); the articulation keeps distinctions GM
- * has no key for. The vocabulary is MusicHub's own; mapping to engines lives in music-engine.
+ * Playing techniques of a percussion note and the General MIDI percussion keys each one
+ * applies to. The note's `pitch` (GM key) always selects the instrument and sound; a technique
+ * only adds what GM has no key for (closed hi-hat is 42, open 46, ride bell 53, …: no technique
+ * needed). One technique works for every listed instrument, e.g. `choke` on crash 1/2, china
+ * and splash. The vocabulary is MusicHub's own; mapping to engines lives in music-engine.
  */
-export const DRUM_ARTICULATIONS = {
-  'hihat.closed': [42],
-  'hihat.half': [42, 46],
-  'hihat.open': [46],
-  'hihat.pedal': [44],
-  'snare.rimshot': [38, 40],
-  'snare.sidestick': [37],
-  'ride.edge': [51, 59],
-  'ride.bell': [53],
-  'crash.choke': [49, 57],
+export const DRUM_TECHNIQUES = {
+  halfOpen: [42, 46],
+  rimshot: [38, 40],
+  edge: [51, 59],
+  choke: [49, 52, 55, 57],
 } as const satisfies Record<string, readonly number[]>;
 
-export type DrumArticulation = keyof typeof DRUM_ARTICULATIONS;
+export type DrumTechnique = keyof typeof DRUM_TECHNIQUES;
 
-const drumArticulationIds = Object.keys(DRUM_ARTICULATIONS) as [
-  DrumArticulation,
-  ...DrumArticulation[],
-];
+const drumTechniqueIds = Object.keys(DRUM_TECHNIQUES) as [DrumTechnique, ...DrumTechnique[]];
 
 /**
  * One pitch. Exactly one pitch authority (checked by `validateDocument`):
@@ -230,8 +224,8 @@ export const NoteSchema = z
     hand: z.enum(['left', 'right']).optional(),
     /** Tie destination: continues a note of the previous beat in the same voice. */
     tiedFromPrevious: flag,
-    /** Percussion tracks only; must match `pitch` (`DRUM_ARTICULATIONS`). */
-    drumArticulation: z.enum(drumArticulationIds).optional(),
+    /** Percussion tracks only; must be allowed for `pitch` (`DRUM_TECHNIQUES`). */
+    drumTechnique: z.enum(drumTechniqueIds).optional(),
     effects: NoteEffectsSchema.optional(),
   })
   .meta({ id: 'Note' });

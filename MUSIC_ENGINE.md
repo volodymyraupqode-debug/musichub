@@ -10,6 +10,8 @@
 > - Added §5.2 (playback-score variants) and spike S7.
 > - MIDI devices moved to `midi-engine`.
 >
+> **Changelog v0.2.3:** D1: the percussion articulation vocabulary (`drumArticulation`, 9 ids) is replaced by the orthogonal `drumTechnique` (`halfOpen`, `rimshot`, `edge`, `choke`) next to the GM `pitch`. MHD v1 is unreleased, so `schemaVersion` stays 1 (§3.4).
+>
 > **Changelog v0.2.2:** MHD v1 decisions after the S2-02 review: UUIDv7 document id, `true`-only optional flags, brush duration as `Duration`, `drumArticulation` vocabulary, `synth` as a keyboard family, repeat/ending limit 99, `rest ⇔ no notes`, every schema change bumps `schemaVersion`, invariants 3/7/8 defined precisely (§3.2–3.4, §4.2).
 >
 > **Changelog v0.2.1:** Q21. Microphone pitch/performance analysis is post‑v1 (Audio/AI phase, §11a). The MIDI guitar is researched in spike S8, not committed for v1. Guitar notation, tab and playback are unchanged.
@@ -218,7 +220,7 @@ type Note = {
   fret?: number;                      // 0..36
   pitch?: number;                     // MIDI 0-127; authoritative on non-stringed staves; GM percussion key on percussion tracks
   spelling?: { step: 'C'|'D'|'E'|'F'|'G'|'A'|'B'; alter: -2|-1|0|1|2 }; // optional, for notation accidentals
-  drumArticulation?: DrumArticulation; // percussion only; must match pitch (see below)
+  drumTechnique?: DrumTechnique;     // percussion only; must be allowed for pitch (see below)
   velocity?: number;                  // 1..127, default from dynamic
   hand?: 'left' | 'right';            // overrides Staff.hand (cross-staff passages)
   tiedFromPrevious?: true;            // continues the previous note of the same pitch (tie destination)
@@ -233,13 +235,12 @@ type DocumentId = string;             // lowercase UUIDv7
 type Position = [number, number];     // reduced fraction of the bar length in [0, 1); zero is [0, 1]
 type BendPoint = { offset: number /*0..60, 60ths of the note duration*/; value: number /* quarter tones */ };
 type InstrumentFamily = 'guitar'|'bass'|'piano'|'drums'|'vocals'|'strings'|'brass'|'woodwinds'|'synth'|'other';
-type DrumArticulation = 'hihat.closed'|'hihat.half'|'hihat.open'|'hihat.pedal'|'snare.rimshot'|'snare.sidestick'
-                      | 'ride.edge'|'ride.bell'|'crash.choke';
+type DrumTechnique = 'halfOpen' | 'rimshot' | 'edge' | 'choke';
 ```
 
 - **Optional flags** are `true` or absent; `false` is rejected so a state has one spelling. Required booleans (`rest`, `percussion`, `mute`, `solo`, `display.*`) keep `true`/`false`.
 - **Keyboard tracks** are the families `piano` and `synth`: only they may use `hand` and `sustainPedal`, with one or two staves.
-- **Percussion:** `pitch` is always the General MIDI percussion key (playback). `drumArticulation` is an optional id from MusicHub's own vocabulary and must be one of the GM keys listed for it: `hihat.closed` 42, `hihat.half` 42/46, `hihat.open` 46, `hihat.pedal` 44, `snare.rimshot` 38/40, `snare.sidestick` 37, `ride.edge` 51/59, `ride.bell` 53, `crash.choke` 49/57. Absent means the plain GM sound. A `drums` track has `percussion: true`; other families may also be percussion tracks.
+- **Percussion:** `pitch` is always the General MIDI percussion key; it selects the instrument and sound. `drumTechnique` is optional and adds only what GM has no key for. Each technique is allowed for these GM keys: `halfOpen` 42/46, `rimshot` 38/40, `edge` 51/59, `choke` 49/52/55/57 (crash 1, china, splash, crash 2). Absent means the plain GM sound (e.g. 42 closed hi-hat, 46 open hi-hat, 37 side stick, 53 ride bell need no technique). A `drums` track has `percussion: true`; other families may also be percussion tracks.
 - **Brush** duration is an MHD `Duration`, so it does not depend on PPQ or an engine.
 - Numeric limits not listed here are documented in `packages/music-model/README.md`. They are MHD sanity limits, never engine limits.
 - Chord diagrams (`Beat.chordId`, `Track.chords`) and score-wide styling are not part of v1. They are decided with the Phase 3 editor; until then they live in `extensions['alphatab.unmapped']` (see §4.2).
@@ -260,7 +261,7 @@ Each invariant has stable issue codes (`ISSUE_CODES`); see `packages/music-model
 10. `hand` and `sustainPedal` only on keyboard tracks (`piano`, `synth`); a keyboard track has one or two staves.
 11. Tempo change and pedal positions strictly increase within a bar; the pedal alternates down/up across the staff (it may stay down to the end).
 12. A tie on a stringed staff keeps the same `string` and `fret`.
-13. Percussion notes have no `string` or `fret`; `drumArticulation` only on percussion tracks and only with a matching GM key.
+13. Percussion notes have no `string` or `fret`; `drumTechnique` only on percussion tracks and only with a GM key allowed for it.
 
 Further checks: a `drums` track has `percussion: true`; a brush is not longer than its beat.
 
@@ -323,7 +324,7 @@ Options: `toAlphaTab(doc, { purpose: 'render' | 'playback' | 'export', tracks, p
 - A **feature coverage matrix** (`music-engine/COVERAGE.md`, created in Phase 1) lists each alphaTab model property: mapped / unmapped-preserved / dropped.
 - Unmapped alphaTab data needed for faithful re-export is stored in `extensions['alphatab.unmapped']` keyed by MHD id only if it is round-trippable; otherwise dropped with an `ImportWarning`.
 - Engine limits and engine units stay in the adapter, never in MHD. Examples: alphaTab stores alternate endings as a 32-bit flag (MHD allows up to 99), so endings above 32 produce an `ImportWarning`/export warning; brush durations are converted between MHD `Duration` and alphaTab ticks in `music-engine` (`PPQ × 4 / value` with dots and tuplet; imported tick values are rounded to the nearest MHD duration with a warning when not exact).
-- Drum articulations are mapped between alphaTab and the MusicHub vocabulary (`DRUM_ARTICULATIONS`) in `music-engine`. An articulation without a MusicHub id keeps the GM `pitch`, stores the original alphaTab data in `extensions['alphatab.unmapped']` keyed by the note id, and produces an `ImportWarning`.
+- Percussion is mapped in `music-engine`: the pair (GM `pitch`, `drumTechnique`) ↔ an alphaTab articulation (`DRUM_TECHNIQUES` lists the valid pairs). An alphaTab articulation that no pair represents keeps the GM `pitch`, stores the original alphaTab data in `extensions['alphatab.unmapped']` keyed by the note id, and produces an `ImportWarning`.
 - The original uploaded file is retained server-side (DATABASE.md §3.11).
 - Golden tests: for each fixture `x.gp`: `import → MHD → export GP7 → import → MHD'`, assert `MHD ≈ MHD'` (ids excluded).
 

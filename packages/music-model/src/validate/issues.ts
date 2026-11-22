@@ -47,8 +47,8 @@ export const ISSUE_CODES = {
   percussionNoteWithString: 'percussion-note-with-string',
   // Instrument and effect rules
   drumsNotPercussion: 'drums-not-percussion',
-  drumArticulationPitchMismatch: 'drum-articulation-pitch-mismatch',
-  drumArticulationNotPercussion: 'drum-articulation-not-percussion',
+  drumTechniquePitchMismatch: 'drum-technique-pitch-mismatch',
+  drumTechniqueNotPercussion: 'drum-technique-not-percussion',
   brushLongerThanBeat: 'brush-longer-than-beat',
 } as const;
 

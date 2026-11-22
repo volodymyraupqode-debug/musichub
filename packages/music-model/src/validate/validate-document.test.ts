@@ -893,52 +893,81 @@ describe('brush duration uses the MHD rhythmic duration', () => {
   });
 });
 
-describe('drum articulations', () => {
+describe('drum techniques (GM pitch + optional technique)', () => {
   const drumsWith = (...notes: ReturnType<typeof note>[]) =>
     documentWith([track('drums', [pitchStaff([bar([beat(1, notes)])])], true)]);
+  const TECHNIQUE = [...NOTE_0, 'drumTechnique'];
 
   it.each([
-    ['hihat.closed', 42],
-    ['hihat.half', 46],
-    ['hihat.open', 46],
-    ['hihat.pedal', 44],
-    ['snare.rimshot', 38],
-    ['snare.sidestick', 37],
-    ['ride.edge', 51],
-    ['ride.bell', 53],
-    ['crash.choke', 57],
-  ] as const)('accepts %s with General MIDI key %i', (drumArticulation, pitch) => {
-    expectClean(drumsWith(note({ pitch, drumArticulation })));
+    ['halfOpen', 42],
+    ['halfOpen', 46],
+    ['rimshot', 38],
+    ['rimshot', 40],
+    ['edge', 51],
+    ['edge', 59],
+    ['choke', 49],
+    ['choke', 52],
+    ['choke', 55],
+    ['choke', 57],
+  ] as const)('accepts %s on General MIDI key %i', (drumTechnique, pitch) => {
+    expectClean(drumsWith(note({ pitch, drumTechnique })));
   });
 
-  it('keeps pitch required next to the articulation', () => {
-    expectIssue(drumsWith(note({ drumArticulation: 'ride.bell' })), ISSUE_CODES.notePitchMissing, [
+  it.each([
+    ['rimshot', 42],
+    ['edge', 38],
+    ['choke', 51],
+    ['halfOpen', 36],
+  ] as const)('reports %s on General MIDI key %i', (drumTechnique, pitch) => {
+    expectIssue(
+      drumsWith(note({ pitch, drumTechnique })),
+      ISSUE_CODES.drumTechniquePitchMismatch,
+      TECHNIQUE,
+    );
+  });
+
+  it('accepts a valid GM key without a technique (plain sound)', () => {
+    expectClean(drumsWith(note({ pitch: 42 }), note({ pitch: 53 }), note({ pitch: 36 })));
+  });
+
+  it('keeps pitch required next to the technique', () => {
+    expectIssue(drumsWith(note({ drumTechnique: 'choke' })), ISSUE_CODES.notePitchMissing, [
       ...NOTE_0,
       'pitch',
     ]);
   });
 
-  it('reports an articulation that does not match the GM key', () => {
+  it('rejects an unknown technique value', () => {
     expectIssue(
-      drumsWith(note({ pitch: 38, drumArticulation: 'hihat.open' })),
-      ISSUE_CODES.drumArticulationPitchMismatch,
-      [...NOTE_0, 'drumArticulation'],
-    );
-  });
-
-  it('rejects an unknown articulation id', () => {
-    expectIssue(
-      drumsWith(note({ pitch: 42, drumArticulation: 'cowbell.more' as never })),
+      drumsWith(note({ pitch: 42, drumTechnique: 'flam' as never })),
       'schema.invalid_value',
-      [...NOTE_0, 'drumArticulation'],
+      TECHNIQUE,
     );
   });
 
-  it('reports an articulation on a non-percussion track', () => {
+  it('rejects the removed drumArticulation field', () => {
+    expectIssue(
+      drumsWith(note({ pitch: 42, ...({ drumArticulation: 'hihat.half' } as object) })),
+      'schema.unrecognized_keys',
+      NOTE_0,
+    );
+  });
+
+  it('reports a technique on a non-percussion track', () => {
     const doc = documentWith([
-      piano([[[beat(1, [note({ pitch: 42, drumArticulation: 'hihat.closed' })])]]]),
+      piano([[[beat(1, [note({ pitch: 42, drumTechnique: 'halfOpen' })])]]]),
     ]);
-    expectIssue(doc, ISSUE_CODES.drumArticulationNotPercussion, [...NOTE_0, 'drumArticulation']);
+    expectIssue(doc, ISSUE_CODES.drumTechniqueNotPercussion, TECHNIQUE);
+  });
+
+  it('keeps extensions verbatim next to drum techniques', () => {
+    const doc = {
+      ...drumsWith(note({ pitch: 55, drumTechnique: 'choke' })),
+      extensions: { 'alphatab.unmapped': { T00000000001: { articulation: 'unknown' } } },
+    };
+    const result = validateDocument(doc);
+    expect(result.valid).toBe(true);
+    expect(result.document?.extensions).toEqual(doc.extensions);
   });
 });
 
