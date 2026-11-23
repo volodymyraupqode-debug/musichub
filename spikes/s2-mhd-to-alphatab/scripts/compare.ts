@@ -28,12 +28,12 @@ for (const { name, kind, doc } of allDocuments(true)) {
     );
     continue;
   }
-  const ma = midiSummary(a.score, newSettings());
-  const mb = midiSummary(b.score, newSettings());
+  const ma = midiSummary(a.playbackScore, newSettings());
+  const mb = midiSummary(b.playbackScore, newSettings());
   const notesEqual = midiDiff(ma, mb, true).length === 0;
   const strict = midiDiff(ma, mb).length;
-  const render = kind === 'performance' ? undefined : renderScore(a.score, newSettings());
-  const recovered = recoverIdMap(doc, b.score as never);
+  const render = kind === 'performance' ? undefined : renderScore(a.renderScore, newSettings());
+  const recovered = recoverIdMap(doc, b.renderScore as never);
   writeFileSync(path.join(out, `${name}.atex`), b.tex);
   const groups = (d: { group: string }[]) => (d.length ? d.map((x) => x.group).join(', ') : 'none');
   console.log(

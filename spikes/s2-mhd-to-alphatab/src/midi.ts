@@ -1,6 +1,7 @@
 // Playback parity: the MIDI alphaTab generates from a Score (MidiFileGenerator, the same path the
 // player uses). Equal event lists mean equal audible playback for the two strategies.
 import * as alphaTab from '@coderline/alphatab';
+import type { PlaybackScore } from './scores.ts';
 
 export interface MidiSummary {
   noteOns: number;
@@ -11,7 +12,8 @@ export interface MidiSummary {
   events: string[];
 }
 
-export function midiSummary(score: alphaTab.model.Score, settings: alphaTab.Settings): MidiSummary {
+/** MIDI of a Playback Score. A Render Score is rejected at compile time (see scores.ts). */
+export function midiSummary(score: PlaybackScore, settings: alphaTab.Settings): MidiSummary {
   const midiFile = new alphaTab.midi.MidiFile();
   const handler = new alphaTab.midi.AlphaSynthMidiFileHandler(midiFile, true);
   new alphaTab.midi.MidiFileGenerator(score, settings, handler).generate();

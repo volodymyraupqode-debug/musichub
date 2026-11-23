@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { allDocuments } from './fixtures.ts';
 import { midiDiff, midiSummary } from './midi.ts';
 import { renderScore } from './render.ts';
+import { asPlaybackScore } from './scores.ts';
 import { compare, newSettings } from './run.ts';
 
 /**
@@ -44,25 +45,28 @@ describe.each(docs)('$name', ({ name, doc }) => {
     expect(comparison.b.vsMhd.map((d) => d.group).filter((g) => !allowed.includes(g))).toEqual([]);
   });
 
-  it('generates the same MIDI note and tempo events (channels aside)', () => {
+  it('generates identical MIDI from the Playback Scores (channels and program changes included)', () => {
     const a = comparison.a.result;
     const b = comparison.b.result;
     if (!a || !b) throw new Error('strategy failed');
-    const ma = midiSummary(a.score, newSettings());
-    const mb = midiSummary(b.score, newSettings());
+    const ma = midiSummary(a.playbackScore, newSettings());
+    const mb = midiSummary(b.playbackScore, newSettings());
     expect(ma.noteOns).toBeGreaterThan(0);
-    expect(midiDiff(ma, mb, true)).toEqual([]);
+    // Both strategies use the same channel plan (channels.ts), so the comparison is strict.
+    expect(midiDiff(ma, mb)).toEqual([]);
   });
 
   it('exports to Guitar Pro 7 and re-imports with the same MIDI notes (both strategies)', () => {
     for (const result of [comparison.a.result, comparison.b.result]) {
       if (!result) throw new Error('strategy failed');
-      const bytes = new alphaTab.exporter.Gp7Exporter().export(result.score, newSettings());
+      // Export the Playback Score: its MIDI is the reference, and it has only playable tracks.
+      const bytes = new alphaTab.exporter.Gp7Exporter().export(result.playbackScore, newSettings());
       const reimported = alphaTab.importer.ScoreLoader.loadScoreFromBytes(bytes, newSettings());
       const notes = (m: ReturnType<typeof midiSummary>) =>
         m.events.filter((e) => e.startsWith('on '));
-      const before = midiSummary(result.score, newSettings());
-      const after = midiSummary(reimported, newSettings());
+      const before = midiSummary(result.playbackScore, newSettings());
+      // The re-imported file is analysed as a playback score (round-trip check only).
+      const after = midiSummary(asPlaybackScore(reimported), newSettings());
       const diff = midiDiff(
         { ...before, events: notes(before) },
         { ...after, events: notes(after) },
@@ -92,7 +96,7 @@ describe.each(docs)('$name', ({ name, doc }) => {
           }
       for (const result of [comparison.a.result, comparison.b.result]) {
         if (!result) throw new Error('strategy failed');
-        const r = renderScore(result.score, newSettings());
+        const r = renderScore(result.renderScore, newSettings());
         expect(r.error).toBeUndefined();
         expect(r.masterBars).toBe(doc.masterBars.length);
         expect(r.bars).toBe(bars);

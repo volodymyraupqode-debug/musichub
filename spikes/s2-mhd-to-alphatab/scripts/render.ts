@@ -27,8 +27,8 @@ body { margin: 0; background: #fff; font: 14px Arial, sans-serif; } h2 { margin:
 const pages: { name: string; kind: string; file: string }[] = [];
 for (const { name, kind, doc } of allDocuments()) {
   const parts = [
-    ['Strategy A — direct model + finish()', toAlphaTabDirect(doc, newSettings()).score],
-    ['Strategy B — alphaTex + AlphaTexImporter', toAlphaTabViaTex(doc, newSettings()).score],
+    ['Strategy A — direct model + finish()', toAlphaTabDirect(doc, newSettings()).renderScore],
+    ['Strategy B — alphaTex + AlphaTexImporter', toAlphaTabViaTex(doc, newSettings()).renderScore],
   ] as const;
   const sections = parts.map(([label, score]) => {
     const r = renderScore(score as alphaTab.model.Score, newSettings());

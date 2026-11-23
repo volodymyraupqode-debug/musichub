@@ -4,7 +4,9 @@
 // arguments, e.g. `\\section "Groove" D#4{acc default}` takes the note as a second argument.
 import * as alphaTab from '@coderline/alphatab';
 import type { Bar, Beat, MhdDocument, Note, Staff, Track } from '@musichub/music-model';
+import { allocateChannels, applyChannels, playbackDocument, type ChannelPlan } from './channels.ts';
 import type { Loss } from './losses.ts';
+import { asPlaybackScore, asRenderScore, type PlaybackScore, type RenderScore } from './scores.ts';
 import {
   TREMOLO_MARKS,
   defaultClef,
@@ -21,11 +23,19 @@ import {
 } from './mapping.ts';
 
 export interface StrategyBResult {
-  score: alphaTab.model.Score;
+  /** Every MHD track, for notation. Never generate MIDI from it. */
+  renderScore: RenderScore;
+  /** Only tracks with a conflict-free playback channel; MIDI is generated from this Score only. */
+  playbackScore: PlaybackScore;
+  /** alphaTex of the Render Score. */
   tex: string;
+  /** alphaTex of the Playback Score (only playable tracks). */
+  playbackTex: string;
+  /** Losses of the Render Score generation plus the channel diagnostics (engine-policy). */
   losses: Loss[];
-  /** Milliseconds: alphaTex generation, and parsing (`ScoreLoader.loadAlphaTex`, includes finish()). */
-  timings: { generate: number; parse: number };
+  channels: ChannelPlan;
+  /** Milliseconds: alphaTex generation and parsing for the Render Score; Playback Score in total. */
+  timings: { generate: number; parse: number; playback: number };
 }
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -453,10 +463,31 @@ function noteTex(note: Note, staff: Staff, track: Track, losses: Loss[]): string
 
 export function toAlphaTabViaTex(doc: MhdDocument, settings: alphaTab.Settings): StrategyBResult {
   const losses: Loss[] = [];
+  const channels = allocateChannels(doc);
   const t0 = performance.now();
   const tex = toAlphaTex(doc, losses);
   const t1 = performance.now();
-  const score = alphaTab.importer.ScoreLoader.loadAlphaTex(tex, settings);
+  const renderScore = alphaTab.importer.ScoreLoader.loadAlphaTex(tex, settings);
   const t2 = performance.now();
-  return { score, tex, losses, timings: { generate: t1 - t0, parse: t2 - t1 } };
+  // alphaTex has no channel syntax and alphaTab 1.9's importer assigns channels with its own
+  // counter (melodic channel 9 from five melodic tracks, channels above 15 from nine). The oracle
+  // normalises both Scores to the same plan as Strategy A after import.
+  applyChannels(renderScore, doc.tracks, channels, 'render');
+  const playbackDoc = playbackDocument(doc, channels);
+  const playbackTex = toAlphaTex(playbackDoc, []);
+  const playbackScore = alphaTab.importer.ScoreLoader.loadAlphaTex(
+    playbackTex,
+    new alphaTab.Settings(),
+  );
+  applyChannels(playbackScore, playbackDoc.tracks, channels, 'playback');
+  const t3 = performance.now();
+  return {
+    renderScore: asRenderScore(renderScore),
+    playbackScore: asPlaybackScore(playbackScore),
+    tex,
+    playbackTex,
+    losses: [...losses, ...channels.diagnostics],
+    channels,
+    timings: { generate: t1 - t0, parse: t2 - t1, playback: t3 - t2 },
+  };
 }

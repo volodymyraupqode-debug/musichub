@@ -45,7 +45,7 @@ describe.each(strategies)('Strategy %s', (_, convert) => {
   const doc = fixture();
   const before = structuredClone(doc);
   const result = convert(doc);
-  const score = result.score;
+  const score = result.renderScore;
 
   it('places representable fermatas at their exact tick with the mapped type', () => {
     // Bar 0: standard at 0 → Medium (1). Bar 1: short at 1/4 (960) → Short (0), long at 3/4 (2880) → Long (2).
@@ -107,13 +107,15 @@ describe('ottava is display-only', () => {
     (_, convert) => {
       // Only note on/off events (tick, channel, key, velocity): what sounds.
       const notes = (doc: MhdDocument) =>
-        midiSummary(convert(doc).score, newSettings()).events.filter((e) => /^(on|off) /.test(e));
+        midiSummary(convert(doc).playbackScore, newSettings()).events.filter((e) =>
+          /^(on|off) /.test(e),
+        );
       const a = notes(withOttava);
       expect(a.length).toBeGreaterThan(0);
       expect(notes(withoutOttava)).toEqual(a);
       // The stored sounding pitch is what alphaTab plays.
       const pitches = (doc: MhdDocument) =>
-        beatsOf(convert(doc).score, 4).flatMap((b) => b.notes.map((n) => n.realValue));
+        beatsOf(convert(doc).playbackScore, 4).flatMap((b) => b.notes.map((n) => n.realValue));
       expect(pitches(withOttava)).toEqual([86, 88, 89, 91, 93]);
       expect(pitches(withoutOttava)).toEqual([86, 88, 89, 91, 93]);
     },
@@ -126,7 +128,7 @@ describe('ottava is display-only', () => {
       settings.core.includeNoteBounds = true;
       const renderer = new alphaTab.rendering.ScoreRenderer(settings);
       renderer.width = 1300;
-      const score = toAlphaTabDirect(doc, newSettings()).score;
+      const score = toAlphaTabDirect(doc, newSettings()).renderScore;
       renderer.renderScore(score, [0]);
       const bars = (renderer.boundsLookup?.staffSystems ?? []).flatMap((s) => s.bars);
       const beats = bars.find((b) => b.index === barIndex)?.bars[0]?.beats ?? [];

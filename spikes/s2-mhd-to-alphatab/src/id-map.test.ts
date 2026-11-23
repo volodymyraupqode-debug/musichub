@@ -47,7 +47,7 @@ describe.each(allDocuments(true))('id map — $name', ({ doc }) => {
   const ids = mhdIds(doc);
   const a = toAlphaTabDirect(doc, newSettings());
   const b = toAlphaTabViaTex(doc, newSettings());
-  const recovered = recoverIdMap(doc, b.score as never);
+  const recovered = recoverIdMap(doc, b.renderScore as never);
 
   it('Strategy A maps every MHD element while building', () => {
     expect(a.idMap.byId.size).toBe(ids.length);
@@ -69,7 +69,7 @@ describe.each(allDocuments(true))('id map — $name', ({ doc }) => {
 describe('id map behaviour across rebuilds and edits', () => {
   it('maps a rendered beat (boundsLookup hit) back to its MHD id', () => {
     const doc = canonical('band-repeats');
-    const { score, idMap } = toAlphaTabDirect(doc, newSettings());
+    const { renderScore: score, idMap } = toAlphaTabDirect(doc, newSettings());
     const renderer = new alphaTab.rendering.ScoreRenderer(newSettings());
     renderer.width = 1300;
     renderer.renderScore(
@@ -116,12 +116,12 @@ describe('id map behaviour across rebuilds and edits', () => {
       { ...first, duration: { value: 8, dots: 0 } },
     );
     const afterA = toAlphaTabDirect(doc, newSettings());
-    const afterB = recoverIdMap(doc, toAlphaTabViaTex(doc, newSettings()).score as never);
+    const afterB = recoverIdMap(doc, toAlphaTabViaTex(doc, newSettings()).renderScore as never);
     const positional = (s: alphaTab.model.Score) =>
       s.tracks[0]?.staves[0]?.bars[0]?.voices[0]?.beats[1];
     // Positional key "track 0 / staff 0 / bar 0 / voice 0 / beat 1" now names the moved original beat.
-    expect(before.idMap.mhdIdOf(positional(before.score) ?? {})).toBe('GA0000000104');
-    expect(afterA.idMap.mhdIdOf(positional(afterA.score) ?? {})).toBe(first.id);
+    expect(before.idMap.mhdIdOf(positional(before.renderScore) ?? {})).toBe('GA0000000104');
+    expect(afterA.idMap.mhdIdOf(positional(afterA.renderScore) ?? {})).toBe(first.id);
     // A freshly built (A) or freshly recovered (B) map resolves every id, including the new beat.
     for (const map of [afterA.idMap, afterB.idMap]) {
       expect(map.get('GAedit000001')).toBeInstanceOf(alphaTab.model.Beat);
