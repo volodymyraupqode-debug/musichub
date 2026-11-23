@@ -2,7 +2,7 @@
 
 - **Task:** ROADMAP.md S2-04 (MUSIC_ENGINE.md §10, spike S1)
 - **Code:** `spikes/s1-turbopack` (kept until the end of Sprint 2; S2/S3/S7 reuse it)
-- **Status:** automated checks done in Chromium and Playwright WebKit; **Safari passed the manual check (owner, audible sound confirmed)**; **Firefox is not verified yet** (§8)
+- **Status:** **complete.** Chromium and Playwright WebKit checked automatically; **Safari and Firefox passed manual checks by the owner, audible sound confirmed** (§8)
 - **Date:** 2026-11-23
 
 ## 1. Goal
@@ -94,7 +94,7 @@ Checked in the embedded Chromium (production and dev) through the probes:
 | Play again → continues | ✅ +1941 ms in 2 s from the pause position |
 | Stop | ✅ state `paused` |
 | SoundFont / worklet errors | none |
-| **Audible sound** | not checkable in this environment; **confirmed by hand in Safari** (§8.1) |
+| **Audible sound** | not checkable in this environment; **confirmed by hand in Safari and Firefox** (§8.1, §8.2) |
 | **Autoplay policy** | **not verified**: the embedded Chromium allows audio without a gesture (both AudioContexts are `running` at load), so the gesture requirement must be checked in Safari/Chrome by hand |
 
 Observations:
@@ -110,7 +110,7 @@ Observations:
 | Chromium (Playwright rev. 1255, headless) | — | ✅ smoke | ✅ 2 tracks, themes | not tested | ✅ 2 | `e2e/score.spec.ts` |
 | WebKit (Playwright rev. 2388, headless) | — | ✅ smoke | ✅ 2 tracks, themes | not tested | ✅ 2 | **Not Safari**: Playwright's WebKit build |
 | Safari (manual, owner) | not recorded | not recorded | ✅ 2 tracks, themes | ✅ sound audible, Play/Pause/Resume | ✅ workers and AudioWorklet | PASS (§8.1); Safari and OS versions not recorded |
-| Firefox | not tested | not tested | — | — | — | Desktop Firefox not installed; the cached Playwright Firefox build (rev. 1538) does not match Playwright 1.65.1 (rev. 1572), nothing installed. Manual check pending (§8.2) |
+| Firefox (manual, owner) | not recorded | not recorded | ✅ 2 tracks, themes | ✅ sound audible, Play/Pause/Resume | ✅ workers and AudioWorklet | PASS (§8.2); Firefox and OS versions not recorded. Not on the agent's test Mac (no desktop Firefox, no matching Playwright build) |
 
 ### 8.1 Manual Safari verification — PASS
 
@@ -143,9 +143,23 @@ Steps used:
 
 Also repeat steps 2–4 with `pnpm --filter @musichub/spike-s1-turbopack dev` (port 3200 as well, through `predev`).
 
-### 8.2 Manual Firefox check — pending
+### 8.2 Manual Firefox verification — PASS
 
-Firefox is not installed on the test Mac, and the cached Playwright Firefox build does not match Playwright 1.65.1, so neither a manual nor an automated Firefox run was possible. Nothing was installed. Steps for the owner, on any machine with desktop Firefox:
+Firefox was not available on the agent's test Mac (no desktop Firefox; the cached Playwright Firefox build, rev. 1538, does not match Playwright 1.65.1, rev. 1572), so nothing was installed and the owner ran the check. The owner confirmed that everything works (2026-11-23). Recorded as reported by the owner:
+
+| Check | Result |
+|---|---|
+| Both tracks render | ✅ PASS |
+| Workers work | ✅ PASS |
+| AudioWorklet works | ✅ PASS |
+| Play produces audible sound | ✅ PASS |
+| Pause stops playback | ✅ PASS |
+| Play again resumes playback | ✅ PASS |
+| Theme switch works | ✅ PASS |
+
+Firefox version, OS, dev/production mode, probe values and timings: **not recorded**.
+
+Steps given to the owner:
 
 1. `pnpm --filter @musichub/spike-s1-turbopack build`, then `pnpm --filter @musichub/spike-s1-turbopack start` (port 3200).
 2. Open `http://localhost:3200` in Firefox and the Web Console (Tools → Browser Tools → Web Developer Tools → Console).
@@ -153,7 +167,6 @@ Firefox is not installed on the test Mac, and the cached Playwright Firefox buil
 4. Click **Play / Pause**: sound is audible, `"playerState": "playing"`, `"positionMs"` increases, `"worklets"` has an entry with `"ok": true`.
 5. Click **Play / Pause**: sound stops and `positionMs` stays constant; click again: playback continues from the same place.
 6. Click **Theme** twice: notation colours change dark → light; the attribution stays visible.
-7. Return: Firefox version, OS, whether sound was audible, PASS/FAIL per step, console errors (if any), and the probe values `workers`, `worklets`, `audioContextStates`, `firstRenderMs`, `soundFontLoadedMs`, `playerReadyMs`, `firstPositionMs`.
 
 ## 9. Measurements
 
@@ -200,21 +213,21 @@ alphaTab is shipped twice: (1) bundled by Turbopack into the page chunk and the 
 - `tex()` without a track list renders only the first track.
 - Attribution can only be checked visually (SVG paths).
 - In dev, React Strict Mode creates and destroys a first alphaTab instance; the destroy path works (AudioContext `closed`), production creates one instance.
-- Autoplay policy and `outputLatency` are unverified; audible output is confirmed only by the manual Safari check.
-- Firefox untested (not installed, no matching Playwright build); Playwright WebKit is not Safari, but Safari itself passed by hand.
+- Autoplay policy and `outputLatency` are unverified; audible output is confirmed by the manual Safari and Firefox checks.
+- Safari and Firefox results are the owner's PASS/FAIL observations; their versions, modes and timings were not recorded. Playwright WebKit is not Safari.
 - The spike ESLint preset has no React/Hooks rules (acceptable for throw-away code).
 
 ## 11. Conclusion
 
-In Chromium (embedded and Playwright) and in Playwright WebKit, the documented Turbopack setup works in development and production without the webpack plugin: Turbopack bundles and starts the alphaTab workers, the audio worklet loads from `core.scriptFile`, playback runs, pauses and resumes, and theming through `display.resources` re-renders the score. **Turbopack is confirmed for Chromium and, by the owner's manual check, for Safari (including audible playback). Firefox is not yet confirmed.**
+In Chromium (embedded and Playwright) and in Playwright WebKit, the documented Turbopack setup works in development and production without the webpack plugin: Turbopack bundles and starts the alphaTab workers, the audio worklet loads from `core.scriptFile`, playback runs, pauses and resumes, and theming through `display.resources` re-renders the score. **Turbopack is confirmed for Chromium (automated and embedded), and by the owner's manual checks for Safari and Firefox, including audible playback, pause and resume.** No browser needed the webpack fallback.
 
 ## 12. Recommendation for ADR-0004 (decision by the owner)
 
-**Accept with documented limitations.** Chromium and Safari pass; the decision can be taken now with Firefox recorded as an open verification item, or after the manual Firefox check (§8.2):
+**Accept with documented limitations.** All target browsers pass (Chromium automated, Safari and Firefox manual):
 
 - Turbopack, no webpack plugin; copy `font/`, `soundfont/`, `alphaTab.mjs`, `alphaTab.core.mjs` in `predev`/`prebuild`; set `core.scriptFile`, `core.fontDirectory`, `player.soundFont`.
 - Limitations to record: two copies of alphaTab (worklet core loaded on first Play), cache headers for `/alphatab/*`, `tex()`/`renderTracks` must pass the track list, attribution checked visually.
-- Open item: Firefox (desktop) not verified. If it fails to play or start workers, record the evidence and evaluate the `--webpack` fallback as a separate proposal (not switched in this spike).
+- The `--webpack` fallback is not needed; it stays documented as the fallback only.
 - ADR-0004 text to update with the decision: the path `apps/web/public/alphatab/` (production), the confirmed worker behaviour under Turbopack, and the measured core size (2,606,053 B).
 
 The ADR status is not changed by this spike.
