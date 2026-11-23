@@ -9,6 +9,8 @@ import {
   TREMOLO_MARKS,
   defaultClef,
   durationTicks,
+  fermataPlacement,
+  firstBeatAt,
   leftFinger,
   mixerBalance,
   mixerVolume,
@@ -17,7 +19,6 @@ import {
   resolvedKeySignatures,
   resolvedTimeSignatures,
 } from './mapping.ts';
-import { lastBeatOffset } from './strategy-a.ts';
 
 export interface StrategyBResult {
   score: alphaTab.model.Score;
@@ -166,23 +167,32 @@ export function toAlphaTex(doc: MhdDocument, losses: Loss[] = []): string {
 
   const ts = resolvedTimeSignatures(doc);
   const ks = resolvedKeySignatures(doc);
-  // Fermata target beats: last non-grace beat of track 1 / staff 1 / voice 1 (same rule as Strategy A).
-  const fermataBeats = new Set<string>();
-  doc.masterBars.forEach((mb, i) => {
-    if (!mb.fermata) return;
-    const beats = doc.tracks[0]?.staves[0]?.bars[i]?.voices[0]?.beats ?? [];
-    const offset = lastBeatOffset(beats);
-    let t = 0;
-    for (const b of beats) {
-      if (b.grace) continue;
-      if (t === offset) fermataBeats.add(b.id);
-      t += durationTicks(b.duration);
+  // Q-E: a fermata is written on the first non-grace beat (document order) that starts exactly at
+  // its tick; the importer then registers it on the master bar at that beat's start. A position
+  // that is not a whole tick or not a beat start is never rounded or moved (diagnostic instead).
+  const fermataBeats = new Map<string, 'short' | 'medium' | 'long'>();
+  doc.masterBars.forEach((mb, barIndex) => {
+    for (const f of mb.fermatas ?? []) {
+      const { tick, onBeat } = fermataPlacement(doc, barIndex, f.position);
+      const at = `[${f.position.join(', ')}]`;
+      const beatId =
+        tick !== undefined && onBeat ? firstBeatAt(doc, barIndex, tick)?.id : undefined;
+      if (beatId) {
+        fermataBeats.set(beatId, f.type ?? 'medium');
+        continue;
+      }
+      losses.push({
+        feature: 'masterBar.fermatas.position',
+        id: mb.id,
+        detail:
+          tick === undefined
+            ? `fermata at ${at} is not a whole alphaTab tick; not placed`
+            : `no beat starts at fermata ${at} (tick ${tick}); alphaTab cannot draw it, not placed`,
+        code: tick === undefined ? 'unsupported' : 'render-limited',
+        severity: 'warning',
+        aspect: 'notation',
+      });
     }
-    losses.push({
-      feature: 'masterBar.fermata',
-      id: mb.id,
-      detail: 'bar fermata placed on the last beat of track 1',
-    });
   });
 
   doc.tracks.forEach((track, trackIndex) => {
@@ -223,7 +233,7 @@ function writeStaff(
   staffIndex: number,
   ts: { numerator: number; denominator: number }[],
   ks: { fifths: number; mode: 'major' | 'minor' }[],
-  fermataBeats: Set<string>,
+  fermataBeats: Map<string, 'short' | 'medium' | 'long'>,
   losses: Loss[],
 ): void {
   const display = [
@@ -254,7 +264,6 @@ function writeStaff(
   for (let v = 0; v < voiceCount; v++) {
     out.push('    \\voice');
     let clef: NonNullable<Bar['clef']> | undefined;
-    let ottava: string | undefined;
     staff.bars.forEach((bar, barIndex) => {
       const meta: string[] = [];
       const mb = doc.masterBars[barIndex];
@@ -295,9 +304,6 @@ function writeStaff(
         const nextClef = bar.clef ?? clef ?? defaultClef(track, staffIndex);
         if (nextClef !== clef) meta.push(`\\clef (${nextClef.toLowerCase()})`);
         clef = nextClef;
-        const nextOttava = bar.ottava ?? 'regular';
-        if (nextOttava !== ottava) meta.push(`\\ottava (${nextOttava})`);
-        ottava = nextOttava;
         const k = ks[barIndex];
         const prevK = ks[barIndex - 1];
         if (k && (barIndex === 0 || prevK?.fifths !== k.fifths || prevK.mode !== k.mode))
@@ -311,7 +317,7 @@ function writeStaff(
       }
       const voice = bar.voices[v];
       const beats = voice
-        ? voice.beats.map((b) => beatTex(b, staff, track, fermataBeats, losses))
+        ? voice.beats.map((b) => beatTex(b, staff, track, bar.ottava, fermataBeats, losses))
         : [];
       const sep = barIndex < staff.bars.length - 1 ? ' |' : '';
       out.push(`      ${[...meta, ...beats].join(' ')}${sep}`);
@@ -323,7 +329,8 @@ function beatTex(
   beat: Beat,
   staff: Staff,
   track: Track,
-  fermataBeats: Set<string>,
+  ottava: Bar['ottava'],
+  fermataBeats: Map<string, 'short' | 'medium' | 'long'>,
   losses: Loss[],
 ): string {
   const notes = beat.notes.map((n) => noteTex(n, staff, track, losses));
@@ -358,7 +365,11 @@ function beatTex(
       props.push(`tbe (custom ${fx.whammy.map((p) => `${p.offset} ${p.value}`).join(' ')})`);
     if (fx.crescendo) props.push(fx.crescendo === 'crescendo' ? 'cre' : 'dec');
   }
-  if (fermataBeats.has(beat.id)) props.push('fermata (medium 0)');
+  const fermata = fermataBeats.get(beat.id);
+  if (fermata) props.push(`fermata (${fermata} 0)`);
+  // Q-D: display-only octave line on every beat of the bar (Beat.ottava); no `\\ottava`, which
+  // would set the clef ottava.
+  if (ottava) props.push(`ot ${ottava}`);
   // `instrument percussion` leaves a program 25 instrument automation on the first beat, which sends
   // program change 25 on the drum channel; a beat-level `instrument 0` replaces it (Strategy A: 0).
   if (track.instrument.percussion && beat.id === firstBeatId(track)) props.push('instrument 0');

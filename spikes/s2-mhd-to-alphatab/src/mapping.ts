@@ -269,3 +269,66 @@ export function naturalHarmonicValue(fret: number): number {
       return 12;
   }
 }
+
+/** Exact fraction [numerator, denominator] (positive denominator, reduced). */
+type Fraction = [number, number];
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? Math.abs(a) : gcd(b, a % b);
+}
+
+function fraction(n: number, d: number): Fraction {
+  const g = gcd(n, d) || 1;
+  return [n / g, d / g];
+}
+
+function addFraction(a: Fraction, b: Fraction): Fraction {
+  return fraction(a[0] * b[1] + b[0] * a[1], a[1] * b[1]);
+}
+
+/** Ticks of an MHD duration as an exact fraction (tuplets may not be whole ticks). */
+function durationFraction(d: Duration): Fraction {
+  let ticks = fraction(PPQ * 4, d.value);
+  let add = ticks;
+  for (let i = 0; i < d.dots; i++) {
+    add = fraction(add[0], add[1] * 2);
+    ticks = addFraction(ticks, add);
+  }
+  return d.tuplet ? fraction(ticks[0] * d.tuplet.normal, ticks[1] * d.tuplet.actual) : ticks;
+}
+
+/**
+ * Where an MHD fermata goes in alphaTab. alphaTab keys fermatas by an integer tick offset in the
+ * master bar and draws one only on a beat that starts exactly there. The position is never rounded
+ * or moved: `tick` is set only when the position is a whole tick, `onBeat` only when a non-grace
+ * beat of some voice of some staff starts exactly at that tick.
+ */
+export function fermataPlacement(
+  doc: MhdDocument,
+  barIndex: number,
+  position: Position,
+): { tick: number | undefined; onBeat: boolean } {
+  const ts = resolvedTimeSignatures(doc)[barIndex] ?? { numerator: 4, denominator: 4 };
+  const exact = fraction(position[0] * PPQ * 4 * ts.numerator, position[1] * ts.denominator);
+  if (exact[1] !== 1) return { tick: undefined, onBeat: false };
+  const tick = exact[0];
+  return { tick, onBeat: firstBeatAt(doc, barIndex, tick) !== undefined };
+}
+
+/** First non-grace beat (track, staff, voice order) starting exactly at `tick`, in exact arithmetic. */
+export function firstBeatAt(doc: MhdDocument, barIndex: number, tick: number): Beat | undefined {
+  for (const track of doc.tracks)
+    for (const staff of track.staves)
+      for (const voice of staff.bars[barIndex]?.voices ?? []) {
+        let start: Fraction = [0, 1];
+        for (const beat of voice.beats) {
+          if (beat.grace) continue;
+          if (start[1] === 1 && start[0] === tick) return beat;
+          start = addFraction(start, durationFraction(beat.duration));
+        }
+      }
+  return undefined;
+}
+
+/** alphaTab `FermataType` (Short 0, Medium 1, Long 2); absent MHD type = standard (medium). */
+export const FERMATA_TYPE = { short: 0, medium: 1, long: 2 } as const;

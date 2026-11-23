@@ -9,6 +9,7 @@ import {
   CLEF,
   DIRECTION,
   DYNAMIC,
+  FERMATA_TYPE,
   HARMONIC,
   OTTAVA,
   RIGHT_FINGER,
@@ -23,6 +24,7 @@ import {
   defaultClef,
   durationTicks,
   endingsMask,
+  fermataPlacement,
   leftFinger,
   mixerBalance,
   mixerVolume,
@@ -194,7 +196,9 @@ function buildStaff(
     const bar = new model.Bar();
     if (mhdBar.clef) clef = mhdBar.clef;
     bar.clef = CLEF[clef];
-    bar.clefOttava = OTTAVA[mhdBar.ottava ?? 'regular'];
+    // Q-D: Bar.ottava is a display-only octave line on every beat of this bar (Beat.ottava);
+    // Bar.clefOttava stays Regular and nothing is carried into the next bar.
+    const ottava = OTTAVA[mhdBar.ottava ?? 'regular'];
     const ks = keySignatures[barIndex] ?? { fifths: 0, mode: 'major' };
     bar.keySignature = ks.fifths;
     bar.keySignatureType = ks.mode === 'major' ? 0 : 1;
@@ -213,6 +217,7 @@ function buildStaff(
       for (const mhdBeat of mhdVoice.beats) {
         if (mhdBeat.dynamic) dynamic = DYNAMIC[mhdBeat.dynamic];
         const beat = buildBeat(mhdBeat, mhdStaff, staff, dynamic, idMap, losses);
+        beat.ottava = ottava;
         voice.addBeat(beat);
       }
       if (mhdVoice.beats.length === 0) appendPlaceholderBeat(voice);
@@ -388,22 +393,42 @@ function buildNote(
 }
 
 /**
- * MHD has a bar-level fermata without a position; alphaTab stores fermatas per beat offset.
- * Both strategies put it on the last non-grace beat of the first voice of the first staff.
+ * Q-E: positioned master-bar fermatas. alphaTab stores a fermata at an integer tick offset and
+ * draws it only on a beat starting exactly there. A position that is not a whole tick, or where no
+ * beat starts, is never rounded or moved: no alphaTab fermata is created and a diagnostic is
+ * recorded (the MHD position itself is untouched).
  */
 function applyFermatas(doc: MhdDocument, score: alphaTab.model.Score, losses: Loss[]): void {
   doc.masterBars.forEach((mhd, i) => {
-    if (!mhd.fermata) return;
-    const voice = doc.tracks[0]?.staves[0]?.bars[i]?.voices[0];
-    const offset = voice ? lastBeatOffset(voice.beats) : 0;
-    const fermata = new model.Fermata();
-    fermata.type = 1; // Medium
-    score.masterBars[i]?.addFermata(offset, fermata);
-    losses.push({
-      feature: 'masterBar.fermata',
-      id: mhd.id,
-      detail: 'bar fermata placed on the last beat of track 1',
-    });
+    for (const f of mhd.fermatas ?? []) {
+      const { tick, onBeat } = fermataPlacement(doc, i, f.position);
+      const at = `[${f.position.join(', ')}]`;
+      if (tick === undefined) {
+        losses.push({
+          feature: 'masterBar.fermatas.position',
+          id: mhd.id,
+          detail: `fermata at ${at} is not a whole alphaTab tick; not placed`,
+          code: 'unsupported',
+          severity: 'warning',
+          aspect: 'notation',
+        });
+        continue;
+      }
+      if (!onBeat) {
+        losses.push({
+          feature: 'masterBar.fermatas.position',
+          id: mhd.id,
+          detail: `no beat starts at fermata ${at} (tick ${tick}); alphaTab cannot draw it, not placed`,
+          code: 'render-limited',
+          severity: 'warning',
+          aspect: 'notation',
+        });
+        continue;
+      }
+      const fermata = new model.Fermata();
+      fermata.type = FERMATA_TYPE[f.type ?? 'medium'];
+      score.masterBars[i]?.addFermata(tick, fermata);
+    }
   });
 }
 
@@ -420,15 +445,4 @@ export function articulationById(id: number): alphaTab.model.InstrumentArticulat
     articulationTable = new Map((track?.percussionArticulations ?? []).map((a) => [a.id, a]));
   }
   return articulationTable.get(id);
-}
-
-export function lastBeatOffset(beats: readonly Beat[]): number {
-  let offset = 0;
-  let last = 0;
-  for (const b of beats) {
-    if (b.grace) continue;
-    last = offset;
-    offset += durationTicks(b.duration);
-  }
-  return last;
 }

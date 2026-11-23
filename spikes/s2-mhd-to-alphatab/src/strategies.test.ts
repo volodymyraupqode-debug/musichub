@@ -17,6 +17,7 @@ const KNOWN_DEVIATIONS: Record<string, string[]> = {
   'band-repeats': ['percussion'], // halfOpen sounds as GM 46
   percussion: ['percussion'], // + no rimshot for GM 40
   'performance-300x8': ['percussion'],
+  'fermatas-ottava': ['rhythm'], // grace timing and 7:4 tuplet ticks truncated
 };
 
 const docs = allDocuments(true);
