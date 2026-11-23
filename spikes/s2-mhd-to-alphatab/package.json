@@ -1,0 +1,28 @@
+{
+  "name": "@musichub/spike-s2-mhd-to-alphatab",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "compare": "node scripts/compare.ts",
+    "bench": "node --expose-gc scripts/bench.ts",
+    "render": "node scripts/render.ts",
+    "fixtures": "node scripts/generate-fixtures.ts"
+  },
+  "dependencies": {
+    "@coderline/alphatab": "catalog:",
+    "@musichub/music-model": "workspace:*"
+  },
+  "devDependencies": {
+    "@musichub/config": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "globals": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
