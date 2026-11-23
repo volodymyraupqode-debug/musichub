@@ -8,3 +8,6 @@ apps/api/
 **/next-env.d.ts
 **/test-results/
 **/playwright-report/
+
+# Generated spike output (spikes/*/results is git-ignored)
+spikes/*/results/
