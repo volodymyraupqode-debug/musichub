@@ -127,9 +127,15 @@ jobs:
         env:
           E2E_EXPECT_API: unavailable
           API_INTERNAL_URL: http://127.0.0.1:9
+      # Spike S1 (S2-04): alphaTab under Turbopack. Chromium is shared with the web smoke above.
+      - run: pnpm --filter @musichub/spike-s1-turbopack exec playwright install --with-deps webkit
+      - name: Playwright smoke for spike S1 (Chromium and WebKit)
+        run: pnpm turbo run test:e2e --filter=@musichub/spike-s1-turbopack
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
-          path: apps/web/playwright-report
+          path: |
+            apps/web/playwright-report
+            spikes/s1-turbopack/playwright-report
           retention-days: 7
