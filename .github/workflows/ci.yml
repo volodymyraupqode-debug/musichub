@@ -82,7 +82,18 @@ jobs:
       - uses: actions/checkout@v7
       - name: Start SeaweedFS and create the bucket
         working-directory: .
-        run: docker compose -f infra/docker-compose.yml up -d --wait seaweedfs seaweedfs-init
+        timeout-minutes: 5
+        # `up --wait` returns once services are running/healthy and does not wait for the one-shot
+        # bootstrap to finish; `run` blocks until it exits and fails the step on a non-zero exit.
+        run: |
+          docker compose -f infra/docker-compose.yml up -d --wait seaweedfs
+          docker compose -f infra/docker-compose.yml run --rm seaweedfs-init
+      - name: Check the bucket through the S3 API
+        run: >-
+          curl -fsS -o /dev/null
+          --aws-sigv4 "aws:amz:${AWS_DEFAULT_REGION}:s3"
+          --user "${AWS_ACCESS_KEY_ID}:${AWS_SECRET_ACCESS_KEY}"
+          "${AWS_ENDPOINT}/${AWS_BUCKET}?list-type=2"
       - uses: shivammathur/setup-php@2.40.0
         with:
           php-version: '8.4'
@@ -99,10 +110,15 @@ jobs:
         run: composer lint
       - name: Pest (incl. real S3 integration test)
         run: composer test
-      - name: SeaweedFS logs on failure
+      - name: SeaweedFS diagnostics on failure
         if: failure()
         working-directory: .
-        run: docker compose -f infra/docker-compose.yml logs seaweedfs seaweedfs-init
+        run: |
+          docker compose -f infra/docker-compose.yml version
+          docker compose -f infra/docker-compose.yml ps -a
+          container=$(docker compose -f infra/docker-compose.yml ps -aq seaweedfs)
+          if [ -n "$container" ]; then docker inspect --format '{{json .State.Health}}' "$container"; fi
+          docker compose -f infra/docker-compose.yml logs --timestamps seaweedfs
       - name: Stop SeaweedFS
         if: always()
         working-directory: .

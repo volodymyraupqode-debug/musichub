@@ -8,7 +8,7 @@
 | redis | `redis:8-alpine` | 6379 (`REDIS_PORT`) | AOF persistence |
 | mailpit | `axllent/mailpit:v1.27` | SMTP 1025 (`MAILPIT_SMTP_PORT`), UI 8025 (`MAILPIT_UI_PORT`) | catches all outgoing mail |
 | seaweedfs | `chrislusf/seaweedfs:4.54` | S3 API 8333 (`S3_PORT`) | Single node (`weed mini`), ADR-0007. Credentials from `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` (local-only defaults) |
-| seaweedfs-init | `chrislusf/seaweedfs:4.54` | — | One-shot: creates bucket `S3_BUCKET` (default `musichub-local`) if missing, verifies it, exits 0 |
+| seaweedfs-init | `chrislusf/seaweedfs:4.54` | — | One-shot: creates bucket `S3_BUCKET` (default `musichub-local`) if missing, verifies it is listed, exits 0; bounded retries (6 attempts, 10 s per `weed shell` call), exits 1 with the last `weed shell` output otherwise |
 
 The optional `full` profile (API and Horizon containers) is deferred to Phase 4; the API runs on the host with PHP 8.4.
 
@@ -34,10 +34,16 @@ Stop them (data is kept):
 docker compose -f infra/docker-compose.yml down
 ```
 
-Check that the S3 API is healthy and the bucket exists:
+`up --wait` returns once SeaweedFS is healthy; it does not wait for the one-shot `seaweedfs-init`. To run the bucket bootstrap and wait for its result (idempotent, exits non-zero if the bucket cannot be created; this is what CI does):
 
 ```bash
-curl -fsS http://localhost:8333/healthz && docker compose -f infra/docker-compose.yml logs --no-log-prefix seaweedfs-init | tail -1
+docker compose -f infra/docker-compose.yml run --rm seaweedfs-init
+```
+
+Check that the S3 API is healthy:
+
+```bash
+curl -fsS http://localhost:8333/healthz
 ```
 
 List buckets directly in SeaweedFS:
