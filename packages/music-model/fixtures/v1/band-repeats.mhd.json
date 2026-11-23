@@ -28,7 +28,7 @@
       "id": "BCM700000000",
       "timeSignature": { "numerator": 4, "denominator": 4 },
       "direction": "coda",
-      "fermata": true
+      "fermatas": [{ "position": [0, 1] }]
     }
   ],
   "tracks": [

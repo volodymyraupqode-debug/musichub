@@ -1037,7 +1037,6 @@ describe('keyboard families: piano and synth', () => {
 describe('canonical optional flags: true or absent', () => {
   it.each([
     ['repeatStart', ['masterBars', 0, 'repeatStart']],
-    ['fermata', ['masterBars', 0, 'fermata']],
     ['isAnacrusis', ['masterBars', 0, 'isAnacrusis']],
   ] as const)('rejects %s: false', (key, path) => {
     const doc = minimalDocument();
@@ -1085,7 +1084,6 @@ describe('canonical optional flags: true or absent', () => {
         ]),
       ]),
     ]);
-    Object.assign(doc.masterBars[0] ?? {}, { fermata: true });
     expectClean(doc);
   });
 
@@ -1139,5 +1137,188 @@ describe('invariant 8: tempo is not checked for redundancy', () => {
         { tempoChanges: [{ position: [0, 1], bpm: 120, label: 'a tempo' }] },
       ]),
     );
+  });
+});
+
+describe('fermatas: positioned, master-bar level (decision Q-E)', () => {
+  const FERMATAS = ['masterBars', 0, 'fermatas'];
+  /** One 4/4 bar: guitar quarter notes and a piano staff with a half rest and a half note. */
+  function withFermatas(fermatas: unknown): MhdDocument {
+    const doc = documentWith([
+      track('guitar', [
+        guitarStaff([
+          bar([
+            beat(4, [note({ string: 1, fret: 0 })]),
+            beat(4, [note({ string: 1, fret: 2 })]),
+            beat(4, [note({ string: 1, fret: 3 })]),
+            beat(4, [note({ string: 1, fret: 5 })]),
+          ]),
+        ]),
+      ]),
+    ]);
+    Object.assign(doc.masterBars[0] ?? {}, { fermatas });
+    return doc;
+  }
+
+  it('accepts a standard fermata, short and long types and several fermatas', () => {
+    expectClean(withFermatas([{ position: [0, 1] }]));
+    expectClean(withFermatas([{ position: [1, 4], type: 'short' }]));
+    expectClean(withFermatas([{ position: [3, 4], type: 'long' }]));
+    expectClean(
+      withFermatas([
+        { position: [1, 4], type: 'short' },
+        { position: [1, 2] },
+        { position: [3, 4], type: 'long' },
+      ]),
+    );
+  });
+
+  it('rejects an empty list, unknown keys, unknown types and unreduced positions', () => {
+    expectIssue(withFermatas([]), 'schema.too_small', FERMATAS);
+    expectIssue(withFermatas([{ position: [0, 1], length: 2 }]), 'schema.unrecognized_keys', [
+      ...FERMATAS,
+      0,
+    ]);
+    expectIssue(withFermatas([{ position: [0, 1], type: 'medium' }]), 'schema.invalid_value', [
+      ...FERMATAS,
+      0,
+      'type',
+    ]);
+    expectIssue(withFermatas([{ position: [2, 4] }]), 'schema.custom', [
+      ...FERMATAS,
+      0,
+      'position',
+    ]);
+    expectIssue(withFermatas([{ position: [1, 1] }]), 'schema.custom', [
+      ...FERMATAS,
+      0,
+      'position',
+    ]);
+  });
+
+  it('rejects the removed `fermata: true` flag as an unknown key', () => {
+    const doc = minimalDocument();
+    Object.assign(doc.masterBars[0] ?? {}, { fermata: true });
+    expectIssue(doc, 'schema.unrecognized_keys', ['masterBars', 0]);
+  });
+
+  it('reports equal or decreasing positions with positions-not-increasing', () => {
+    const doc = withFermatas([{ position: [1, 2] }, { position: [1, 2] }, { position: [1, 4] }]);
+    expectIssue(doc, ISSUE_CODES.positionsNotIncreasing, [...FERMATAS, 1, 'position']);
+    expectIssue(doc, ISSUE_CODES.positionsNotIncreasing, [...FERMATAS, 2, 'position']);
+    expect(issuesOf(doc).filter((i) => i.code === ISSUE_CODES.positionsNotIncreasing)).toHaveLength(
+      2,
+    );
+  });
+
+  it('warns when no beat of any voice starts at the position', () => {
+    const doc = withFermatas([{ position: [1, 8] }, { position: [1, 2] }]);
+    const result = validateDocument(doc);
+    expect(result.valid).toBe(true);
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        code: ISSUE_CODES.fermataNotOnBeat,
+        path: [...FERMATAS, 0, 'position'],
+        severity: 'warning',
+      }),
+    ]);
+  });
+
+  it('counts beats of every track, staff and voice, and rests', () => {
+    // Guitar plays a whole note; the piano has a dotted half rest and a quarter note at 3/4.
+    const doc = documentWith([
+      track('guitar', [guitarStaff([bar([beat(1, [note({ string: 1, fret: 0 })])])])]),
+      {
+        ...track('piano', [
+          pitchStaff([
+            bar([{ ...rest(2), duration: { value: 2, dots: 1 } }, beat(4, [note({ pitch: 60 })])]),
+          ]),
+        ]),
+      },
+    ]);
+    Object.assign(doc.masterBars[0] ?? {}, { fermatas: [{ position: [3, 4] }] });
+    expectClean(doc);
+    // A rest starts at 0 in a second voice of the guitar: the rest counts as a beat.
+    const restDoc = minimalDocument();
+    const guitarBar = restDoc.tracks[0]?.staves[0]?.bars[0];
+    guitarBar?.voices.push({ id: testId(), beats: [rest(2), rest(2)] });
+    Object.assign(restDoc.masterBars[0] ?? {}, { fermatas: [{ position: [1, 2] }] });
+    expectClean(restDoc);
+  });
+
+  it('does not count grace beats as beat starts', () => {
+    // A 16th grace beat before the second half note has no time of its own: the half note still
+    // starts at [1, 2]. If the grace took time, it would start at [9, 16]; that is no beat start.
+    const doc = documentWith([
+      track('guitar', [
+        guitarStaff([
+          bar([
+            beat(2, [note({ string: 1, fret: 0 })]),
+            beat(16, [note({ string: 1, fret: 2 })], { grace: 'beforeBeat' }),
+            beat(2, [note({ string: 1, fret: 3 })]),
+          ]),
+        ]),
+      ]),
+    ]);
+    Object.assign(doc.masterBars[0] ?? {}, {
+      fermatas: [{ position: [1, 2] }, { position: [9, 16] }],
+    });
+    const issues = issuesOf(doc);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        code: ISSUE_CODES.fermataNotOnBeat,
+        path: [...FERMATAS, 1, 'position'],
+      }),
+    ]);
+  });
+
+  it('measures positions against the nominal bar length in a pickup bar', () => {
+    // Pickup of one quarter in 4/4: its only beat starts at 0; [1, 4] is after the pickup content.
+    const doc = documentWith([
+      track('guitar', [guitarStaff([bar([beat(4, [note({ string: 1, fret: 0 })])])])]),
+    ]);
+    Object.assign(doc.masterBars[0] ?? {}, { isAnacrusis: true, fermatas: [{ position: [0, 1] }] });
+    expectClean(doc);
+    Object.assign(doc.masterBars[0] ?? {}, { fermatas: [{ position: [1, 4] }] });
+    expectIssue(doc, ISSUE_CODES.fermataNotOnBeat, [...FERMATAS, 0, 'position'], 'warning');
+  });
+});
+
+describe('Bar.ottava: display-only octave line (decision Q-D)', () => {
+  const OTTAVA = ['tracks', 0, 'staves', 0, 'bars', 0, 'ottava'];
+
+  it('accepts an ottava on a non-percussion staff with standard notation', () => {
+    const doc = documentWith([
+      track('piano', [pitchStaff([bar([beat(1, [note({ pitch: 84 })])], { ottava: '8va' })])]),
+    ]);
+    expectClean(doc);
+  });
+
+  it('warns on a staff without standard notation', () => {
+    const staff = pitchStaff([bar([beat(1, [note({ pitch: 60 })])], { ottava: '8vb' })], {
+      display: { standard: false, tab: false, slash: true, numbered: false },
+    });
+    const doc = documentWith([track('synth', [staff])]);
+    const result = validateDocument(doc);
+    expect(result.valid).toBe(true);
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        code: ISSUE_CODES.ottavaNotDisplayed,
+        path: OTTAVA,
+        severity: 'warning',
+      }),
+    ]);
+  });
+
+  it('warns on a percussion staff', () => {
+    const doc = documentWith([
+      track(
+        'drums',
+        [pitchStaff([bar([beat(1, [note({ pitch: 36 })])], { ottava: '15ma' })])],
+        true,
+      ),
+    ]);
+    expectIssue(doc, ISSUE_CODES.ottavaNotDisplayed, OTTAVA, 'warning');
+    expect(validateDocument(doc).valid).toBe(true);
   });
 });
