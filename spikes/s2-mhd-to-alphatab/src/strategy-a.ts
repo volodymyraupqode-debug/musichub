@@ -419,7 +419,7 @@ function applyFermatas(doc: MhdDocument, score: alphaTab.model.Score, losses: Lo
           feature: 'masterBar.fermatas.position',
           id: mhd.id,
           detail: `no beat starts at fermata ${at} (tick ${tick}); alphaTab cannot draw it, not placed`,
-          code: 'render-limited',
+          code: 'unsupported',
           severity: 'warning',
           aspect: 'notation',
         });

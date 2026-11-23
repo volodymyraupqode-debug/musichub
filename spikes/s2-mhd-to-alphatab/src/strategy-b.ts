@@ -188,7 +188,7 @@ export function toAlphaTex(doc: MhdDocument, losses: Loss[] = []): string {
           tick === undefined
             ? `fermata at ${at} is not a whole alphaTab tick; not placed`
             : `no beat starts at fermata ${at} (tick ${tick}); alphaTab cannot draw it, not placed`,
-        code: tick === undefined ? 'unsupported' : 'render-limited',
+        code: 'unsupported',
         severity: 'warning',
         aspect: 'notation',
       });

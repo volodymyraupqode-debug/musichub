@@ -62,7 +62,7 @@ describe.each(strategies)('Strategy %s', (_, convert) => {
     expect(beatsOf(score, 3).some((b) => b.fermata)).toBe(false); // [1, 7] = tick 548.57…
     const diagnostics = result.losses.filter((l) => l.feature === 'masterBar.fermatas.position');
     expect(diagnostics.map((l) => [l.id, l.code, l.severity, l.aspect])).toEqual([
-      [doc.masterBars[2]?.id, 'render-limited', 'warning', 'notation'],
+      [doc.masterBars[2]?.id, 'unsupported', 'warning', 'notation'],
       [doc.masterBars[3]?.id, 'unsupported', 'warning', 'notation'],
     ]);
   });
@@ -83,6 +83,17 @@ describe.each(strategies)('Strategy %s', (_, convert) => {
     expect(beatsOf(score, 5).map((b) => b.ottava)).toEqual([4, 4]); // 15mb
     expect(beatsOf(score, 6).map((b) => b.ottava)).toEqual([regular]); // not carried forward
     for (const bar of score.tracks[0]?.staves[0]?.bars ?? []) expect(bar.clefOttava).toBe(regular);
+  });
+});
+
+describe('fermata diagnostics', () => {
+  it('are identical in Strategy A and Strategy B (code, severity, aspect, id, feature, detail)', () => {
+    const [a, b] = strategies.map(([, convert]) =>
+      convert(fixture()).losses.filter((l) => l.feature === 'masterBar.fermatas.position'),
+    );
+    expect(a).toHaveLength(2);
+    expect(b).toEqual(a);
+    expect(a?.every((l) => l.code === 'unsupported')).toBe(true);
   });
 });
 
