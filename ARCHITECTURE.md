@@ -146,12 +146,13 @@ Tasks `build`, `lint`, `typecheck`, `test`, `test:e2e`, `codegen` (OpenAPI → a
 
 - **Rendering strategy:** marketing, community and public composition pages are Server Components (SEO). The studio (`/studio/...`) and the player on public pages are client-only islands. alphaTab is created only in the browser (`useEffect`) and destroyed with `api.destroy()`.
 - **Per-frame work never goes through React.** The score cursor (alphaTab), the visualizer and the piano-roll playhead run their own `requestAnimationFrame` loops and read `PlaybackClock`. React state holds only coarse state (playing/paused, bar number at ≤ 10 Hz).
-- **alphaTab under Turbopack (Next.js 16 default)**, per the alphaTab docs section "Next.js with Turbopack" (since 1.9.0):
-  - Do **not** use `@coderline/alphatab-webpack`; Turbopack runs no webpack plugins.
+- **alphaTab under Turbopack (Next.js 16 default)**, per the alphaTab docs section "Next.js with Turbopack" (since 1.9.0). ADR‑0004 accepted with documented limitations after spike S1 ([docs/spikes/s1-turbopack.md](docs/spikes/s1-turbopack.md)):
+  - Do **not** use `@coderline/alphatab-webpack`; Turbopack runs no webpack plugins. `next build --webpack` stays a documented fallback only.
   - `predev`/`prebuild` script copies `font/`, `soundfont/`, `alphaTab.mjs`, `alphaTab.core.mjs` from the package dist into `public/alphatab/` (git-ignored).
   - Settings: `core.scriptFile: '/alphatab/alphaTab.mjs'`, `core.fontDirectory: '/alphatab/font/'`, `player.soundFont: '/alphatab/soundfont/sonivox.sf2'` (prefix with `basePath` if used).
-  - Cost: the worklet loads the unminified `alphaTab.core.mjs` (~2.5 MB). Serve it with long-lived immutable cache headers.
-  - Whether rendering runs in a worker under Turbopack is not documented; verify in spike S1. Fallback: `next build --webpack` + `@coderline/alphatab-webpack`.
+  - Confirmed by spike S1: Turbopack bundles and starts the alphaTab workers; the audio worklet loads the core from `public/alphatab/` via `core.scriptFile`. Chromium and Playwright WebKit pass automated checks; Safari and Firefox pass manual checks.
+  - Cost: alphaTab ships twice, in the bundle and as `public/alphatab/alphaTab.core.mjs` for the worklet (≈ 2.6 MB, ≈ 0.53 MB gzip for 1.9.0 in the spike build), loaded on the first Play. Cache it long only with versioned URLs or revalidation (ADR‑0004).
+  - Production integration (`packages/music-engine`, `apps/web`) follows in Phase 1; until then alphaTab exists only in `spikes/s1-turbopack`.
 - **State:**
   - Server state: TanStack Query (generated client).
   - Studio/editor state: a **Zustand** store created in `editor-core` with `zustand/vanilla`, so it works without React in tests and in React Native. It holds the document, selection, undo/redo stacks and panel state. `apps/web` binds it with `useStore(store, selector)`. Every document mutation goes through `editor-core` commands; components never `set()` document data directly.
@@ -231,5 +232,5 @@ Record decisions and deviations as `docs/adr/NNNN-title.md` (context, decision, 
 1. ADR‑0001 Modular monolith; Laravel as a standalone Composer project; Node worker only for music processing.
 2. ADR‑0002 Own canonical document model (MHD) instead of alphaTab `Score`/JSON.
 3. ADR‑0003 Snapshot revisions + optimistic concurrency for sync.
-4. ADR‑0004 alphaTab integration under Turbopack (finalised after spike S1).
+4. ADR‑0004 alphaTab integration under Turbopack (accepted with documented limitations after spike S1).
 5. ADR‑0005 Mobile: Expo + React Native, native-first. WebView only for notation (`ScoreView`). Audio/visualizer placement is decided by the mobile prototype (MOBILE.md §6, ROADMAP Phase 2M).

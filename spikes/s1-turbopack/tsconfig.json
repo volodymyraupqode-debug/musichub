@@ -1,0 +1,15 @@
+{
+  "extends": "@musichub/config/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "e2e/**/*.ts",
+    "*.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", "public"]
+}

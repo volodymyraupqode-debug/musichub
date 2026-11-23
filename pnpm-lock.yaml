@@ -173,6 +173,9 @@ settings:
 
 catalogs:
   default:
+    '@coderline/alphatab':
+      specifier: 1.9.0
+      version: 1.9.0
     '@eslint/js':
       specifier: 10.0.1
       version: 10.0.1
@@ -402,6 +405,46 @@ importers:
         specifier: 'catalog:'
         version: 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6))
 
+  spikes/s1-turbopack:
+    dependencies:
+      '@coderline/alphatab':
+        specifier: 'catalog:'
+        version: 1.9.0
+      next:
+        specifier: 'catalog:'
+        version: 16.4.6(@babel/core@7.29.13(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.1(react@19.3.1)
+    devDependencies:
+      '@musichub/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.65.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
+      eslint:
+        specifier: 'catalog:'
+        version: 10.15.0(supports-color@10.2.2)
+      globals:
+        specifier: 'catalog:'
+        version: 17.14.0
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
 packages:
 
   '@babel/code-frame@7.29.7':
@@ -480,6 +523,18 @@ packages:
 
   '@cacheable/utils@2.5.0':
     resolution: {integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==}
+
+  '@coderline/alphatab@1.9.0':
+    resolution: {integrity: sha512-pG/Um03DdiTW7i9KR+rPTRRnzIW5oJBWs67altBXtCkxGvUG1RuvkgRTZO3GIaOD2vATjcw+5OevMZl9I2/T+Q==}
+    engines: {node: '>=6.0.0'}
+    peerDependencies:
+      '@coderline/alphatab-vite': ^1.9.0
+      '@coderline/alphatab-webpack': ^1.9.0
+    peerDependenciesMeta:
+      '@coderline/alphatab-vite':
+        optional: true
+      '@coderline/alphatab-webpack':
+        optional: true
 
   '@emnapi/core@2.0.0-beta.2':
     resolution: {integrity: sha512-MzCVoWtcg4Pm2B3je5mMvYMvj3MmBKw+fU7vbsJc9/iT8ip6/eYIHo/Dsm/mr+wsHB6SEyJDuxB09Yy6r/8+4A==}
@@ -2788,6 +2843,8 @@ snapshots:
     dependencies:
       hashery: 1.5.1
       keyv: 5.6.0
+
+  '@coderline/alphatab@1.9.0': {}
 
   '@emnapi/core@2.0.0-beta.2':
     dependencies:

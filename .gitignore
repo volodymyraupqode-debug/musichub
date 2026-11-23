@@ -22,6 +22,10 @@ coverage/
 
 # alphaTab assets copied at dev/build time (ARCHITECTURE.md §4)
 apps/web/public/alphatab/
+spikes/*/public/alphatab/
+
+# Local Claude Code preview servers (absolute local paths)
+.claude/launch.json
 
 # OS / editors
 .DS_Store
