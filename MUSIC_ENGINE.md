@@ -64,7 +64,7 @@ Sources: alphatab.net docs (v1.9.0), GitHub `CoderLine/alphaTab` `develop` branc
 | Layout modes `Page`, `Horizontal`, `Parchment` | ✅ | `display.layoutMode` |
 | `display.scale`, `barsPerRow`, `startBar`, `barCount`, `barCountPerPartial`, `core.enableLazyLoading` | ✅ | Partial rendering = chunked output, **not** incremental re-layout of edited bars |
 | Incremental re-render of one edited bar | ❌ | Not documented → assume full re-layout per `renderScore` (risk R2) |
-| Rendering in Web Worker | ✅ (`core.useWorkers`) / ⚠️ under Turbopack | Verify in spike |
+| Rendering in Web Worker | ✅ (`core.useWorkers`), ✅ under Turbopack | Confirmed by spike S1: Turbopack starts the alphaTab workers (ADR‑0004, docs/spikes/s1-turbopack.md) |
 | Colors/fonts (`display.resources`, per-element styling since 1.5) | ✅ | Used for theming (DESIGN_SYSTEM.md §5) |
 | Attribution mark "♪ alphaTab.net" | ✅ | Drawn above the first system when the song has > 10 bars or > 2 rendered tracks; no setting to hide it. **Kept unchanged (Q9).** Layout and containers must never clip it (PROJECT_SPEC §7). |
 

@@ -203,7 +203,7 @@ These numbers mix network-free local loading with a fast machine; they are indic
 
 alphaTab is shipped twice: (1) bundled by Turbopack into the page chunk and the Turbopack workers (1.26 MB minified), and (2) as `public/alphatab/alphaTab.core.mjs` (2.6 MB unminified), which the audio worklet loads through `core.scriptFile` because Turbopack does not bundle audio worklets. The alphaTab docs list this as a known limitation of the Turbopack setup. Consequences:
 
-- The first playback downloads the unminified core once more (≈ 533 KB gzip, 2.6 MB raw). It should be served with long-lived immutable cache headers (ARCHITECTURE.md §4).
+- The first playback downloads the unminified core once more (≈ 533 KB gzip, 2.6 MB raw). It should be cached for a long time, but `immutable` only on versioned URLs, because the copied file names are not content-hashed (ADR-0004).
 - Both copies must come from the same package version; the copy script copies from the installed package at every `dev`/`build`, so they cannot drift.
 - The copy script also copies unused files (`sonivox.sf3`, `.eot`, `.otf`, `.svg`, licence texts). Copying only the used files would cut `public/alphatab/` by several megabytes; licence texts must stay available for the notices page.
 
@@ -230,4 +230,4 @@ In Chromium (embedded and Playwright) and in Playwright WebKit, the documented T
 - The `--webpack` fallback is not needed; it stays documented as the fallback only.
 - ADR-0004 text to update with the decision: the path `apps/web/public/alphatab/` (production), the confirmed worker behaviour under Turbopack, and the measured core size (2,606,053 B).
 
-The ADR status is not changed by this spike.
+**Outcome:** the owner accepted ADR-0004 with documented limitations on 2026-11-23 (see the ADR for the final wording, including the caching rule: `immutable` only for versioned URLs).
