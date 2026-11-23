@@ -43,6 +43,8 @@ export const ISSUE_CODES = {
   // Invariant 11
   positionsNotIncreasing: 'positions-not-increasing',
   pedalSequenceInvalid: 'pedal-sequence-invalid',
+  /** Warning: no non-grace beat of any voice of any staff starts at the fermata position. */
+  fermataNotOnBeat: 'fermata-not-on-beat',
   // Invariant 13
   percussionNoteWithString: 'percussion-note-with-string',
   // Instrument and effect rules
@@ -50,6 +52,8 @@ export const ISSUE_CODES = {
   drumTechniquePitchMismatch: 'drum-technique-pitch-mismatch',
   drumTechniqueNotPercussion: 'drum-technique-not-percussion',
   brushLongerThanBeat: 'brush-longer-than-beat',
+  /** Warning: an ottava on a percussion staff or a staff without standard notation is not shown. */
+  ottavaNotDisplayed: 'ottava-not-displayed',
 } as const;
 
 export type IssueCode = (typeof ISSUE_CODES)[keyof typeof ISSUE_CODES] | `schema.${string}`;

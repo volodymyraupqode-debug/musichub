@@ -202,9 +202,12 @@
             "toCoda"
           ]
         },
-        "fermata": {
-          "type": "boolean",
-          "const": true
+        "fermatas": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Fermata"
+          }
         },
         "isAnacrusis": {
           "type": "boolean",
@@ -308,6 +311,25 @@
       "items": false,
       "minItems": 2,
       "maxItems": 2
+    },
+    "Fermata": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/$defs/Position"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "short",
+            "long"
+          ]
+        }
+      },
+      "required": [
+        "position"
+      ],
+      "additionalProperties": false
     },
     "Track": {
       "type": "object",

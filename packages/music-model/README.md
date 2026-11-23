@@ -6,7 +6,7 @@ The MusicHub Document (MHD) is the only persisted music format (ADR-0002). This 
 
 ```
 MhdDocument  format 'musichub', schemaVersion 1, id (UUIDv7), meta, masterBars[1..5000], tracks[1..64], extensions?
-├─ MasterBar   bar data shared by all tracks: time/key signature, tempo changes, repeats, endings, section, direction
+├─ MasterBar   bar data shared by all tracks: time/key signature, tempo changes, repeats, endings, section, direction, fermatas
 └─ Track       name, color (track.1…track.12), instrument, mixer, staves[1..]
    └─ Staff    display, stringed? (tuning, capo, fretCount), transpositionPitch?, hand?, bars[one per master bar]
       └─ Bar   clef?, ottava?, sustainPedal?, voices[1..4]
@@ -16,8 +16,17 @@ MhdDocument  format 'musichub', schemaVersion 1, id (UUIDv7), meta, masterBars[1
 - A chord is several notes in one beat. Chord diagrams (`chordId`, `Track.chords`) are not part of v1.
 - A note has exactly one pitch authority: `string` + `fret` on stringed staves (pitch is derived from tuning and capo), `pitch` (MIDI 0–127) otherwise.
 - `rest: true` ⇔ `notes` is empty. A beat that is not a rest has at least one note.
-- Optional flags (`repeatStart`, `fermata`, `isAnacrusis`, `tiedFromPrevious`, note and beat effect flags) are `true` or absent; `false` is rejected so every state has one spelling. Required booleans (`rest`, `percussion`, `mute`, `solo`, `display.*`) keep `true`/`false`.
+- Optional flags (`repeatStart`, `isAnacrusis`, `tiedFromPrevious`, note and beat effect flags) are `true` or absent; `false` is rejected so every state has one spelling. Required booleans (`rest`, `percussion`, `mute`, `solo`, `display.*`) keep `true`/`false`.
 - Keyboard tracks are `piano` and `synth` (`KEYBOARD_FAMILIES`): only they may use `hand` and the sustain pedal, with one or two staves.
+
+### Ottava and fermatas
+
+- **`Bar.ottava`** (`15ma`, `8va`, `8vb`, `15mb`) is an octave line over every beat of every voice of this bar on this staff. It applies to this bar only and is never carried into the next bar (absent = no line); consecutive bars with the same value may be drawn as one line, which is a rendering choice. It is display only: `Note.pitch`, and the pitch derived from string and fret, is always the sounding pitch and is never rewritten; only the written position moves (−12, −24, +12, +24 semitones). It is not a clef ottava: MHD has no clef ottava, a written-octave instrument uses `Staff.transpositionPitch`. On a percussion staff or a staff without standard notation the line cannot be shown (warning `ottava-not-displayed`).
+- **`MasterBar.fermatas`** is a list of `{ position, type? }` with at least one entry. A fermata belongs to the master bar and applies to every track and staff at its position. `type` is `short` or `long`; absent means a standard fermata. Positions strictly increase. A fermata is notation: how long playback holds it is decided by the timeline / playback engine and is not stored in MHD.
+
+```json
+"fermatas": [{ "position": [1, 4], "type": "short" }, { "position": [3, 4] }]
+```
 
 ### Percussion
 
@@ -35,7 +44,7 @@ No technique means the plain GM sound: 42 is a closed hi-hat, 46 an open hi-hat,
 ## Time
 
 - `PPQ = 960`. Durations are rhythmic values `{ value, dots, tuplet? }`; ticks and milliseconds are always derived, never stored. The brush duration reuses the same `Duration` (absent = engine default) and may not be longer than its beat.
-- Positions inside a bar (tempo changes, pedal) are reduced fractions `[numerator, denominator]` in `[0, 1)`. Zero is `[0, 1]`; `[2, 4]` is rejected because `[1, 2]` is the only spelling.
+- Positions inside a bar (tempo changes, pedal, fermatas) are reduced fractions `[numerator, denominator]` in `[0, 1)` of the nominal bar length of the time signature. Zero is `[0, 1]`; `[2, 4]` is rejected because `[1, 2]` is the only spelling. In a pickup bar the same nominal length applies, so only positions inside the actual pickup content can meet a beat.
 - Bend and whammy points: `offset` is 0–60 sixtieths of the note duration, `value` is in quarter tones.
 - Tempo is in quarter notes per minute, 20–400. Bar 0 defines time signature, key signature and a tempo at `[0, 1]`; later bars store only changes. Playback speed is a session setting, not document data.
 - Repeats, endings and directions are stored as written. The expanded playback order is derived (timeline, Phase 1).
@@ -78,10 +87,12 @@ const { valid, issues, document } = validateDocument(json);
 | 8 | Bar 0 defines time signature, key signature and tempo at `[0, 1]`; repeating the current time or key signature later is an error (tempo is not checked); pickup only on bar 0 | `first-bar-*-missing`, `redundant-time-signature`, `redundant-key-signature`, `anacrusis-not-first-bar` |
 | 9 | Alternate endings belong to the repeat closed in their group; a bar that opens the next repeat ends the group; numbers are unique in the group and ≤ its count | `alternate-ending-*` |
 | 10 | Hands and sustain pedal only on keyboard tracks (`piano`, `synth`); a keyboard track has 1–2 staves | `keyboard-only-hand`, `keyboard-only-pedal`, `keyboard-staff-count` |
-| 11 | Tempo and pedal positions strictly increase; pedal alternates down/up (a pedal may stay down to the end) | `positions-not-increasing`, `pedal-sequence-invalid` |
+| 11 | Tempo, pedal and fermata positions strictly increase; pedal alternates down/up (a pedal may stay down to the end) | `positions-not-increasing`, `pedal-sequence-invalid` |
 | 12 | Ties on stringed staves keep string and fret | `tie-string-fret-mismatch` |
 | 13 | Percussion notes have no string or fret; `drumTechnique` only on percussion tracks, with a GM key allowed for it | `percussion-note-with-string`, `drum-technique-*` |
 | — | A `drums` track has `percussion: true`; a brush is not longer than its beat | `drums-not-percussion`, `brush-longer-than-beat` |
+| — | Warning: no non-grace beat (rests count) of any voice, staff or track starts at a fermata position | `fermata-not-on-beat` |
+| — | Warning: an ottava on a percussion staff or a staff without standard notation is not shown | `ottava-not-displayed` |
 
 `validateDocument` is pure: it does not mutate the input, generate ids, normalise data or touch `extensions`.
 

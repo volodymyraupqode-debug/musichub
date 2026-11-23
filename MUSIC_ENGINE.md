@@ -10,6 +10,8 @@
 > - Added §5.2 (playback-score variants) and spike S7.
 > - MIDI devices moved to `midi-engine`.
 >
+> **Changelog v0.2.4:** Decisions Q-D and Q-E after the S2-05 review. `Bar.ottava` is a display-only octave line over the current bar (not carried forward, not a clef ottava; pitch stays sounding). `MasterBar.fermata: true` is replaced by positioned `fermatas: { position; type?: 'short'|'long' }[]`; fermata positions join invariant 11; new warnings `fermata-not-on-beat` and `ottava-not-displayed`. Fermata playback length belongs to the timeline. No `schemaVersion` bump (pre-release rule, §3.4).
+>
 > **Changelog v0.2.3:** D1: the percussion articulation vocabulary (`drumArticulation`, 9 ids) is replaced by the orthogonal `drumTechnique` (`halfOpen`, `rimshot`, `edge`, `choke`) next to the GM `pitch`. MHD v1 is unreleased, so `schemaVersion` stays 1 (§3.4).
 >
 > **Changelog v0.2.2:** MHD v1 decisions after the S2-02 review: UUIDv7 document id, `true`-only optional flags, brush duration as `Duration`, `drumArticulation` vocabulary, `synth` as a keyboard family, repeat/ending limit 99, `rest ⇔ no notes`, every schema change bumps `schemaVersion`, invariants 3/7/8 defined precisely (§3.2–3.4, §4.2).
@@ -171,7 +173,7 @@ type MasterBar = {
   section?: { letter?: string; text: string };
   direction?: 'segno' | 'segnoSegno' | 'coda' | 'doubleCoda' | 'fine' | 'daCapo' | 'daCapoAlFine'
             | 'daCapoAlCoda' | 'dalSegno' | 'dalSegnoAlFine' | 'dalSegnoAlCoda' | 'toCoda';
-  fermata?: true;
+  fermatas?: { position: Position; type?: 'short' | 'long' }[]; // ≥ 1 entry; absent type = standard fermata
   isAnacrusis?: true;                 // pickup bar (only bar 0)
 };
 
@@ -192,7 +194,8 @@ type Staff = {
   bars: Bar[];                        // length === masterBars.length (invariant)
 };
 
-type Bar = { id: MhdId; clef?: 'G2' | 'F4' | 'C3' | 'C4' | 'neutral'; ottava?: '15ma'|'8va'|'8vb'|'15mb';
+type Bar = { id: MhdId; clef?: 'G2' | 'F4' | 'C3' | 'C4' | 'neutral';
+             ottava?: '15ma'|'8va'|'8vb'|'15mb'; // display-only octave line over this bar (see below)
              sustainPedal?: { position: Position; type: 'down' | 'up' }[]; // keyboard staves
              voices: Voice[] /* 1..4, voice 0 primary */ };
 
@@ -242,6 +245,8 @@ type DrumTechnique = 'halfOpen' | 'rimshot' | 'edge' | 'choke';
 - **Keyboard tracks** are the families `piano` and `synth`: only they may use `hand` and `sustainPedal`, with one or two staves.
 - **Percussion:** `pitch` is always the General MIDI percussion key; it selects the instrument and sound. `drumTechnique` is optional and adds only what GM has no key for. Each technique is allowed for these GM keys: `halfOpen` 42/46, `rimshot` 38/40, `edge` 51/59, `choke` 49/52/55/57 (crash 1, china, splash, crash 2). Absent means the plain GM sound (e.g. 42 closed hi-hat, 46 open hi-hat, 37 side stick, 53 ride bell need no technique). A `drums` track has `percussion: true`; other families may also be percussion tracks.
 - **Brush** duration is an MHD `Duration`, so it does not depend on PPQ or an engine.
+- **Ottava** (`Bar.ottava`, decision Q-D): an octave line over every beat of every voice of the current bar on that staff. It applies to this bar only and never carries into the next bar; drawing consecutive bars as one continuous line is a rendering choice, not MHD semantics. Display only: `Note.pitch`, and the pitch derived from string and fret, is always the sounding pitch and is never rewritten by `ottava`; only the written position moves. It is distinct from a clef ottava (MHD has none; a written-octave instrument uses `Staff.transpositionPitch`). The adapter maps it to alphaTab `Beat.ottava` on every beat, including grace beats, never to `Bar.clefOttava`; alphaTab plays the stored pitch unchanged.
+- **Fermatas** (`MasterBar.fermatas`, decision Q-E): a fermata belongs to the master bar and applies to every track and staff at its `position`. Positions use the same coordinate system as tempo changes and pedal positions: a reduced fraction of the nominal bar length of the time signature in `[0, 1)`, also in a pickup bar. Several fermatas per bar are allowed. A missing `type` is a standard (medium) fermata. MHD stores no playback duration or multiplier; the adapter never rounds or moves a fermata whose position is not an integer alphaTab tick or not a beat start, it reports a diagnostic instead.
 - Numeric limits not listed here are documented in `packages/music-model/README.md`. They are MHD sanity limits, never engine limits.
 - Chord diagrams (`Beat.chordId`, `Track.chords`) and score-wide styling are not part of v1. They are decided with the Phase 3 editor; until then they live in `extensions['alphatab.unmapped']` (see §4.2).
 
@@ -259,11 +264,11 @@ Each invariant has stable issue codes (`ISSUE_CODES`); see `packages/music-model
 8. `masterBars[0]` defines `timeSignature`, `keySignature` and a tempo change at position `[0,1]`; a staff's bar 0 may omit `clef` (it is derived from the instrument). Later bars only carry changes: repeating the current time signature or key signature is an error. Tempo is not checked by this rule (the same bpm may come with a new label). Only bar 0 may be a pickup.
 9. Alternate endings belong to the repeat closed in their group (consecutive bars with endings; a bar that opens the next repeat ends the group). Numbers are unique within the group (a multi-bar ending repeats its numbers on consecutive bars) and do not exceed the repeat count.
 10. `hand` and `sustainPedal` only on keyboard tracks (`piano`, `synth`); a keyboard track has one or two staves.
-11. Tempo change and pedal positions strictly increase within a bar; the pedal alternates down/up across the staff (it may stay down to the end).
+11. Tempo change, pedal and fermata positions strictly increase within a bar; the pedal alternates down/up across the staff (it may stay down to the end).
 12. A tie on a stringed staff keeps the same `string` and `fret`.
 13. Percussion notes have no `string` or `fret`; `drumTechnique` only on percussion tracks and only with a GM key allowed for it.
 
-Further checks: a `drums` track has `percussion: true`; a brush is not longer than its beat.
+Further checks: a `drums` track has `percussion: true`; a brush is not longer than its beat. Warnings: `fermata-not-on-beat` when no non-grace beat (rests count) of any voice, staff or track starts at a fermata position; `ottava-not-displayed` when `Bar.ottava` is set on a percussion staff or a staff without standard notation.
 
 ### 3.4 Versioning & migrations
 
@@ -286,6 +291,7 @@ Further checks: a `drums` track has `percussion: true`; a brush is not longer th
 - **Playback order**: master bar sequence after expanding repeats, alternate endings and directions.
 - **Note events**: `{ noteId, trackId, staffId, hand, pitch, startTick, durationTicks, startMs, durationMs, velocity, playIndex }` after resolving ties (tied notes merge), grace notes, capo and transposition. Used by PIANO_VISUALIZER, practice-core, Piano Roll and MIDI out.
 - **DerivedMeta** for the API (`summary`, `tracks`; API.md §5).
+- **Fermata playback**: how long a fermata holds is a timeline / playback engine policy, not MHD data and not alphaTab (alphaTab 1.9 draws fermatas but its MIDI generator ignores them).
 
 ### 3.6 Shared runtime contracts (`music-model/contracts`)
 

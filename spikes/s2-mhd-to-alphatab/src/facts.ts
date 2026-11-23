@@ -4,6 +4,8 @@ import type * as alphaTab from '@coderline/alphatab';
 import type { MhdDocument } from '@musichub/music-model';
 import {
   CLEF,
+  FERMATA_TYPE,
+  fermataPlacement,
   DIRECTION,
   OTTAVA,
   defaultClef,
@@ -43,7 +45,11 @@ export function scoreFacts(score: alphaTab.model.Score): Facts {
     alternateEndings: score.masterBars.map((m) => m.alternateEndings),
     directions: score.masterBars.map((m) => [...(m.directions ?? [])].sort((a, b) => a - b)),
     sections: score.masterBars.map((m) => (m.section ? [m.section.marker, m.section.text] : null)),
-    fermata: score.masterBars.map((m) => [...(m.fermata?.keys() ?? [])]),
+    // [tick, FermataType] per master bar (alphaTab keys fermatas by tick offset).
+    fermata: score.masterBars.map((m) =>
+      [...(m.fermata?.entries() ?? [])].map(([tick, f]) => [tick, f.type]),
+    ),
+    beatOttava: [],
     tripletFeel: score.masterBars.map((m) => m.tripletFeel),
     trackInfo: score.tracks.map((t) => [
       t.name,
@@ -116,6 +122,7 @@ export function scoreFacts(score: alphaTab.model.Score): Facts {
               beat.tupletNumerator,
               beat.tupletDenominator,
             ]);
+            f.beatOttava?.push([...at, beat.ottava]);
             if (beat.graceType !== 0) f.grace?.push([...at, beat.graceType]);
             if (beat.isRest) f.rests?.push(at);
             f.dynamics?.push([...at, beat.dynamics]);
@@ -253,6 +260,14 @@ export function mhdFacts(doc: MhdDocument): Facts {
     transposition: [],
     clef: [],
     ottava: [],
+    beatOttava: [],
+    // Representable fermatas only (whole tick on a beat start); the others produce diagnostics.
+    fermata: doc.masterBars.map((m, barIndex) =>
+      (m.fermatas ?? []).flatMap((fermata) => {
+        const { tick, onBeat } = fermataPlacement(doc, barIndex, fermata.position);
+        return tick !== undefined && onBeat ? [[tick, FERMATA_TYPE[fermata.type ?? 'medium']]] : [];
+      }),
+    ),
     sustainPedal: [],
     voices: [],
     rhythm: [],
@@ -285,7 +300,8 @@ export function mhdFacts(doc: MhdDocument): Facts {
         const key = [ti, si, bi];
         if (bar.clef) clef = bar.clef;
         f.clef?.push([...key, CLEF[clef]]);
-        f.ottava?.push([...key, OTTAVA[bar.ottava ?? 'regular']]);
+        // Q-D: the clef ottava is never used; the octave line is on every beat (Beat.ottava).
+        f.ottava?.push([...key, OTTAVA.regular]);
         const k = ks[bi] ?? { fifths: 0, mode: 'major' };
         f.keySignature?.push([...key, k.fifths, k.mode === 'major' ? 0 : 1]);
         for (const p of bar.sustainPedal ?? [])
@@ -300,6 +316,7 @@ export function mhdFacts(doc: MhdDocument): Facts {
           let tick = 0;
           for (const [bti, beat] of voice.beats.entries()) {
             const at = [...key, vi, bti];
+            f.beatOttava?.push([...at, OTTAVA[bar.ottava ?? 'regular']]);
             const ticks = durationTicks(beat.duration);
             f.rhythm?.push([
               ...at,
@@ -394,6 +411,8 @@ export function projectToMhd(f: Facts): Facts {
     'transposition',
     'clef',
     'ottava',
+    'beatOttava',
+    'fermata',
     'structure',
     'timeSignature',
     'keySignature',

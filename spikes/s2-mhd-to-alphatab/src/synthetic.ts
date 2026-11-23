@@ -390,7 +390,7 @@ function navigation(): MhdDocument {
     { direction: 'fine' as const },
     { direction: 'dalSegnoAlCoda' as const },
     { direction: 'coda' as const },
-    { direction: 'doubleCoda' as const, fermata: true as const },
+    { direction: 'doubleCoda' as const, fermatas: [{ position: [0, 1] as [number, number] }] },
     { direction: 'daCapoAlFine' as const },
   ];
   const s = staff(
@@ -666,6 +666,65 @@ function effects(): MhdDocument {
   );
 }
 
+/**
+ * S-fermatas-ottava (decisions Q-D, Q-E): standard, short and long fermatas, several per bar, one
+ * where no beat starts (warning), one on a beat at a non-integer alphaTab tick (7:4 septuplets),
+ * and `Bar.ottava` on a bar with a grace beat, then 15mb, then no ottava (not carried forward).
+ */
+function fermatasOttava(): MhdDocument {
+  const id = idSource('SF');
+  const q = (p: number) => beat(id, d(4), [{ pitch: p }]);
+  const masterBars = [
+    { ...FIRST_BAR, fermatas: [{ position: [0, 1] as [number, number] }] },
+    {
+      fermatas: [
+        { position: [1, 4] as [number, number], type: 'short' as const },
+        { position: [3, 4] as [number, number], type: 'long' as const },
+      ],
+    },
+    { fermatas: [{ position: [1, 8] as [number, number] }] },
+    { fermatas: [{ position: [1, 7] as [number, number] }] },
+    {},
+    {},
+    {},
+  ];
+  const bars = [
+    bar(id, [voice(id, [q(72), q(74), q(76), q(77)])]),
+    bar(id, [voice(id, [q(79), q(77), q(76), q(74)])]),
+    bar(id, [voice(id, [q(72), q(71), q(72), q(74)])]),
+    bar(id, [
+      voice(
+        id,
+        Array.from({ length: 7 }, (_, i) => beat(id, d(4, 0, [7, 4]), [{ pitch: 72 + i }])),
+      ),
+    ]),
+    bar(
+      id,
+      [
+        voice(id, [
+          beat(id, d(16), [{ pitch: 86 }], { grace: 'beforeBeat' }),
+          q(88),
+          q(89),
+          q(91),
+          q(93),
+        ]),
+      ],
+      { ottava: '8va' },
+    ),
+    bar(id, [voice(id, [beat(id, d(2), [{ pitch: 41 }]), beat(id, d(2), [{ pitch: 43 }])])], {
+      ottava: '15mb',
+    }),
+    bar(id, [voice(id, [beat(id, d(1), [{ pitch: 72 }])])]),
+  ];
+  return documentOf(
+    uuid(211),
+    'Synthetic — fermatas and ottava',
+    masterBars,
+    [track(id, 'Piano', piano, [staff(id, bars)])],
+    id,
+  );
+}
+
 export const SYNTHETIC_FIXTURES: Record<string, () => MhdDocument> = {
   'multi-voice': multiVoice,
   'multi-instrument': multiInstrument,
@@ -677,4 +736,5 @@ export const SYNTHETIC_FIXTURES: Record<string, () => MhdDocument> = {
   pedal,
   'long-sequence': longSequence,
   effects,
+  'fermatas-ottava': fermatasOttava,
 };

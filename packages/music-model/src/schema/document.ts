@@ -118,6 +118,19 @@ export const DIRECTIONS = [
  */
 export const MAX_REPEAT_COUNT = 99;
 
+/**
+ * Fermata at a position of the master bar; it applies to every track and staff at that position.
+ * `position` uses the same coordinate system as tempo changes and pedal positions (fraction of the
+ * nominal bar length of the time signature, also in a pickup bar). A missing `type` is a standard
+ * fermata. Notation only: the playback length is decided by the timeline, never stored in MHD.
+ */
+export const FermataSchema = z
+  .strictObject({
+    position: PositionSchema,
+    type: z.enum(['short', 'long']).optional(),
+  })
+  .meta({ id: 'Fermata' });
+
 export const MasterBarSchema = z
   .strictObject({
     id: MhdIdSchema,
@@ -136,7 +149,8 @@ export const MasterBarSchema = z
       .strictObject({ letter: z.string().min(1).max(3).optional(), text: label })
       .optional(),
     direction: z.enum(DIRECTIONS).optional(),
-    fermata: flag,
+    /** Fermatas of this bar, positions strictly increasing (invariant 11). */
+    fermatas: z.array(FermataSchema).min(1).optional(),
     /** Pickup bar; only allowed on bar 0. */
     isAnacrusis: flag,
   })
@@ -287,6 +301,11 @@ export const BarSchema = z
   .strictObject({
     id: MhdIdSchema,
     clef: z.enum(['G2', 'F4', 'C3', 'C4', 'neutral']).optional(),
+    /**
+     * Octave line over every beat of every voice of this bar on this staff; this bar only, never
+     * carried into the next bar. Display only: `Note.pitch` (and the pitch derived from string and
+     * fret) stays the sounding pitch. Not a clef ottava.
+     */
     ottava: z.enum(['15ma', '8va', '8vb', '15mb']).optional(),
     /** Keyboard staves only. */
     sustainPedal: z.array(SustainPedalSchema).min(1).optional(),
@@ -412,6 +431,7 @@ export const MhdDocumentSchema = z
 export type MhdDocument = z.infer<typeof MhdDocumentSchema>;
 export type Meta = z.infer<typeof MetaSchema>;
 export type MasterBar = z.infer<typeof MasterBarSchema>;
+export type Fermata = z.infer<typeof FermataSchema>;
 export type TimeSignature = z.infer<typeof TimeSignatureSchema>;
 export type KeySignature = z.infer<typeof KeySignatureSchema>;
 export type TempoChange = z.infer<typeof TempoChangeSchema>;

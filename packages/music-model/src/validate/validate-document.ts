@@ -93,6 +93,7 @@ function checkDocument(doc: MhdDocument, issues: Collector): void {
   doc.tracks.forEach((track, trackIndex) => {
     checkTrack(doc, track, ['tracks', trackIndex], timeSignatures, issues);
   });
+  checkFermataOnsets(doc, timeSignatures, issues);
 }
 
 // ── Invariant 1: unique ids ──────────────────────────────────────────────────
@@ -152,6 +153,13 @@ function checkMasterBars(masterBars: readonly MasterBar[], issues: Collector): v
       checkIncreasing(
         bar.tempoChanges.map((change) => change.position),
         ['masterBars', index, 'tempoChanges'],
+        issues,
+      );
+    }
+    if (bar.fermatas) {
+      checkIncreasing(
+        bar.fermatas.map((fermata) => fermata.position),
+        ['masterBars', index, 'fermatas'],
         issues,
       );
     }
@@ -364,6 +372,49 @@ function checkIncreasing(positions: readonly Position[], path: IssuePath, issues
   }
 }
 
+/**
+ * Warning `fermata-not-on-beat`: a fermata position should be the start of a non-grace beat
+ * (rests count) in some voice of some staff. Positions are fractions of the nominal bar length of
+ * the time signature, also in a pickup bar (same convention as tempo and pedal positions).
+ */
+function checkFermataOnsets(
+  doc: MhdDocument,
+  timeSignatures: readonly TimeSignature[],
+  issues: Collector,
+): void {
+  doc.masterBars.forEach((masterBar, barIndex) => {
+    const timeSignature = timeSignatures[barIndex];
+    if (!masterBar.fermatas || !timeSignature) return;
+    const length = barTicks(timeSignature);
+    const onsets: Rational[] = [];
+    for (const track of doc.tracks) {
+      for (const staff of track.staves) {
+        for (const voice of staff.bars[barIndex]?.voices ?? []) {
+          let start = ZERO;
+          for (const beat of voice.beats) {
+            if (beat.grace !== undefined) continue;
+            // start / length as a reduced fraction of the bar
+            onsets.push(
+              rational(start.numerator * length.denominator, start.denominator * length.numerator),
+            );
+            start = add(start, durationTicks(beat.duration));
+          }
+        }
+      }
+    }
+    masterBar.fermatas.forEach((fermata, fermataIndex) => {
+      const position = asRational(fermata.position);
+      if (!onsets.some((onset) => compare(onset, position) === 0)) {
+        issues.warning(
+          ISSUE_CODES.fermataNotOnBeat,
+          ['masterBars', barIndex, 'fermatas', fermataIndex, 'position'],
+          'No beat of any voice starts at the fermata position',
+        );
+      }
+    });
+  });
+}
+
 function asRational([numerator, denominator]: Position): Rational {
   return rational(numerator, denominator);
 }
@@ -483,6 +534,13 @@ function checkBars(
 ): void {
   staff.bars.forEach((bar, barIndex) => {
     const barPath = [...staffPath, 'bars', barIndex];
+    if (bar.ottava && (track.instrument.percussion || !staff.display.standard)) {
+      issues.warning(
+        ISSUE_CODES.ottavaNotDisplayed,
+        [...barPath, 'ottava'],
+        'An ottava is shown only on a non-percussion staff with standard notation',
+      );
+    }
     const timeSignature = timeSignatures[barIndex];
     const anacrusis = barIndex === 0 && doc.masterBars[0]?.isAnacrusis === true;
     bar.voices.forEach((voice, voiceIndex) => {
