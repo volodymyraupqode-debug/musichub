@@ -23,10 +23,12 @@ installed and nothing was downloaded.
 ### 2.1 Verified (14 independently prepared MusicXML fixtures, alphaTab 1.9.0 import vs intent)
 
 The intent of each fixture is written as MHD from the fixture's specification, independently of
-alphaTab (§5). Against it, alphaTab's `MusicXmlImporter` imports these exactly (every entry equal):
+alphaTab (§5). Against it, alphaTab's `MusicXmlImporter` imports these exactly (every entry equal;
+the items marked † are compared after the spike converter, at the MHD stage, see below):
 
 - structure, multiple parts with their MIDI programs (1-based MusicXML → GM), staff display, clefs
-  (treble, bass, percussion, TAB), guitar tuning;
+  (treble, bass, percussion), guitar tuning; a TAB staff arrives as tab-only display with clef G2,
+  which is the MHD default for a guitar staff (MHD v1 has no TAB clef);
 - time signatures (4/4, 3/4, 6/8) and key signatures (major and minor), accidentals;
 - tempo, including a change in the middle of a bar;
 - repeats, first and second endings, segno, To Coda, coda;
@@ -34,7 +36,8 @@ alphaTab (§5). Against it, alphaTab's `MusicXmlImporter` imports these exactly 
   ties across and within bars; string and fret;
 - unpitched percussion (GM keys 36, 38, 42 from 1-based `midi-unpitched`);
 - a transposing instrument: sounding pitch and the written-to-sounding offset (−2);
-- lyrics; dynamics p, mf, ff; staccato, accent, strong accent;
+- lyrics†; dynamics p, mf, ff (also checked on the imported Score); staccato†; accent and strong
+  accent (also checked on the imported Score as `AccentuationType`);
 - a compressed `.mxl` container (same result as the uncompressed file).
 
 Deviations found, each pinned by a test:
@@ -67,8 +70,13 @@ not independent compatibility:
   deviation 3 does not appear, because MHD computes ticks without grace time). The converter reports
   every feature it does not convert as a loss; here `note.accent.tenuto`, `note.slur` and, for every
   track, `track.instrument.family` (alphaTab has no instrument family).
-- **Re-import stability:** importing a fixture again gives byte-identical converted MHD and the same
-  losses (14/14).
+- **Re-import stability:** importing a fixture's bytes a second time and converting again gives an
+  identical JSON serialisation of the converted MHD document and an equal loss list (14/14). It
+  checks determinism of import + conversion, not the identity of files or of alphaTab objects.
+
+† Lyrics and staccato are verified against the independent intent only through the converter
+output: the facts of the imported Score have no lyrics or staccato group, and no direct Score
+check exists for them.
 - **GP7 round trip** (MHD → alphaTab → `Gp7Exporter` → `Gp7To8Importer`, compared with the first
   import): every exercised group survives, sounding pitch included, **except that non-guitar,
   non-percussion staves come back as stringed staves** (a guitar or bass tuning, string and fret per
@@ -136,7 +144,8 @@ MHD ─▶ toAlphaTabDirect (S2 Strategy A) ─▶ Gp7Exporter ─▶ Gp7To8Impo
   **exact JSON equality, no tolerance** (ticks and fractions are exact). Stated reductions:
   `trackInfo` keeps name, MIDI program and percussion (mixer volume and pan are engine defaults);
   `soundingPitch` is `pitch` without string and fret. Dynamics, note effects and lyrics are extra
-  groups at the MHD stage and are checked directly on the imported Score.
+  groups at the MHD stage; dynamics (mx05) and accent types including tenuto (mx06) are also checked
+  directly on the imported Score, lyrics and staccato are not.
 - **Status per group:** *supported* (all entries equal), *partial* (some), *unsupported* (none),
   *not exercised* (empty on both sides), *not evaluated* (the intent does not define it).
 - **Converter** (`src/import/from-alphatab.ts`): minimal alphaTab Score → MHD v1 for the fixtures'
