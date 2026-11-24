@@ -1,10 +1,10 @@
 # ADR-0002: Own canonical document model (MHD) instead of alphaTab Score/JSON
 
-- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07)
+- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10--status-deferred), no decision
 - **Date:** 2026-11-21
 - **Deciders:** project owner
 - **Spec sections:** MUSIC_ENGINE.md §1–4; ARCHITECTURE.md §1.2
-- **Evidence:** [docs/spikes/s2-mhd-to-alphatab.md](../spikes/s2-mhd-to-alphatab.md), [docs/spikes/s7-playback-score-variants.md](../spikes/s7-playback-score-variants.md)
+- **Evidence:** [docs/spikes/s2-mhd-to-alphatab.md](../spikes/s2-mhd-to-alphatab.md), [docs/spikes/s7-playback-score-variants.md](../spikes/s7-playback-score-variants.md), [docs/spikes/s3-edit-loop-latency.md](../spikes/s3-edit-loop-latency.md)
 
 ## Context
 
@@ -138,3 +138,14 @@ Amendment 1 and its decisions A1–A6 are unchanged. This amendment answers open
 8. **Fallback kept open.** If the hook proves unstable, the fallback in MUSIC_ENGINE.md §5.2 stays available: render the Playback Score as well, which hides excluded tracks from the notation. It is not implemented.
 
 **Not verified by S7:** whether the sustain pedal is audible, and the hand split for one-hand practice (MUSIC_ENGINE.md §5.2); `exportAudio`, backing tracks, count-in, metronome, playback ranges and looping with the hook; the cost of generating MIDI twice per load. Manual browser verification by the owner passed with no issues observed (S7 report §8); browsers and covered steps were not specified, and it did not include the sustain pedal or the hand split.
+
+## Amendment 3 (2026-11-24): edit-loop latency (spike S3, S2-10) — status Deferred
+
+Records the measured numbers MUSIC_ENGINE.md §10 asks for; **no decision is taken** and A1–A8 are unchanged. Evidence: [S3 report](../spikes/s3-edit-loop-latency.md).
+
+- Measured: the full edit loop of A1 + A7 (Strategy A conversion of the whole document into Render and Playback Score, `api.renderScore`, MIDI regeneration with the `midiLoad` hook) in Playwright Chromium and WebKit, headless, from the edit command to the next frame (median / p95): 8 bars × 4 tracks 16 / 22 ms (Chromium), 27 / 79 ms (WebKit); 50 × 8 84–98 / 147–185 ms (Chromium), 114–169 / 245–558 ms (WebKit); 300 × 8 535 / 726 ms (Chromium), 619 / 1312 ms (WebKit).
+- The < 150 ms target is met for the small document only. On 300 × 8 none of the MUSIC_ENGINE.md §6 fallbacks (horizontal layout, render window, edited track only) nor decoupled MIDI reaches it; the best measured combination (render window + no MIDI regeneration) is 244 / 352 ms (Chromium). No fallback is selected.
+- Bottlenecks: whole-document conversion on every edit, MIDI generated twice on the main thread (alphaTab's Render-Score MIDI and the A7 hook's Playback-Score MIDI), and worker layout of the full sheet.
+- Player position: an edit during playback stops it (A8.7); restoring `tickPosition` after `midiLoaded` works within 1 tick.
+- Not decided: the interpretation of the target (start and end points, statistic, document size), and whether to pursue unmeasured options (partial Render Score for the displayed bars, off-main-thread conversion, MIDI regeneration only on play).
+
