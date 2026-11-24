@@ -453,6 +453,18 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 | S7 | Playback-score variants: can the player play a Score that differs from the rendered one? Is the sustain pedal audible? Hand split via separate tracks/channels | Decision recorded; one-hand practice audible correctly |
 | S8 | **Runs in Phase 2, not Phase 0** (needs `midi-engine` + `practice-core`). MIDI guitar (optional, needs hardware; Q21): does `midi-engine` + `practice-core` give reliable correctness with common MIDI guitar systems? | Report: per-device compatibility, latency, error rate. **Owner decision** whether MIDI-guitar checking enters v1 |
 
+**Results (recorded 2026-11-24, S2-12; pass criteria above unchanged).** Index with sources: ADR-0002 Amendment 4.
+
+| ID | Status | Recorded in |
+|---|---|---|
+| S1 | Done | ADR-0004 |
+| S2 | Done (Strategy A, decision A1) | ADR-0002 A1–A6, Amendment 4 |
+| S3 | Partly done: < 150 ms not met on 300 × 8, no fallback selected | ADR-0002 Amendment 3 (A9) |
+| S4 | Partly done: 14 synthetic MusicXML fixtures, GP3–GP8 not evaluated; criterion not met | ADR-0002 Amendment 4 |
+| S5 | Done for defined semantics (17 of 19 scenarios at 100 %); D1, D2, half-open hi-hat key, [CONV] open | ADR-0002 Amendment 4 |
+| S6 | Partly done: player-event timing only, no audio reference; criterion not verified | ADR-0004 Addendum |
+| S7 | Done (playback mechanism A7–A8); sustain pedal and hand split not covered | ADR-0002 Amendment 2 |
+
 Spikes run in Sprint 2 (ROADMAP.md). Spike code lives in `spikes/` (never imported by apps) and is deleted or promoted after the ADR is written.
 
 ## 11a. Post‑v1 Audio/AI phase (not in v1, Q21)
