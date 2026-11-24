@@ -1,0 +1,27 @@
+$ playwright test e2e/measure.spec.ts --workers=1 --project=chromium --project=webkit
+
+Running 18 tests using 1 worker
+
+  ✓   1 [chromium] › e2e/measure.spec.ts:37:3 › measure i10-s1-d60-r1 (1.1m)
+  ✓   2 [chromium] › e2e/measure.spec.ts:37:3 › measure i10-s1-d60-r2 (1.1m)
+  ✓   3 [chromium] › e2e/measure.spec.ts:37:3 › measure i10-s1-d60-r3 (1.0m)
+  ✓   4 [chromium] › e2e/measure.spec.ts:37:3 › measure i0-s1-d60-r1 (1.1m)
+  ✓   5 [chromium] › e2e/measure.spec.ts:37:3 › measure i0-s1-d60-r2 (1.1m)
+  ✓   6 [chromium] › e2e/measure.spec.ts:37:3 › measure i0-s1-d60-r3 (1.1m)
+  ✓   7 [chromium] › e2e/measure.spec.ts:37:3 › measure i10-s0.5-d60-r1 (1.1m)
+  ✓   8 [chromium] › e2e/measure.spec.ts:37:3 › measure i10-s1.5-d60-r1 (1.0m)
+  ✓   9 [chromium] › e2e/measure.spec.ts:37:3 › measure i10-s1-d300-r1 (5.1m)
+  ✓  10 [webkit] › e2e/measure.spec.ts:37:3 › measure i10-s1-d60-r1 (1.1m)
+  ✓  11 [webkit] › e2e/measure.spec.ts:37:3 › measure i10-s1-d60-r2 (1.1m)
+  ✓  12 [webkit] › e2e/measure.spec.ts:37:3 › measure i10-s1-d60-r3 (1.1m)
+  ✓  13 [webkit] › e2e/measure.spec.ts:37:3 › measure i0-s1-d60-r1 (1.1m)
+  ✓  14 [webkit] › e2e/measure.spec.ts:37:3 › measure i0-s1-d60-r2 (1.1m)
+  ✓  15 [webkit] › e2e/measure.spec.ts:37:3 › measure i0-s1-d60-r3 (1.1m)
+  ✓  16 [webkit] › e2e/measure.spec.ts:37:3 › measure i10-s0.5-d60-r1 (1.0m)
+  ✓  17 [webkit] › e2e/measure.spec.ts:37:3 › measure i10-s1.5-d60-r1 (1.1m)
+  ✓  18 [webkit] › e2e/measure.spec.ts:37:3 › measure i10-s1-d300-r1 (5.1m)
+
+  Slow test file: [webkit] › e2e/measure.spec.ts (13.6m)
+  Slow test file: [chromium] › e2e/measure.spec.ts (13.6m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  18 passed (27.2m)
