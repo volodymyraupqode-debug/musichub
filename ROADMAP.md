@@ -2,6 +2,10 @@
 
 > Status: Draft v0.2 (audited 2026‑11‑21) — awaiting approval. The order follows the required strategy: **web first → music engine before advanced editing → editor before community → mobile after web → AI after initial release.** Durations are rough estimates for a small team (1–2 developers + AI agents). They will be re-estimated after Phase 0. Sprints are 2 weeks.
 >
+> **Changelog v0.2.19:** S2-07 (spike S7) done: the Render/Playback Score separation is kept with alphaTab's `midiLoad` event as the playback hook (ADR-0002 Amendment 2). S2-08…S2-10 stay planned; Phase 0 is not complete.
+>
+> **Changelog v0.2.18:** Sprint 2 status corrected: S2-05 (spike S2, PRs #10–#13) and S2-06 (spike S5, PR #14) are done. S2-07 (spike S7, playback-score variants) is in review; S2-08 (S6), S2-09 (S4) and S2-10 (S3) are planned. Completed spikes are not Phase 0 exit criteria; Phase 0 is not complete.
+>
 > **Changelog v0.2.17:** S2-05 follow-up, decisions Q-D and Q-E (MUSIC_ENGINE.md §3.2): `Bar.ottava` is a display-only octave line over the current bar; `MasterBar.fermata` is replaced by positioned `fermatas`. Implemented in `music-model` (schema, validation, JSON Schema, `band-repeats` fixture) and in spike S2. S2-06 stays TBD; Phase 0 is not complete.
 >
 > **Changelog v0.2.16:** ADR-0004 (alphaTab under Turbopack) accepted with documented limitations after spike S1.
@@ -358,7 +362,9 @@ Sprint 1 is closed pending owner review.
 
 **Goal:** answer the Phase 0 spike questions (MUSIC_ENGINE.md §10, S1–S7), draft MHD v1 in `music-model` with hand-written fixtures, collect legally usable import fixtures, and record the results in ADR‑0002 and ADR‑0004 (Phase 0 scope above). Design tokens are not part of Sprint 2 (Phase 1, decision C1).
 
-**Status (2026‑11‑23):** in progress. Done: S2-00, S2-01, S2-02, S2-03, S2-04. In review: S2-05. TBD: S2-06…S2-13.
+**Status (2026‑11‑24):** in progress. Done: S2-00…S2-07. Planned: S2-08, S2-09, S2-10. TBD: S2-11…S2-13. Spike ids S3–S7 (MUSIC_ENGINE.md §10) are kept in the technical docs; task ids and spike ids differ (S2-06 = S5, S2-07 = S7, S2-08 = S6, S2-09 = S4, S2-10 = S3).
+
+Done research spikes do not by themselves meet the Phase 0 exit criteria (§Phase 0 *Exit*). Phase 0 is not complete: S6 clock jitter, the import fixtures for S4 and the recording of all spike results in ADR‑0002 and ADR‑0004 are still open.
 
 | ID | Title | Depends on | Status | Result / scope |
 |---|---|---|---|---|
@@ -367,17 +373,17 @@ Sprint 1 is closed pending owner review.
 | S2-02 | MHD v1 schema and validation | S2-01 | ✅ done (PR #5) | Strict Zod schemas and types in `packages/music-model`; UUIDv7 document id and 12-character base62 element ids; `validateDocument` with the cross-field invariants of MUSIC_ENGINE.md §3.3; JSON Schema `json-schema/mhd-v1.schema.json`; `fixtures/v1/` reserved and documented; versioning rule (every structural change bumps `schemaVersion` after the first public release or saved document). Follow-up D1: `drumTechnique` replaces `drumArticulation` |
 | S2-03 | Hand-written MHD v1 fixtures | S2-02 | ✅ done | `packages/music-model/fixtures/v1/`: `guitar-basic`, `piano-grand-staff`, `band-repeats` (`.mhd.json`), original synthetic content, each valid with zero issues. Sidecars `<name>.expected.json` hold the validation result and structural counts only (D4); `src/fixtures.test.ts` imports both as JSON modules (D3) and runs negative mutations. Conventions O1–O5 in `fixtures/v1/README.md` |
 | S2-04 | Spike S1: alphaTab 1.9.0 in Next.js 16 + Turbopack | S2-01 | ✅ done | `spikes/s1-turbopack`; report `docs/spikes/s1-turbopack.md`. Turbopack setup works without the webpack plugin: Turbopack-bundled workers, audio worklet from `core.scriptFile`, playback cycle, `display.resources` themes. Chromium (dev + prod) and Playwright Chromium/WebKit checked automatically; Safari and Firefox passed manual checks by the owner, including audible playback. ADR-0004 accepted with documented limitations. Spike kept until the end of Sprint 2. Import fixtures for S4 are a separate task after OQ2 |
-| S2-05 | Spike S2: MHD → alphaTab, Strategy A vs B | S2-03, S2-04 | 🔍 in review | `spikes/s2-mhd-to-alphatab`; report `docs/spikes/s2-mhd-to-alphatab.md`. Both strategies convert all 3 canonical, 10 synthetic and a 300 × 8 document with identical facts, MIDI notes and layout; shared alphaTab losses documented. Recommendation: A (direct model + `finish()`) with B (alphaTex) as test oracle; median 55–63 ms vs 105–121 ms for 300 × 8. Decision and ADR-0002 update by the owner. Follow-up (Q-D/Q-E): `Bar.ottava` defined as a display-only bar octave line, positioned `MasterBar.fermatas` replace `fermata: true` (MHD v1, no version bump) |
-| S2-06 | TBD | — | ❔ TBD | Not defined yet. The remaining spikes (MUSIC_ENGINE.md §10) are Phase 0 scope; their assignment to S2-06…S2-11 is to be confirmed |
-| S2-07 | TBD | — | ❔ TBD | Not defined yet (see S2-06) |
-| S2-08 | TBD | — | ❔ TBD | Not defined yet (see S2-06) |
-| S2-09 | TBD | — | ❔ TBD | Not defined yet (see S2-06) |
-| S2-10 | TBD | — | ❔ TBD | Not defined yet (see S2-06) |
-| S2-11 | TBD | — | ❔ TBD | Not defined yet (see S2-06) |
+| S2-05 | Spike S2: MHD → alphaTab, Strategy A vs B | S2-03, S2-04 | ✅ done (PR #10, #11, #12, #13) | `spikes/s2-mhd-to-alphatab`; report `docs/spikes/s2-mhd-to-alphatab.md`. Both strategies convert all 3 canonical, 10 synthetic and a 300 × 8 document with identical facts, MIDI notes and layout; shared alphaTab losses documented. Recommendation: A (direct model + `finish()`) with B (alphaTex) as test oracle; median 55–63 ms vs 105–121 ms for 300 × 8. Owner decisions Q-A…Q-E taken; ADR-0002 Amendment 1 records Strategy A, the diagnostics contract and separate Render and Playback Scores (PR #12, #13). Follow-up (Q-D/Q-E): `Bar.ottava` defined as a display-only bar octave line, positioned `MasterBar.fermatas` replace `fermata: true` (MHD v1, no version bump) |
+| S2-06 | Spike S5: timeline parity | S2-05 | ✅ done (PR #14) | `spikes/s2-mhd-to-alphatab/src/timeline`; report `docs/spikes/s5-timeline-parity.md`. Independent MHD playback-order and MIDI-event prototype compared with alphaTab 1.9.0 `MidiFileGenerator` on the Playback Score: 17 of 19 golden scenarios at 100 % note-on, note-off and tempo parity. Open decisions for the owner, not resolved: D1 (repeat end after an earlier repeat), D2 (skipped closing bar), half-open hi-hat key (MHD 42, alphaTab 46), the [CONV] conventions |
+| S2-07 | Spike S7: playback-score variants | S2-05 | ✅ done (PR #15) | `spikes/s2-mhd-to-alphatab` (`src/playback-variants`, `e2e`); report `docs/spikes/s7-playback-score-variants.md`. alphaTab 1.9.0 has no native API to play a Score other than the rendered one; a hook on the public `midiLoad` event that rewrites the MIDI with the Playback Score passed all automated criteria in Node (time axis, content, cursor beats, offline mute/solo) and with the real `AlphaTabApi` in Playwright Chromium and WebKit. Owner decision: keep the Render/Playback separation and the hook, with the constraints in ADR-0002 Amendment 2 (A7–A8); the fallback is not implemented. Manual browser verification by the owner passed, no issues observed (report §8). Sustain pedal and hand split not covered |
+| S2-08 | Spike S6: clock jitter | S2-04 | 📋 planned | `playerPositionChanged` frequency and jitter, per-browser output latency; interpolated clock error < 10 ms or a fallback (MUSIC_ENGINE.md §10; Phase 0 exit criterion). Not started |
+| S2-09 | Spike S4: import fidelity | S2-05, import fixtures | 📋 planned | 20 own or public-domain GP3–8 and MusicXML files → MHD → GP7 round-trip; coverage matrix (MUSIC_ENGINE.md §10). Needs the legally usable import fixtures (OQ2). Not started |
+| S2-10 | Spike S3: edit-loop latency | S2-05 | 📋 planned | Re-render after a single note change and player position preservation; < 150 ms or a fallback (MUSIC_ENGINE.md §10). Not started |
+| S2-11 | TBD | — | ❔ TBD | Not defined yet |
 | S2-12 | TBD | — | ❔ TBD | Not defined yet. Phase 0 requires the spike results in ADR‑0002 and ADR‑0004; which task covers it is to be confirmed |
 | S2-13 | TBD | — | ❔ TBD | Not defined yet |
 
-A numbering for S2-03…S2-13 was proposed in the Sprint 2 planning audit (2026‑11‑22). Only S2-00…S2-03 are confirmed; the other ids get a scope when the owner approves them.
+A numbering for S2-03…S2-13 was proposed in the Sprint 2 planning audit (2026‑11‑22). S2-00…S2-10 are confirmed by the owner (S2-07…S2-10 on 2026‑11‑24); S2-11…S2-13 get a scope when the owner approves them.
 
 **Decisions taken for S2-03:** D3 native JSON module imports (`with { type: 'json' }`, no `@types/node`); D4 sidecars with validation result and structural counts only (playback order follows with the Phase 1 timeline).
 

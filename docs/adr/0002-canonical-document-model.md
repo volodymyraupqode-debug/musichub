@@ -1,10 +1,10 @@
 # ADR-0002: Own canonical document model (MHD) instead of alphaTab Score/JSON
 
-- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05)
+- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07)
 - **Date:** 2026-11-21
 - **Deciders:** project owner
 - **Spec sections:** MUSIC_ENGINE.md §1–4; ARCHITECTURE.md §1.2
-- **Evidence:** [docs/spikes/s2-mhd-to-alphatab.md](../spikes/s2-mhd-to-alphatab.md)
+- **Evidence:** [docs/spikes/s2-mhd-to-alphatab.md](../spikes/s2-mhd-to-alphatab.md), [docs/spikes/s7-playback-score-variants.md](../spikes/s7-playback-score-variants.md)
 
 ## Context
 
@@ -101,7 +101,7 @@ The decision above is unchanged. Until this amendment the status read "Accepted 
 
 **Open questions** (not decided; nothing above answers them):
 
-1. S7: whether alphaTab's player can play a separate Playback Score while the Render Score is displayed is not proven.
+1. S7: whether alphaTab's player can play a separate Playback Score while the Render Score is displayed is not proven. *Answered by Amendment 2 (A7): not natively; through the `midiLoad` hook, with the constraints of A8.*
 2. GP7 export from the Render Score can contain placeholder channels; no export policy is approved.
 3. Priority of secondary channels for bend, whammy and vibrato.
 4. Mixer settings when several percussion tracks share channel 9.
@@ -114,3 +114,27 @@ The decision above is unchanged. Until this amendment the status read "Accepted 
 - `packages/music-engine` (Phase 1) implements A1–A5 with the full diagnostics contract (A2) and the regression suite (A1), including tests for the two A defects found in review: the missing registration of articulation id 59, and alternate endings 33+, which Strategy A silently corrupts through 32-bit shifts (MHD keeps endings 1–99; the adapter must report them, never truncate or corrupt them).
 - To verify in Phase 1: conversion and rendering in the browser render worker; audible playback; GP7 and MIDI exports opened in third-party applications; timeline parity with alphaTab (grace timing, tuplet tick truncation; spike S5).
 - Unresolved owner decisions that may affect the adapter: the open questions of A5, left-hand fingering numbering, alternate endings above 8 (drawn without numbers), half-open hi-hat on GM 42 vs 46 and rimshot on GM 40, note velocity in alphaTab playback.
+
+## Amendment 2 (2026-11-24): Playback Score substitution (spike S7, S2-07)
+
+Amendment 1 and its decisions A1–A6 are unchanged. This amendment answers open question 1 of A5 with the owner's decision after spike S7 ([report](../spikes/s7-playback-score-variants.md)). Numbering continues from Amendment 1. Nothing here is implemented in production code; `packages/music-engine` is Phase 1 work.
+
+### A7. Playback mechanism (approved)
+
+- **The Render Score / Playback Score separation of A5 is retained.**
+- alphaTab 1.9.0 has no API to play a Score other than the rendered one: every MIDI load generates MIDI from `api.score` (S7 report §3).
+- The adapter substitutes the MIDI through alphaTab's public **`midiLoad`** event, in one isolated hook inside `packages/music-engine`. alphaTab fires the event synchronously with the `MidiFile` it passes to the player next. The hook replaces that file's content with MIDI generated from the Playback Score, while the Render Score keeps the time line: its tick lookup drives the cursor and beat events.
+- **Evidence:** spike S7 Node tests (time axis, content, cursor beat coherence, offline mute/solo with alphaTab's synthesizer) and the real `AlphaTabApi` in Playwright Chromium and WebKit, including a control run without the hook (S7 report §6).
+
+### A8. Constraints (approved with A7)
+
+1. **Workaround.** Changing the `midiLoad` payload is not a documented alphaTab feature. The hook is tied to alphaTab 1.9.0 (pinned); every alphaTab upgrade re-runs the S7 evidence before it is accepted.
+2. **Render Score timing.** The Playback MIDI is generated on the Render Score's tick shift, including the shift caused by before-beat grace notes of tracks excluded from playback. With its own tick shift the cursor would resolve wrong beats (S7 report §6, E3-grace). The Playback tracks must be a subset of the Render tracks with the same master bars; otherwise the hook fails closed.
+3. **Fail closed.** When the hook has no Playback Score for the rendered Score, or cannot generate its MIDI on the Render time axis, it empties the MIDI and reports a failure. It never lets the Render Score's MIDI play, and never throws into alphaTab's MIDI load, which would leave the previous Score's MIDI in the player.
+4. **Mute and solo** (and track volume) target Playback Score tracks, resolved by MHD id. An excluded track has no playback channel: its Render Score track is never passed to `changeTrackMute`, `changeTrackSolo` or `changeTrackVolume`, because its placeholder channel belongs to another track.
+5. **Channel state after each MIDI load.** alphaTab sets channel mix volumes (on `readyForPlayback`) and transposition pitches (in `loadMidiForScore`) from the Render Score. The hook resets both from the Playback Score after every load.
+6. **`exportAudio` bypasses the hook**: it regenerates MIDI from the Render Score without `midiLoad`. Audio export needs its own implementation path that uses the Playback Score.
+7. **Replacing the Render Score** (a new Score object) reloads the MIDI and stops playback. Keeping the playback position across edits is spike S3 (ROADMAP S2-10).
+8. **Fallback kept open.** If the hook proves unstable, the fallback in MUSIC_ENGINE.md §5.2 stays available: render the Playback Score as well, which hides excluded tracks from the notation. It is not implemented.
+
+**Not verified by S7:** whether the sustain pedal is audible, and the hand split for one-hand practice (MUSIC_ENGINE.md §5.2); `exportAudio`, backing tracks, count-in, metronome, playback ranges and looping with the hook; the cost of generating MIDI twice per load. Manual browser verification by the owner passed with no issues observed (S7 report §8); browsers and covered steps were not specified, and it did not include the sustain pedal or the hand split.
