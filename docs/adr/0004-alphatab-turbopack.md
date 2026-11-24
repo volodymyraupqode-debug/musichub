@@ -5,6 +5,7 @@
 - **Deciders:** project owner
 - **Spec sections:** ARCHITECTURE.md §4; MUSIC_ENGINE.md §2.3, §10 (S1)
 - **Evidence:** [docs/spikes/s1-turbopack.md](../spikes/s1-turbopack.md)
+- **Addendum:** 2026-11-24, spike S6 clock findings, status *Deferred* (no decision), see [Addendum](#addendum-2026-11-24-spike-s6-clock-measurements--status-deferred)
 
 ## Context
 
@@ -56,3 +57,12 @@ Safari and Firefox were not covered by automated tests; their versions and timin
 ## Alternatives considered
 
 - **`next build --webpack` + `@coderline/alphatab-webpack`:** not needed, since Turbopack works in all four browser checks; it would leave the Next.js default build and add a plugin. Kept as fallback.
+
+## Addendum (2026-11-24): spike S6 clock measurements — status Deferred
+
+This addendum records findings only; the decision above is unchanged and no clock decision is taken. Evidence: [docs/spikes/s6-audio-clock-accuracy.md](../spikes/s6-audio-clock-accuracy.md) (ROADMAP.md S2-08).
+
+- alphaTab 1.9.0 `playerPositionChanged` timing was measured against the browser's audio-frame clock in Playwright Chromium and Playwright WebKit (headless, macOS). p95 anchor jitter: Chromium below 10 ms in 9/9 runs; WebKit above 10 ms at the default `positionUpdateIntervalInMilliseconds = 10` in 3 of 4 speed-1.0 runs and below 10 ms at `0` in 3/3 runs.
+- Only browser-reported latency values were recorded (`outputLatency` 24 ms in Chromium, 8.94 ms in WebKit). The *Not measured* item above (real latency to audible sound) remains open: no loopback was performed, and Safari on a real device and Firefox were not measured.
+- Provisional, not accepted: 10 ms as the base interval for Chromium; `0` as a possible fallback for WebKit, not confirmed for Safari. A decision is deferred until measurements against the audio output exist.
+
