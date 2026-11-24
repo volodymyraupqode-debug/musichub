@@ -272,8 +272,9 @@ At speeds 0.5, 1.0 and 1.5, `currentTime` advances at 1.000 ms per ms in every r
 `currentTick` advances at 0.96, 1.92 and 2.88 ticks per ms (120 BPM, 960 PPQ). **`currentTime` is
 elapsed playback time, not score time.** MUSIC_ENGINE.md §5.1 takes `anchor.scoreMs` from
 `currentTime` and multiplies the extrapolation by `speed`; with alphaTab 1.9.0 the score position
-must come from `currentTick` (or `currentTime × speed` from the playback start), and the
-extrapolation rate for `currentTime` is 1. Recorded as a finding for Phase 1.
+has to come from `currentTick` (or `currentTime × speed` from the playback start), and the
+extrapolation rate for `currentTime` is 1. Recorded as a finding for Phase 1; the resulting
+recommendation is provisional (§9.2).
 
 ### 7.4 What is not shown
 
