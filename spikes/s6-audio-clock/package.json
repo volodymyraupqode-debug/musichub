@@ -10,6 +10,7 @@
     "test:browser": "playwright test e2e/smoke.spec.ts",
     "measure": "playwright test e2e/measure.spec.ts --workers=1",
     "analyze": "node scripts/analyze.ts",
+    "replay-clock": "node scripts/replay-clock.ts",
     "serve": "node scripts/serve.ts"
   },
   "dependencies": {

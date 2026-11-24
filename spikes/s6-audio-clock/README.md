@@ -10,3 +10,6 @@ Throw-away research code for ROADMAP.md S2-08 (MUSIC_ENGINE.md §5.1, §10 spike
 - `scripts/serve.ts` — `pnpm serve`: the harness on http://127.0.0.1:3280/ for manual and loopback runs (none of which was performed in S2-08; see the report §8).
 
 `data/raw/` holds the raw runs (gzip JSON, with configuration and environment); `data/measure-run.log` the Playwright log of the measurement session.
+
+Offline clock replay (S6 follow-up, no new measurements): `src/clock.ts` (research clock model), `src/clock.test.ts` (synthetic lifecycle tests), `scripts/replay-clock.ts` — `pnpm replay-clock` replays the 18 raw runs into `data/clock-replay/`. Report: [REPLAY.md](REPLAY.md).
+
