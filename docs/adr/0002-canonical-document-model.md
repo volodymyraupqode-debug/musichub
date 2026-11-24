@@ -26,7 +26,7 @@ alphaTab is a rendering/playback SDK, not an editor. Its docs warn that direct m
 
 ## Amendment 1 (2026-11-24): alphaTab adapter strategy (spike S2, S2-05)
 
-The decision above is unchanged. Until this amendment the status read "Accepted (adapter strategy A vs B is finalised by spike S2 in Sprint 2)"; this amendment is that finalisation. It records the owner's decisions after spike S2 and its review: Q-A (strategy), Q-B (diagnostics), Q-C (playback channels, partly), Q-D (ottava) and Q-E (fermatas). Nothing here is implemented in production code yet; `packages/music-engine` is Phase 1 work. Spike code is never promoted as-is (spikes/README.md).
+The decision above is unchanged. Until this amendment the status read "Accepted (adapter strategy A vs B is finalised by spike S2 in Sprint 2)"; this amendment is that finalisation. It records the owner's decisions after spike S2 and its review: Q-A (strategy), Q-B (diagnostics), Q-C (playback channels; open questions listed in A5), Q-D (ottava) and Q-E (fermatas). Nothing here is implemented in production code yet; `packages/music-engine` is Phase 1 work. Spike code is never promoted as-is (spikes/README.md).
 
 ### A1. Adapter strategy (Q-A, approved)
 
@@ -79,28 +79,38 @@ The decision above is unchanged. Until this amendment the status read "Accepted 
 - MHD stores no duration multiplier or playback policy. Fermata playback is owned by the future timeline / playback engine; alphaTab 1.9's MIDI generator does not hold fermatas.
 - alphaTab draws a fermata only on a beat that starts exactly at its tick. The adapter never rounds, moves or approximates a fermata. If the position is not a whole alphaTab tick, or no non-grace beat starts there, no alphaTab fermata is created and the spike reports `unsupported` (severity `warning`, aspect `notation`); the MHD position is unchanged. Strategies A and B report identical diagnostics.
 
-### A5. Playback channel allocation (Q-C, approved in part)
+### A5. Playback channel allocation (Q-C)
 
-Approved:
+**Approved decisions:**
 
-- MIDI channel 9 (zero-based) is reserved for percussion; melodic tracks never use it.
-- Each melodic instrument gets its own channel when possible.
-- Program-change conflicts from accidental channel sharing between instruments are not allowed.
-- When channels are insufficient, the adapter uses a deterministic fallback and reports an `engine-policy` diagnostic.
-- Channel allocation is adapter policy, not part of MHD.
+- **Two Scores per conversion.** The adapter produces a **Render Score** and a **Playback Score**.
+  - The Render Score contains every MHD track (melodic and percussion) and is used for notation and hit-testing.
+  - The Playback Score contains only tracks with a conflict-free channel allocation. **Only the Playback Score may be the source of MIDI playback; the Render Score must never enter the MIDI playback pipeline.**
+- MIDI channel 9 (zero-based) is reserved for percussion; percussion tracks use 9 for both primary and secondary channel. Melodic tracks use only channels 0–8 and 10–15 and never channel 9.
+- Each melodic track gets its own channel whenever one is available, allocated deterministically in document order; percussion tracks do not count toward the melodic index.
+- When the melodic channels run out, a track may share a channel only with an earlier track that has the **same MIDI program and bank**, choosing the earliest compatible channel. Sharing between different programs or banks is never allowed.
+- If no compatible channel exists, the track is **left out of the Playback Score and stays in the Render Score**, with an `engine-policy` warning that carries the track's MHD id. MHD is not changed.
+- Channel allocation is adapter policy, not part of the canonical MHD model.
 
-**Not decided yet** (the proposal from the S2-05 review is not approved):
+**Implemented in the spike** (PR #12, `spikes/s2-mhd-to-alphatab/src/channels.ts`, `scores.ts`; evidence in the [S2-05 report](../spikes/s2-mhd-to-alphatab.md), §5.4.1):
 
-1. Behaviour for melodic tracks beyond the available channels (alphaTab 1.9 has 16 channels; the MIDI port is ignored).
-2. Whether secondary channels go first to tracks with bend, whammy or vibrato.
-3. Several percussion tracks with different mixer settings sharing channel 9.
-4. Whether mute or solo may change the allocation.
-5. A separate channel policy for the future in-house MIDI output engine (`midi-engine`).
+- Up to 7 melodic tracks get consecutive channel pairs (primary, secondary); 8–15 get one own primary each and the spare channels as secondaries in document order; from the 16th, the sharing and exclusion rules above apply. Sharing is reported as an `engine-policy` diagnostic with severity `info`.
+- `RenderScore` and `PlaybackScore` are distinct compile-time types; the spike's MIDI helper accepts only a `PlaybackScore`. Each Score has its own ID map.
+- Tracks excluded from playback keep a placeholder channel in the Render Score; it is never a playback allocation.
+- Strategy B (test-only oracle) imports both Scores and normalises their channels to the same plan, because alphaTex has no channel syntax and alphaTab 1.9.0's importer does not follow this policy (melodic channel 9 from five melodic tracks, channels above 15 from nine).
 
-The spike does not implement the approved fallback: beyond 15 melodic tracks it reuses channels by track index without a diagnostic, and in a 25-track probe it gave the 25th melodic track channel 9, the percussion channel.
+**Open questions** (not decided; nothing above answers them):
+
+1. S7: whether alphaTab's player can play a separate Playback Score while the Render Score is displayed is not proven.
+2. GP7 export from the Render Score can contain placeholder channels; no export policy is approved.
+3. Priority of secondary channels for bend, whammy and vibrato.
+4. Mixer settings when several percussion tracks share channel 9.
+5. Mute and solo for tracks that share a MIDI channel.
+6. The channel policy of the future in-house MIDI output engine (`midi-engine`).
+7. The performance cost of building two Scores per conversion is not measured.
 
 ### A6. Consequences and Phase 1 verification
 
 - `packages/music-engine` (Phase 1) implements A1–A5 with the full diagnostics contract (A2) and the regression suite (A1), including tests for the two A defects found in review: the missing registration of articulation id 59, and alternate endings 33+, which Strategy A silently corrupts through 32-bit shifts (MHD keeps endings 1–99; the adapter must report them, never truncate or corrupt them).
 - To verify in Phase 1: conversion and rendering in the browser render worker; audible playback; GP7 and MIDI exports opened in third-party applications; timeline parity with alphaTab (grace timing, tuplet tick truncation; spike S5).
-- Unresolved owner decisions that may affect the adapter: the remaining Q-C points (A5), left-hand fingering numbering, alternate endings above 8 (drawn without numbers), half-open hi-hat on GM 42 vs 46 and rimshot on GM 40, note velocity in alphaTab playback.
+- Unresolved owner decisions that may affect the adapter: the open questions of A5, left-hand fingering numbering, alternate endings above 8 (drawn without numbers), half-open hi-hat on GM 42 vs 46 and rimshot on GM 40, note velocity in alphaTab playback.

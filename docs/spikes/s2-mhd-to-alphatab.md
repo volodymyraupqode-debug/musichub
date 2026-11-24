@@ -3,7 +3,7 @@
 - **Task:** ROADMAP.md S2-05 (MUSIC_ENGINE.md §4.1 `toAlphaTab()`, §10 spike S2)
 - **Code:** `spikes/s2-mhd-to-alphatab` (isolated workspace package, Node only)
 - **Status:** **complete.** The owner approved Strategy A with B as a test-only oracle and decided the follow-up questions Q-B to Q-E; the decisions are recorded in [ADR-0002, Amendment 1](../adr/0002-canonical-document-model.md#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05). Some Q-C points and other questions stay open (§12).
-- **Date:** 2026-11-23; revised 2026-11-24 after the review and the Q-D/Q-E follow-up (PR #11)
+- **Date:** 2026-11-23; revised 2026-11-24 after the review, the Q-D/Q-E follow-up (PR #11) and the MIDI channel allocation fix (PR #12)
 
 ## 1. Goal and scope
 
@@ -32,18 +32,20 @@ Evidence counts only when it is checked in the resulting structure, MIDI output 
 |---|---|
 | `src/strategy-a.ts` | Strategy A converter; builds the `idMap` while constructing |
 | `src/strategy-b.ts` | Strategy B: MHD → alphaTex generator + import |
-| `src/mapping.ts` | Value mappings **shared by both** (enums, units, channels, percussion articulations, fermata placement) |
+| `src/mapping.ts` | Value mappings **shared by both** (enums, units, percussion articulations, fermata placement) |
+| `src/channels.ts` | MIDI channel allocation shared by both (PR #12, §5.4.1) |
+| `src/scores.ts` | `RenderScore` / `PlaybackScore` compile-time types (PR #12) |
 | `src/facts.ts` | Comparable facts from an alphaTab `Score` and from MHD (see §5.1 on independence) |
 | `src/midi.ts`, `src/render.ts` | MIDI from `MidiFileGenerator`; headless rendering with bounds lookup |
 | `src/id-map.ts` | `idMap` and positional recovery for Strategy B |
 | `src/losses.ts` | `Loss` records: a partial mapping of the Q-B diagnostic contract (§9.1) |
 | `src/synthetic.ts`, `src/performance.ts`, `src/builders.ts` | Synthetic fixtures and the 300 × 8 document |
-| `src/*.test.ts` | 4 files, 164 tests + 1 skipped: both strategies on every document, alphaTab findings, id map, fermatas and ottava |
+| `src/*.test.ts` | 5 files, 459 tests + 1 skipped: both strategies on every document, alphaTab findings, id map, fermatas and ottava, channel allocation (293 of them) |
 | `scripts/compare.ts`, `bench.ts`, `render.ts` | Reproducible comparison, benchmark, screenshots |
 
 ## 2. Strategy A — direct model + `finish()`
 
-Order that works: create all `MasterBar`s and `score.addMasterBar()`; per track `score.addTrack()`, `track.ensureStaveCount(n)`; per staff set display, tuning, capo and transposition, then `staff.addBar()`, `bar.addVoice()`, `voice.addBeat()`, `beat.addNote()`, registering every object in the `idMap` as it is created; attach fermatas with `masterBar.addFermata(tick, …)`; finally **one** `score.finish(settings)`. `finish()` computes beat timing (`playbackStart`, `playbackDuration`, `displayDuration`), chains beats and notes across bars, resolves ties (`tieOrigin`), grace groups, tuplet groups, pedal chains and master-bar start ticks. Every conversion builds a fresh Score with a fresh `idMap`.
+Order that works: create all `MasterBar`s and `score.addMasterBar()`; per track `score.addTrack()`, `track.ensureStaveCount(n)`; per staff set display, tuning, capo and transposition, then `staff.addBar()`, `bar.addVoice()`, `voice.addBeat()`, `beat.addNote()`, registering every object in the `idMap` as it is created; attach fermatas with `masterBar.addFermata(tick, …)`; finally **one** `score.finish(settings)`. `finish()` computes beat timing (`playbackStart`, `playbackDuration`, `displayDuration`), chains beats and notes across bars, resolves ties (`tieOrigin`), grace groups, tuplet groups, pedal chains and master-bar start ticks. Every conversion builds fresh Scores with fresh ID maps: since PR #12 a **Render Score** (all tracks) and a separate **Playback Score** (only tracks with a playback channel), each with its own `idMap` (§5.4.1).
 
 Invariants Strategy A must ensure itself (each found by a failure, each pinned by a test or the comparison):
 
@@ -77,7 +79,7 @@ Pitfalls found (each pinned by a test):
 4. **`tb` spaces whammy values evenly; exact offsets need `tbe`.**
 5. **Decimals must round-trip:** a 12-digit `0.333333333333` moved a tempo change from tick 2240 to 2239.99…; B writes the shortest round-trip form.
 6. **`instrument percussion` leaves a program-25 instrument automation** on the first beat, so program change 25 goes to the drum channel; B adds a beat-level `instrument 0`.
-7. **No syntax for MIDI channels:** the importer assigns them itself (see §5.4).
+7. **No syntax for MIDI channels:** the importer assigns them itself, and not according to our policy (melodic channel 9 from five melodic tracks, channels above 15 from nine; pinned by a test). Since PR #12 the oracle overwrites the imported channels with the shared allocation (§5.4.1).
 8. **`displaytranspose` must be explicit:** otherwise the importer applies a default per MIDI program.
 
 The importer reports invalid input with code, line and column in the generated text (e.g. `AT208` for a string out of range), but those coordinates refer to alphaTex, not MHD ids; a source map would be needed to point at the MHD element.
@@ -140,9 +142,9 @@ For every document and both strategies (`pnpm compare`, `pnpm test`):
 
 "Rendered bars" counts one bar bound per drawn notation line (notation + tab = 2). Every expected beat and note has rendered bounds in both strategies.
 
-**Full model diff (JsonConverter), A vs B** (scripts; rerun on all 15 documents after PR #11): identical except for (a) alphaTab id references (`tieOriginNoteId` etc., global counters), (b) MIDI channel numbers on documents with a drum track (§5.4), (c) B♯3 / E𝄫4 stored as `octave 4 / tone 12` (B, from the pitch name) vs `octave 5 / tone 0` (A) with the same sounding pitch, accidental mode and rendering, and (d) **in `percussion`, A does not register articulation id 59** (MHD `59 + edge`) in `track.percussionArticulations` and stores the raw id instead, while B registers it. The fact-based tests did not catch (d); only the full model diff did.
+**Full model diff (JsonConverter), A vs B** (scripts; rerun on all 15 documents after PR #11): identical except for (a) alphaTab id references (`tieOriginNoteId` etc., global counters), (b) before PR #12 only: MIDI channel numbers on documents with a drum track; after PR #12 the Render and Playback Scores of A and B have identical channels (rerun), (c) B♯3 / E𝄫4 stored as `octave 4 / tone 12` (B, from the pitch name) vs `octave 5 / tone 0` (A) with the same sounding pitch, accidental mode and rendering, and (d) **in `percussion`, A does not register articulation id 59** (MHD `59 + edge`) in `track.percussionArticulations` and stores the raw id instead, while B registers it. The fact-based tests did not catch (d); only the full model diff did.
 
-**MIDI:** note on/off, tempo and velocity events are identical for all 15 documents. Strict comparison (with channels and program changes) differs only on the three documents with a drum track (§5.4). alphaTab generates **no sustain-pedal (CC 64) events** and **no fermata holds** for either strategy (tests for the pedal; fermata checked by script: same last note-off tick with and without a fermata).
+**MIDI:** since PR #12 the MIDI generated from the Playback Scores of A and B is **strictly** identical for all 15 documents, channels and program changes included (test). Before PR #12 note, tempo and velocity events were identical and channels differed on the three documents with a drum track. alphaTab generates **no sustain-pedal (CC 64) events** and **no fermata holds** for either strategy (tests for the pedal; fermata checked by script: same last note-off tick with and without a fermata).
 
 **GP7 round trip:** re-imported MIDI notes equal the original for 14 of 15 documents with both strategies; in `effects` the trill playback changes (4 note-on differences, the same for A and B). Placed fermatas and ottava survive the round trip. Input for spike S4, not a conversion difference.
 
@@ -163,7 +165,7 @@ For every document and both strategies (`pnpm compare`, `pnpm test`):
 
 | Topic | Strategy A | Strategy B |
 |---|---|---|
-| MIDI channels | Chosen by the spike adapter: consecutive pairs while they fit, melodic tracks kept off channel 9 up to 15 melodic tracks; primaries first when pairs do not fit; beyond 15 melodic tracks channels are reused by track index **without a diagnostic**, and a 25-track probe gave the 25th melodic track channel 9 (not the approved policy, §10.2) | Assigned by the importer; it reserves a pair for the percussion track and **puts a melodic track's secondary channel on 9** (drum channel) in `multi-instrument` and `performance-300x8` |
+| MIDI channels | Allocated by the adapter (`channels.ts`, §5.4.1) | alphaTab's importer assigns its own channels (melodic channel 9 from five melodic tracks, channels above 15 from nine); the oracle **normalises** them to the same allocation after import, so the results match A |
 | Drum program change | 0 | 25 unless `instrument 0` is added (pitfall 6) |
 | GP7 export of percussion | correct only with registered articulations (invariant 4) | correct |
 | Alternate endings 33+ | **silently corrupted**: `1 << 32` wraps to 1, so ending 33 becomes ending 1 | rejected by the importer (`AT211`) |
@@ -171,6 +173,32 @@ For every document and both strategies (`pnpm compare`, `pnpm test`):
 | Invalid input (validation bypassed) | string out of range, overfull and missing bars accepted silently; some inconsistencies crash inside alphaTab (`TypeError`) without element context | string out of range rejected with a diagnostic (line and column of the generated text); overfull and missing bars accepted silently |
 | Unplaceable fermata | `unsupported` diagnostic, no alphaTab fermata | identical diagnostic (test) |
 | Coupling | to undocumented model conventions (§2 invariants 1–5) | to the alphaTex grammar and importer behaviour (§3) |
+
+### 5.4.1 MIDI channel allocation (PR #12)
+
+The first spike allocation broke the approved Q-C policy: from the 16th melodic track it reused channels through a raw `i % 15` (different programs on one channel; the 25th melodic track got channel 9), without a diagnostic. PR #12 replaced it; the policy is recorded in ADR-0002, A5.
+
+**Render and Playback Scores.** Both strategies now return a `renderScore` (every MHD track, for notation, hit-testing and facts) and a separate `playbackScore` (only tracks with a conflict-free channel), each with its own ID map (`idMap`, `playbackIdMap`). They are distinct compile-time types (`RenderScore`, `PlaybackScore` in `scores.ts`); `midiSummary` accepts only a `PlaybackScore`, and a test with `@ts-expect-error` checks that passing a Render Score fails typecheck. The brands exist only in the type system. Strategy A builds the two Scores separately; Strategy B imports both from alphaTex and then writes the same channel plan into them.
+
+**Allocation** (`allocateChannels`, `channels.ts`):
+
+- Percussion tracks: 9/9 in both Scores; they do not count toward the melodic index.
+- Melodic channels are exactly `0–8, 10–15`, in document order. Up to 7 melodic tracks: consecutive pairs. 8–15: one own primary each, the spare channels as secondaries in document order, otherwise secondary = primary (no bend/whammy/vibrato prioritisation).
+- From the 16th melodic track: share the channel of the earliest earlier track with the same program and bank (`engine-policy`, severity `info`, aspect `playback`, the track's MHD id); otherwise the track is left out of the Playback Score (`engine-policy`, severity `warning`, aspect `playback`, the track's MHD id, detail "playback unavailable: all 15 melodic MIDI channels are in use and none has program …, bank …") and keeps a placeholder channel from the melodic list in the Render Score.
+
+**Test matrix** (`channels.test.ts`, real alphaTab Scores and the MIDI generated from the Playback Score; percussion absent, first, between and last; each melodic track has its own program and pitch):
+
+| Melodic tracks | Render / Playback tracks (no drums; with drums) | Melodic on ch 9 | Channel > 15 | Program conflicts in MIDI | `engine-policy` warnings | MIDI note-ons |
+|---|---|---|---|---|---|---|
+| 1 | 1 / 1; 2 / 2 | 0 | 0 | 0 | – | 1; 2 |
+| 7 | 7 / 7; 8 / 8 | 0 | 0 | 0 | – | 7; 8 |
+| 8 | 8 / 8; 9 / 9 | 0 | 0 | 0 | – | 8; 9 |
+| 15 | 15 / 15; 16 / 16 | 0 | 0 | 0 | – | 15; 16 |
+| 16 | 16 / 15; 17 / 16 | 0 | 0 | 0 | M16 | 15; 16 |
+| 20 | 20 / 15; 21 / 16 | 0 | 0 | 0 | M16–M20 | 15; 16 |
+| 25 | 25 / 15; 26 / 16 | 0 | 0 | 0 | M16–M25 | 15; 16 |
+
+Also checked: percussion is 9/9 in every case, and the melodic channels do not depend on where the percussion track is; the MIDI note keys are exactly those of the playable tracks (excluded tracks produce no notes); the Render Score still draws every track (26 of 26 notes for 25 melodic tracks plus drums); with programs 0–14 followed by 3, 3, 14, 20 and 3 on bank 1, the 16th–18th tracks share channels 3, 3 and 15 and the last two are excluded with warnings; 15 tracks with the same program still get 15 distinct channels; Strategy A and B give identical channels in both Scores and identical diagnostics; repeated runs are identical. A separate regression test in `findings.test.ts` pins alphaTab 1.9.0's native importer channels (the 5th melodic track gets 8/9, the 9th gets 16/17); the policy is enforced by the adapter, not by the importer.
 
 ## 6. Visual check
 
@@ -191,6 +219,7 @@ A and B look the same in all 14 screenshots; no notes, voices, tracks or bars ar
 - **Hit-testing:** every beat in `boundsLookup` maps back to its MHD id (test on `band-repeats`).
 - **After rebuild or edit:** a rebuilt Score has new objects and ids; the old map does not know them, a fresh map (A) or a fresh recovery (B) resolves every MHD id again, including newly inserted beats. A positional key (track/staff/bar/voice/beat index) names a different beat after an insert (test), so positional keys must never be cached across edits.
 - Elements without their own MHD id (individual fermatas) can only be identified through their master bar and position.
+- Since PR #12 each conversion has two ID maps, one for the Render Score and one for the Playback Score (different objects); the tests above use the Render Score map.
 
 ## 8. Benchmark (300 master bars × 8 tracks)
 
@@ -244,7 +273,7 @@ Severity: **none** · **low** · **medium** · **high** · **unsupported**. "✅
 | Program, bank, mute, solo | ✅ | ✅ | – | – | none |
 | Volume, pan | ✅ quantised | ✅ quantised | 0..16 steps | – | low |
 | Track colour token | hex placeholder | hex placeholder | token not representable | style through renderer resources | low |
-| MIDI channel assignment | ⚠️ controlled, approved fallback not implemented | ⚠️ importer; melodic secondary on channel 9 | B cannot set channels | approved policy in Phase 1 (ADR-0002 A5) | low (A) / medium (B) |
+| MIDI channel assignment | ✅ approved allocation (§5.4.1) | ✅ after normalisation (native importer channels do not follow the policy) | from the 16th melodic track: shared only with the same program and bank, otherwise not in the Playback Score | `engine-policy` diagnostics; open questions in §10.4 | low |
 | Pitch (string/fret, MIDI pitch) | ✅ | ✅ | – | – | none |
 | Spelling (`step`, `alter`) | ✅ accidental mode | ✅ pitch name + `acc` | – | – | none |
 | Chords, rests | ✅ | ✅ | – | – | none |
@@ -267,7 +296,7 @@ Severity: **none** · **low** · **medium** · **high** · **unsupported**. "✅
 | `extensions` | not mapped | not mapped | nothing to map in v1 | – | none |
 | Stable MHD id ↔ object | ✅ while building | ✅ positional recovery | B relies on 1:1 order | – | none (A) / low (B) |
 
-Both strategies reach the same semantic coverage except where §5.4 lists a difference (MIDI channels, endings 33+, articulation 59 registration); every other loss is shared because it comes from the alphaTab model itself.
+Both strategies reach the same semantic coverage except where §5.4 lists a difference (endings 33+, articulation 59 registration); every other loss is shared because it comes from the alphaTab model itself.
 
 ### 9.1 Diagnostics in the spike
 
@@ -288,6 +317,7 @@ Strategies A and B return identical fermata diagnostics (test). Two failing ferm
 - Ottava maps to `Beat.ottava`, applies to the bar only, is display-only, and leaves MIDI note events unchanged (`fermata-ottava.test.ts`).
 - Fermatas are placed only at an exact whole tick on an exact non-grace beat start; otherwise `unsupported` is reported, nothing is rounded or moved, and MHD is unchanged; A and B diagnostics are identical (`fermata-ottava.test.ts`).
 - alphaTab ids are global counters reset by alphaTex imports; the id map is per Score (tests).
+- MIDI channel allocation follows the approved policy in both strategies: no melodic channel 9, no channel above 15, no sharing between different programs or banks, excluded tracks only in the Render Score with an `engine-policy` warning; MIDI of A and B is strictly identical (`channels.test.ts`, `strategies.test.ts`).
 
 ### 10.2 Known limitations
 
@@ -298,7 +328,7 @@ Strategies A and B return identical fermata diagnostics (test). Two failing ferm
 5. **Strategy B is not a fully independent oracle**: it shares mapping tables and helpers with A (§3).
 6. **Strategy A depends on undocumented alphaTab construction conventions** (§2 invariants 1–5), which may change with alphaTab upgrades.
 7. **The spike `Loss` is not the complete Q-B diagnostic contract** (§9.1).
-8. **The approved MIDI channel policy is not implemented or verified**: beyond 15 melodic tracks the spike reuses channels by index without an `engine-policy` diagnostic and can even give a melodic track channel 9 (25th track in a probe), and Strategy B cannot control channels at all.
+8. **MIDI channel allocation (since PR #12):** the policy is implemented and tested in the spike only (§5.4.1), not in a production engine. Not verified: whether alphaTab's player can play a Playback Score while showing a different Render Score (S7); a GP7 export of the Render Score can contain placeholder channels (no export policy); the cost of building two Scores per conversion is not measured. Open questions: §10.4.
 9. Measurement scope: Node only (no browser worker), no audible playback check, GP7 files not opened in Guitar Pro, playback order with endings above 8 compared only A vs B, benchmark p95 noisy (§8).
 
 ### 10.3 Phase 1 implementation requirements
@@ -311,7 +341,14 @@ Strategies A and B return identical fermata diagnostics (test). Two failing ferm
 
 ### 10.4 Unresolved owner decisions
 
-- Q-C details: melodic tracks beyond the available channels; secondary channels first for bend/whammy/vibrato tracks; several percussion tracks with different mixer settings; whether mute/solo changes the allocation; the channel policy of the future MIDI output engine.
+- Q-C open questions (ADR-0002 A5), not decided:
+  1. S7: independent playback of the Playback Score while the Render Score is displayed is not proven.
+  2. GP7 export from the Render Score can contain placeholder channels; no export policy is approved.
+  3. Priority of secondary channels for bend, whammy and vibrato.
+  4. Mixer settings when several percussion tracks share channel 9.
+  5. Mute and solo for tracks that share a MIDI channel.
+  6. The channel policy of the future in-house MIDI output engine.
+  7. The performance cost of building two Scores per conversion is not measured.
 - Left-hand fingering numbering (MHD 0..5, undocumented).
 - Alternate endings above 8: how the UI and exports should treat numbers alphaTab cannot draw (MHD keeps 1–99).
 - Half-open hi-hat on GM 42 vs 46 and rimshot on GM 40.
@@ -322,7 +359,7 @@ Strategies A and B return identical fermata diagnostics (test). Two failing ferm
 From `spikes/s2-mhd-to-alphatab` (Node 26.13.1; `@musichub/music-model` must be built, e.g. by `pnpm turbo run build --filter=@musichub/music-model`):
 
 ```bash
-pnpm test        # 164 tests + 1 skipped: both strategies on all documents, findings, id map, fermatas and ottava
+pnpm test        # 459 tests + 1 skipped: both strategies on all documents, findings, id map, fermatas and ottava, channels
 pnpm compare     # comparison table; results/compare.json and results/<name>.atex
 pnpm bench       # 300 × 8 benchmark (BENCH_RUNS, BENCH_RENDER_RUNS)
 pnpm render      # results/render/<name>.html + .png; --docs copies canonical screenshots to docs/spikes/
@@ -336,7 +373,7 @@ From the repository root: `pnpm turbo run lint typecheck test --filter=@musichub
 
 Musical semantics did not decide between the two: on every document both reach identical facts, identical MIDI notes, identical rendered layout, and the same alphaTab losses. The decision rests on the other criteria:
 
-1. **Control over the model.** A sets MIDI channels, programs and articulations exactly; B cannot express channels and its importer puts melodic tracks on the drum channel in 2 documents, adds a stray program change, and auto-assigns defaults that B has to override.
+1. **Control over the model.** A sets MIDI channels, programs and articulations exactly; B cannot express channels (its importer gives melodic tracks channel 9 from five melodic tracks, so the oracle has to overwrite them), adds a stray program change, and auto-assigns defaults that B has to override.
 2. **ID mapping.** A gets the map for free while building; B needs a positional recovery that only works while the importer keeps MHD order 1:1 and adds ~15 ms per 300 × 8 build.
 3. **Editing and the edit loop.** ADR-0002 rebuilds a fresh Score for every change; A is about twice as fast (median 55 – 63 ms vs 105 – 121 ms, plus 15 ms for B's map), which matters for the < 150 ms target of spike S3.
 4. **Playback and timeline.** Both produce the same MIDI notes; A gives direct access to the objects the timeline (S5) and the playback-score variants (S7) must manipulate.
@@ -352,7 +389,7 @@ Musical semantics did not decide between the two: on every document both reach i
 |---|---|
 | Q-A: strategy | Strategy A for `music-engine`; B as a test-only regression oracle, re-implemented in Phase 1 test support, with a full serialized-model comparison |
 | Q-B: diagnostics | `validateDocument` gate; success = Score + id map + diagnostics, failure = diagnostics only; every loss reported; MHD never rewritten; contract details in Phase 1 |
-| Q-C: channels | Approved in part: channel 9 for percussion only, own channel per melodic instrument when possible, no program conflicts from accidental sharing, deterministic fallback with `engine-policy` diagnostic, not part of MHD. Details open (§10.4) |
+| Q-C: channels | Separate Render and Playback Scores; channel 9 for percussion only, melodic 0–8 and 10–15; own channel per melodic track when possible; sharing only with the same program and bank (earliest compatible); otherwise left out of the Playback Score with an `engine-policy` warning; not part of MHD (implemented in the spike, PR #12). Open questions in §10.4 |
 | Q-D: `Bar.ottava` | Display-only octave line over the current bar, mapped to `Beat.ottava` (PR #11) |
 | Q-E: fermatas | Positioned `MasterBar.fermatas` with optional `short` / `long` type; playback owned by the timeline (PR #11) |
 | Timeline parity | Mirror alphaTab's grace timing and tuplet tick truncation in `music-model/timeline` (spike S5) |
