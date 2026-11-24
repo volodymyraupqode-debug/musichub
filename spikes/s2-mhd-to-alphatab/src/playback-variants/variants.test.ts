@@ -343,4 +343,32 @@ describe('hook without a Playback Score', () => {
     expect(hook.stats.rewritten).toBe(0);
     expect(hook.stats.failures[0]).toMatch(/tick shift 120/);
   });
+
+  it('does not touch the player after detach, even for a load just before it', async () => {
+    const pair = variantPairs()[0];
+    if (!pair) throw new Error('pair missing');
+    const settings = newSettings();
+    const calls: string[] = [];
+    const player = {
+      setChannelVolume: () => calls.push('volume'),
+      applyTranspositionPitches: () => calls.push('transposition'),
+    } as unknown as alphaTab.synth.IAlphaSynth;
+    const listeners: ((f: alphaTab.midi.MidiFile) => void)[] = [];
+    const api = {
+      score: pair.render,
+      settings,
+      player,
+      midiLoad: {
+        on: (f: (x: alphaTab.midi.MidiFile) => void) => (listeners.push(f), () => {}),
+        off: () => {},
+      },
+      playerReady: { on: () => () => {}, off: () => {} },
+    };
+    const hook = attachPlaybackScore(api, () => pair.playback);
+    for (const f of listeners) f(renderMidi(pair.render, settings).file);
+    hook.detach();
+    await Promise.resolve();
+    expect(hook.stats.rewritten).toBe(1);
+    expect(calls).toEqual([]);
+  });
 });

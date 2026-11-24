@@ -123,9 +123,10 @@ export function attachPlaybackScore(
 ): { stats: HookStats; detach: () => void } {
   const stats: HookStats = { midiLoads: 0, rewritten: 0, failures: [] };
   let current: Score | undefined;
+  let attached = true;
   const applyVolumes = () => {
     const player = api.player;
-    if (!player || !current) return;
+    if (!attached || !player || !current) return;
     for (const [channel, volume] of channelVolumes(current.tracks))
       player.setChannelVolume(channel, volume);
   };
@@ -156,6 +157,7 @@ export function attachPlaybackScore(
     stats.lastNaturalTickShift = result.naturalTickShift;
     current = playback;
     queueMicrotask(() => {
+      if (!attached) return; // detached between the load and this microtask
       api.player?.applyTranspositionPitches(result.transpositionPitches);
       applyVolumes();
     });
@@ -164,6 +166,7 @@ export function attachPlaybackScore(
   return {
     stats,
     detach: () => {
+      attached = false;
       offLoad();
       offReady();
     },
