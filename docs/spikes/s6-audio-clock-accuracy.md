@@ -1,8 +1,10 @@
 # Spike S6 — Audio clock accuracy (ROADMAP S2-08)
 
-> Status: **automated measurements done; criterion not verified.** Player-event timing measured
-> in Playwright Chromium and WebKit (headless, macOS). No independent audio reference
-> (loopback) was available; Safari and Firefox were not measured. S2-08 stays open (§9).
+> Status: **automated part done; Phase 0 clock criterion not verified.** Measured: alphaTab
+> `playerPositionChanged` timing against the browser's audio-frame clock, in Playwright Chromium
+> and Playwright WebKit (headless, macOS). Not measured: physical audio output (no loopback),
+> Safari on a real device, Firefox. The owner decided on 2026‑11‑24 that loopback and further
+> measurements are not part of the current scope (§9, §11).
 
 ## 1. Question
 
@@ -279,7 +281,7 @@ None of these numbers prove synchronisation with sound. They show how well a clo
 `playerPositionChanged` follows the player's own audio-frame count. The output latency, its
 jitter, and whether the frame count matches the speaker are open until a loopback run (§8).
 
-## 8. Independent audio reference (loopback): availability and manual instructions
+## 8. Independent audio reference (loopback): availability and setup notes (not performed)
 
 **Available on the measurement machine** (macOS 26.7.3, Intel i7-9750H; `system_profiler
 SPAudioDataType`): built-in output (2 channels) and built-in microphone (1 channel). No
@@ -287,7 +289,9 @@ BlackHole or other virtual loopback driver and no audio interface are installed
 (`/Library/Audio/Plug-Ins/HAL` contains only `ParrotAudioPlugin.driver`, which is not a
 loopback device). Headless Playwright cannot record its own output, and installing drivers or
 downloading Playwright's Firefox needs the owner's consent. **No loopback measurement was made
-by the agent.**
+by the agent**, and by decision of the owner (2026‑11‑24) none is planned in the current scope.
+The paths and steps below are kept as setup notes for a later task; they are not pending work of
+S2-08.
 
 Possible reference paths:
 
@@ -297,7 +301,7 @@ Possible reference paths:
 | Cable loopback | Audio interface (or headphone-out → line-in) and a cable from output to input | Output + input latency and jitter | Cleanest physical reference |
 | BlackHole (virtual) | BlackHole 2ch installed, set as output and selected as microphone | The software path up to the CoreAudio device; **not** the DAC/speaker latency | Jitter only; hardware latency is excluded |
 
-Manual run (any path):
+Run procedure, for a later task (any path):
 
 1. `pnpm --filter @musichub/spike-s6-audio-clock serve` and open
    `http://127.0.0.1:3280/?interval=10&seconds=60&loopback=1` in the browser to test (Chrome,
@@ -319,53 +323,93 @@ Phase 2 calibration table, not corrected here.
 
 ## 9. Conclusion
 
-**Insufficient evidence; the Phase 0 criterion is not verified.**
+**Verdict: insufficient evidence. The Phase 0 criterion "S6 clock jitter < 10 ms, or a fallback
+is chosen" is not verified.** The measurements cover alphaTab's event timing against the browser's
+audio-frame clock, in two Playwright engines. They do not cover sound at the output, Safari on a
+real device or Firefox, and in headless WebKit the default setting fails.
 
-- Clock measured: alphaTab 1.9.0 `playerPositionChanged` (arrival time on the page vs the
-  reported played-audio position), raw and interpolated.
-- Metric for the 10 ms threshold: p95 anchor jitter (§4), per run.
-- Chromium (Playwright, headless): met in 9/9 runs, at both intervals and all speeds; repeats
-  consistent (p95 0.24–0.76 ms at 10 ms, 2.52–2.55 ms at 0 ms).
-- WebKit (Playwright, headless, 1 ms timer): not met at the default 10 ms in 3 of 4 speed-1.0 runs
-  (incl. the 300-s run); met at speeds 0.5 and 1.5 (one run each) and at 0 ms (3/3). Repeats vary
-  (9.69–14.37 ms at 10 ms).
-- No independent audio reference: output latency and jitter against sound are unmeasured.
-- Not measured: Safari, Firefox, headed browsers with a real output device.
+### 9.1 Confirmed (directly by the measurements in §6)
 
-S2-08 is therefore **not complete**: the criterion is unverified for sound and fails in headless
-WebKit at the default setting.
+1. alphaTab 1.9.0 reports the played position in steps of whole 128-frame render quanta:
+   every 10.67 ms at the default 10 ms, every 2.67 ms at 0 ms (48 kHz, source §3 and §6).
+2. **Playwright Chromium, headless:** p95 anchor jitter 0.24–0.76 ms at 10 ms and 2.52–2.55 ms
+   at 0 ms, below 10 ms in 9/9 runs, at speeds 0.5/1.0/1.5 and over 300 s. Repeats are
+   consistent.
+3. **Playwright WebKit, headless:** p95 anchor jitter **above 10 ms at the default 10 ms in 3 of 4
+   speed-1.0 runs** (12.73, 13.64, 14.37 ms; 9.69 ms in the fourth); below 10 ms at speeds 0.5
+   (8.06) and 1.5 (8.65), one run each, and at 0 ms in 3/3 runs (5.79–8.87 ms, p99 up to
+   10.86 ms). Repeats vary.
+4. In Chromium the interpolated clock (MUSIC_ENGINE.md §5.1 without slew) reduces the p95 error
+   against the audio-frame timeline from ≈ 5.1 ms (raw position) to 0.21–0.70 ms. At 0 ms Chromium
+   delivers the reports in pairs (effective period ≈ 5.3 ms) and the interpolated clock gains
+   nothing over 10 ms, with about four times as many events.
+5. In WebKit neither interpolation nor regression windows up to 2 s bring the error below the
+   jitter: the event timeline wanders by 9–30 ms over seconds (153 ms in one run with a 307 ms
+   stall), and `AudioContext.currentTime` read on the page wanders by a similar amount.
+6. Drift against `performance.now()`: Chromium +10.6…+18.3 ppm; WebKit −704…−1336 ppm.
+7. `currentTime` is elapsed playback time at every speed; `currentTick` scales with the speed.
 
-## 10. Recommended clock strategy (provisional) and fallback
+### 9.2 Provisional (follows from the results, needs further checks)
 
-1. **Keep the audio-anchored, interpolated clock of MUSIC_ENGINE.md §5.1**, with the score
-   position taken from `currentTick` (§7.3). In Chromium interpolation removes the 5 ms step error
-   of the raw position; the residual error is far below 10 ms.
-2. **Keep `positionUpdateIntervalInMilliseconds = 10` in Chromium**: `0` adds four times the
-   messages and no accuracy for an interpolated clock.
-3. **WebKit/Safari: provisional fallback `0`**, the only tested setting that met p95 < 10 ms in
-   headless WebKit (p99 still above 10 ms in 2/3 runs). Trade-off: ~4× messages, tiny gain in
-   Chromium-like engines. To be confirmed or rejected in real Safari with a loopback run; not
-   selected as a decision.
-4. **Regression smoothing is not a fallback**: it helps Chromium marginally and WebKit not at all
+1. Take the score position from `currentTick`, not from `currentTime` (recorded in
+   MUSIC_ENGINE.md §5.1). Confirmed for alphaTab 1.9.0 in both engines; to be re-checked in
+   Phase 1 with the real `PlaybackClock`.
+2. Keep `positionUpdateIntervalInMilliseconds = 10` as the base setting for Chromium.
+3. Consider `0` as a possible fallback for WebKit: it was the only tested setting with p95 < 10 ms
+   in headless WebKit. **Not a decision for Safari:** real Safari was not measured, p99 still
+   exceeded 10 ms in 2/3 runs, and it costs about four times the messages.
+4. Keep the interpolated, audio-anchored clock of MUSIC_ENGINE.md §5.1 and its 30 ms snap rule
+   (the WebKit wander would otherwise cause visible jumps). Regression smoothing is not a fallback
    (§6.4).
-5. **The §5.1 slew rule (snap above 30 ms)** stays: the observed WebKit wander (up to 30 ms over
-   seconds, 153 ms in one stall) would otherwise cause visible jumps.
 
-No ADR is changed: the measurements do not justify an architecture decision yet (the clock design
-of MUSIC_ENGINE.md §5.1 stands; only its `currentTime` assumption is corrected by §7.3, which is
-recorded in MUSIC_ENGINE.md §5.1 as an S6 note).
+### 9.3 Not confirmed (needs measurements that were not made)
+
+1. Real audio output latency and jitter at the speaker (needs loopback).
+2. Whether the clock matches the sound in any browser; whether WebKit's wander is the sound's
+   timing or an artefact of headless Playwright (needs loopback and headed runs).
+3. Safari on a real device (Playwright WebKit is not equivalent).
+4. Firefox (not run).
+5. The PIANO_VISUALIZER.md §5 plan in full: 5-minute runs at 0.5/1.0/1.5 in Chrome, Firefox and
+   Safari (this spike ran 60-s runs at 0.5 and 1.5 and one 300-s run at 1.0 per engine).
+6. The MUSIC_ENGINE.md §10 S6 criterion "interpolated clock error < 10 ms vs a reference
+   (Playwright + audio loopback, or manual metronome tap test)": the reference here is the
+   player's own audio-frame timeline, not loopback or a tap test.
+7. That the Phase 0 criterion holds for all supported browsers.
+
+## 10. Limitations
+
+- **What was measured:** the arrival time of alphaTab's `playerPositionChanged` on the page
+  against the position it reports, which counts frames the browser's audio worklet consumed. This
+  is the browser-reported audio clock as alphaTab sees it, not physical audio output.
+- **No loopback** was performed; output latency and jitter at the speaker are not measured. The
+  latency values in §6.6 are the browsers' own reports.
+- **Playwright WebKit** is Playwright's engine build in headless mode, not Safari on a real
+  device; its `performance.now()` has 1 ms resolution, so its sub-millisecond figures are not
+  comparable with Chromium's 0.1 ms data.
+- **Firefox** was not checked (Playwright's Firefox build not installed; download not approved).
+- **Headless only**, one Intel Mac, one alphaTab version (1.9.0, pinned), one simple score.
+- The WebKit results at the default 10 ms interval are negative (3 of 4 speed-1.0 runs above
+  10 ms) and stay part of the result.
+- The results do **not** show that the Phase 0 criterion is met for all supported browsers.
+
+No ADR records a decision from this spike: the evidence is not sufficient. ADR-0004 carries a
+short addendum with the status *Deferred* (findings and limitations only).
 
 Validation (2026‑11‑24, agent): `pnpm format:check` clean; `pnpm depcruise` no violations
 (137 modules); `pnpm turbo run lint typecheck test build` 24/24 tasks (spike S6: 15 unit tests);
 `pnpm test:browser` in the spike 4 passed (Chromium, WebKit).
 
-## 11. Remaining work
+## 11. Scope and open items
 
-1. Loopback runs (§8), at least Chrome and Safari, intervals 10 and 0: latency median and
-   jitter p95 against sound.
-2. Safari and Firefox player-event runs (`pnpm serve`, manual, or Playwright Firefox after the
-   owner approves the download).
-3. Headed runs with a real output device, to see whether WebKit's wander is a headless artefact.
-4. The PIANO_VISUALIZER.md §5 plan asks for 5-minute runs at speeds 0.5/1.0/1.5 in each
-   browser; this spike ran 60-s runs at 0.5 and 1.5 and one 300-s run at 1.0 per engine.
-5. Calibration (Phase 2) is out of scope.
+By decision of the owner (2026‑11‑24), the current S2-08 scope ends with the automated
+measurements and this report. Loopback runs, Safari and Firefox runs, headed runs and the full
+PIANO_VISUALIZER.md §5 plan are **not part of the current scope** and are not scheduled. They are
+the evidence a later task needs before the Phase 0 clock criterion can be decided:
+
+1. Loopback (§8): latency median and jitter p95 against sound, at least Chrome and Safari,
+   intervals 10 and 0.
+2. Safari on a real device and Firefox player-event runs.
+3. Headed runs with a real output device (is WebKit's wander a headless artefact?).
+4. A decision on the fallback for WebKit/Safari, or on another fallback, once 1–3 exist.
+
+Calibration (Phase 2) is out of scope.
