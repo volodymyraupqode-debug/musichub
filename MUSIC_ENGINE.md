@@ -379,6 +379,7 @@ interface PlaybackController {
 - **Drift control:** when a new anchor differs from the extrapolated value by < 30 ms, slew smoothly (no visual jump); when larger or `isSeek`, snap and emit `onSeek`.
 - Clock state is never React state. Consumers poll `now()` in their own `requestAnimationFrame` loop.
 - The event frequency and jitter of `playerPositionChanged` are undocumented → spike S6 (PIANO_VISUALIZER §5).
+- *S6 finding (alphaTab 1.9.0, [report](docs/spikes/s6-audio-clock-accuracy.md) §7.3):* `currentTime` is elapsed playback time and does not include `playbackSpeed`; `currentTick` does. The score-time anchor therefore comes from `currentTick` (or `currentTime × speed` from the playback start), not from `currentTime` directly. S6 is not complete (no audio loopback yet); the rest of this section is unchanged.
 - Consumers: cursor overlay, Piano Visualizer, Piano Roll playhead, practice-core.
 
 ### 5.2 Playback-score variants
