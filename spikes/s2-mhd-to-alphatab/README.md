@@ -19,4 +19,6 @@ pnpm render    # screenshots of A and B (Playwright Chromium); --docs updates do
 
 `src/playback-variants/` and `e2e/` hold spike S7 (ROADMAP.md S2-07): playing a Playback Score while alphaTab renders a different Render Score, through a `midiLoad` hook. Report: [docs/spikes/s7-playback-score-variants.md](../../docs/spikes/s7-playback-score-variants.md). Node evidence runs in `pnpm test` (`pnpm exec vitest run src/playback-variants`); the browser experiment with the real `AlphaTabApi` runs by hand with `pnpm test:browser` (Playwright Chromium and WebKit; not part of `turbo run test` or CI). `pnpm s7:serve` serves the harness on http://127.0.0.1:3270/ for the manual checklist in the report.
 
+`src/import/` and `fixtures/import/` hold spike S4 (ROADMAP.md S2-09): import fidelity of original hand-authored MusicXML fixtures through alphaTab → MHD (a spike-only converter) → GP7 round trip. Report: [docs/spikes/s4-import-fidelity.md](../../docs/spikes/s4-import-fidelity.md); fixture provenance and checksums: `fixtures/import/SOURCES.md`. Tests run in `pnpm test`; `pnpm import-fidelity` prints the coverage matrix.
+
 `results/` is generated and git-ignored. Production code never imports this package.

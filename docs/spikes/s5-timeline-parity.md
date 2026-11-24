@@ -160,7 +160,7 @@ Fermatas and ottava caused no difference: alphaTab's MIDI ignores both, and the 
 - It does not compare pitch bends, program or control changes, or time signatures.
 - Ties across a repeat or jump boundary use score positions, as alphaTab does; only simple cases are tested.
 - MHD `velocity` is not used: alphaTab ignores it (S2-05), so parity is measured against dynamics.
-- No import fixtures: real-world files (GP/MusicXML) would test more combinations. They depend on legally usable fixtures (S2-10 / OQ2) and were not used.
+- No import fixtures: real-world files (GP/MusicXML) would test more combinations. They depend on legally usable fixtures (S2-09 / S4, decision OQ2 in ROADMAP §Sprint 2) and were not used.
 - Measured in Node with `MidiFileGenerator`; the player's own MIDI path and S7 (separate Playback Score playback) are not verified.
 - "G3" is not defined in the repository documents. If it refers to the `segnoSegno` / `doubleCoda` gap: in MHD v1 both are unreachable markers (§6), and adding jumps to them would be a schema change (new `direction` values) that alphaTab already supports (directions 13–16 and 7, 11, 18).
 

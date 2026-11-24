@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<!-- MusicHub import fixture mx12-transposing: original synthetic content written for MusicHub spike S4 (ROADMAP S2-09).
+     Own work of the MusicHub project; see ../SOURCES.md. Purpose: B-flat clarinet: written D major key, written D5 E5 F#5, transpose -2 semitones (sounding C5 D5 E5) -->
+<score-partwise version="4.0">
+  <work><work-title>MusicHub S4 mx12-transposing</work-title></work>
+  <identification>
+    <creator type="composer">MusicHub project</creator>
+    <rights>Original MusicHub test fixture (own work)</rights>
+    <encoding><software>Hand-authored for MusicHub</software><encoding-date>2026-11-24</encoding-date></encoding>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name>Clarinet in Bb</part-name>
+      <score-instrument id="P1-I1"><instrument-name>Clarinet in Bb</instrument-name></score-instrument>
+      <midi-instrument id="P1-I1"><midi-channel>1</midi-channel><midi-program>72</midi-program></midi-instrument>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>12</divisions>
+        <key><fifths>2</fifths><mode>major</mode></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+        <transpose><diatonic>-1</diatonic><chromatic>-2</chromatic></transpose>
+      </attributes>
+      <direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>120</per-minute></metronome></direction-type><sound tempo="120"/></direction>
+      <note>
+        <pitch><step>D</step><octave>5</octave></pitch>
+        <duration>12</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>5</octave></pitch>
+        <duration>12</duration>
+        <voice>1</voice>
+        <type>quarter</type>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>5</octave></pitch>
+        <duration>24</duration>
+        <voice>1</voice>
+        <type>half</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

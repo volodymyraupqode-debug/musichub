@@ -12,7 +12,8 @@
     "compare": "node scripts/compare.ts",
     "bench": "node --expose-gc scripts/bench.ts",
     "render": "node scripts/render.ts",
-    "fixtures": "node scripts/generate-fixtures.ts"
+    "fixtures": "node scripts/generate-fixtures.ts",
+    "import-fidelity": "node scripts/import-fidelity.ts"
   },
   "dependencies": {
     "@coderline/alphatab": "catalog:",
