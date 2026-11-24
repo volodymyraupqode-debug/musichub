@@ -1,10 +1,10 @@
 # ADR-0002: Own canonical document model (MHD) instead of alphaTab Score/JSON
 
-- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) and the S3 acceptance criterion recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10) (criterion A9; S3 not met, no fallback selected)
+- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) and the S3 acceptance criterion recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10) (criterion A9; S3 not met, no fallback selected); findings of spikes S2, S4 and S5 and an index of all Phase 0 spike results in [Amendment 4](#amendment-4-2026-11-24-phase-0-spike-findings-s2-12--status-deferred) (findings only)
 - **Date:** 2026-11-21
 - **Deciders:** project owner
 - **Spec sections:** MUSIC_ENGINE.md §1–4; ARCHITECTURE.md §1.2
-- **Evidence:** [docs/spikes/s2-mhd-to-alphatab.md](../spikes/s2-mhd-to-alphatab.md), [docs/spikes/s7-playback-score-variants.md](../spikes/s7-playback-score-variants.md), [docs/spikes/s3-edit-loop-latency.md](../spikes/s3-edit-loop-latency.md)
+- **Evidence:** [docs/spikes/s2-mhd-to-alphatab.md](../spikes/s2-mhd-to-alphatab.md), [docs/spikes/s7-playback-score-variants.md](../spikes/s7-playback-score-variants.md), [docs/spikes/s3-edit-loop-latency.md](../spikes/s3-edit-loop-latency.md), [docs/spikes/s4-import-fidelity.md](../spikes/s4-import-fidelity.md), [docs/spikes/s5-timeline-parity.md](../spikes/s5-timeline-parity.md)
 
 ## Context
 
@@ -204,3 +204,43 @@ No fallback is selected. No measured fallback or combination has demonstrated th
 - S3 overall: **partly done**. No fallback selected.
 - The existing measurements establish the failure (they are lower bounds, and even the fastest measured edit with a visible edited bar exceeds 150 ms in every large-document variant). They cannot establish a future pass: they include neither RenderScheduler processing nor confirmation of the painted frame, and they do not meet the sample-size and environment requirements of A9.
 - A future pass claim requires new measurements that include the scheduler, confirm the painted frame, and satisfy the sample-size and environment requirements above.
+
+## Amendment 4 (2026-11-24): Phase 0 spike findings (S2-12) — status Deferred
+
+Records the results of spikes S2, S4 and S5 that the amendments above did not yet hold, so that every Phase 0 spike result is recorded in an ADR (ROADMAP.md §Phase 0 *Exit*). **Findings only:** no decision is taken, A1–A9 are unchanged, no acceptance criterion is changed, and no missing evidence is inferred. Each figure is copied from the cited report.
+
+### Spike S2 (ROADMAP S2-05): conversion performance
+
+- Source: [S2 report](../spikes/s2-mhd-to-alphatab.md) §8 (`pnpm bench`, Node 26.13.1, alphaTab 1.9.0, 300 master bars × 8 tracks, 3 runs of 1 cold + 30 warm conversions; ranges are min–max over the runs, not confidence intervals).
+- Warm median time to a finished Score: **Strategy A 55–63 ms**, Strategy B 105–121 ms (121–138 ms including B's id map). Warm p95: A 76–118 ms, B 174–200 ms.
+- Rendering, measured separately (Node SVG, all 8 tracks, width 1300): cold 621–714 ms, warm median 397–501 ms (4 runs each). Node only, not a browser worker.
+- Status: done (decision A1).
+
+### Spike S5 (ROADMAP S2-06): timeline parity
+
+- Source: [S5 report](../spikes/s5-timeline-parity.md) §5–§7.
+- Golden scenarios: **17 of 19** reach 100 % exact note-on, note-off and tempo parity with alphaTab 1.9.0 `MidiFileGenerator` (183 note-ons in those 17). The other two are `repeat-end-after-repeat` (MHD and alphaTab disagree, **D1**) and `ending-closing-skipped` (undefined in MHD, **D2**). Totals over all 19: 194 exact, 5 pitch, 5 missing note-ons.
+- S2-05 corpus (15 documents, 31,246 reference note-ons): 30,748 exact; 456 pitch, of which 454 are the half-open hi-hat (MHD GM key 42 vs alphaTab 46); 4 missing (D1/D2 order); 38 unsupported (constructs the prototype does not model). No timing, ordering, velocity, channel or extra-event mismatch.
+- Status: done for every construct whose semantics MHD defines or leaves to the engine. **Open owner decisions, unchanged:** D1, D2, the half-open hi-hat key, the [CONV] conventions.
+
+### Spike S4 (ROADMAP S2-09): import fidelity
+
+- Source: [S4 report](../spikes/s4-import-fidelity.md) §2–§3, §6–§7.
+- Corpus: **14 original, hand-authored MusicXML fixtures** (13 distinct contents plus one compressed `.mxl`; synthetic own work); **0 Guitar Pro files**.
+- alphaTab 1.9.0 `MusicXmlImporter` against independently written intent: every exercised feature group matches, except three deviations: D.S. al Coda arrives as Dal Segno; spaces in part names become U+00A0; an unslashed grace with `steal-time-previous` arrives on-beat. MHD v1 cannot hold tenuto or slur (reported as conversion losses).
+- alphaTab on both sides (spike converter, GP7 round trip): all 14 converted documents are valid MHD v1; the GP7 round trip keeps sounding pitch but makes non-guitar, non-percussion staves stringed. Not evidence of GP7/GP8 import fidelity.
+- **Unavailable evidence:** GP3, GP4, GP5, GP6/GPX, GP7 and GP8 are not evaluated (no independent, legally usable fixtures, OQ2); public-domain MusicXML was not used. The absence of GP files is a test-data gap, not evidence about the GP importers.
+- Status: **partly done**; the S4 criterion (20 public-domain/own GP3–8 + MusicXML files) is not met.
+
+### Index of Phase 0 spike results
+
+| Spike | ROADMAP | Status | Recorded in |
+|---|---|---|---|
+| S1 alphaTab under Turbopack | S2-04 | done | ADR-0004 (decision and limitations) |
+| S2 MHD → alphaTab strategy | S2-05 | done | ADR-0002 A1–A6 (decisions), Amendment 4 (numbers) |
+| S3 edit-loop latency | S2-10 | partly done: target not met on 300 × 8, no fallback selected | ADR-0002 Amendment 3 (numbers, criterion A9) |
+| S4 import fidelity | S2-09 | partly done: GP3–GP8 not evaluated, criterion not met | ADR-0002 Amendment 4 (findings) |
+| S5 timeline parity | S2-06 | done for defined semantics; D1, D2, half-open key, [CONV] open | ADR-0002 Amendment 4 (findings) |
+| S6 audio clock accuracy | S2-08 | partly done: automated part only, criterion not verified | ADR-0004 Addendum (findings, Deferred) |
+| S7 playback-score variants | S2-07 | done (ROADMAP); the sustain-pedal and hand-split questions of MUSIC_ENGINE.md §10 S7 were not covered ([S7 report](../spikes/s7-playback-score-variants.md) §1), so "one-hand practice audible correctly" has no evidence | ADR-0002 Amendment 2 (A7, A8) |
+
