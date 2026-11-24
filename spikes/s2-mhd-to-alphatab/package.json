@@ -13,7 +13,9 @@
     "bench": "node --expose-gc scripts/bench.ts",
     "render": "node scripts/render.ts",
     "fixtures": "node scripts/generate-fixtures.ts",
-    "import-fidelity": "node scripts/import-fidelity.ts"
+    "import-fidelity": "node scripts/import-fidelity.ts",
+    "edit-loop-analyze": "node scripts/edit-loop-analyze.ts",
+    "edit-loop-node": "node scripts/edit-loop-node.ts"
   },
   "dependencies": {
     "@coderline/alphatab": "catalog:",

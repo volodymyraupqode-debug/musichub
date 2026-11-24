@@ -21,4 +21,6 @@ pnpm render    # screenshots of A and B (Playwright Chromium); --docs updates do
 
 `src/import/` and `fixtures/import/` hold spike S4 (ROADMAP.md S2-09): import fidelity of original hand-authored MusicXML fixtures through alphaTab → MHD (a spike-only converter) → GP7 round trip. Report: [docs/spikes/s4-import-fidelity.md](../../docs/spikes/s4-import-fidelity.md); fixture provenance and checksums: `fixtures/import/SOURCES.md`. Tests run in `pnpm test`; `pnpm import-fidelity` prints the coverage matrix.
 
+`src/edit-loop/` and `e2e/edit-loop*` hold spike S3 (ROADMAP.md S2-10): edit-loop latency of the real adapter, S7 hook and `AlphaTabApi` in Playwright Chromium and WebKit. Report: [docs/spikes/s3-edit-loop-latency.md](../../docs/spikes/s3-edit-loop-latency.md). The smoke test runs in `pnpm test:browser`; measurements with `S3_MEASURE=1 pnpm exec playwright test e2e/edit-loop-measure.spec.ts --workers=1`, then `pnpm edit-loop-analyze` (raw data and summaries in `data/edit-loop/`); `pnpm edit-loop-node` times the stages in Node.
+
 `results/` is generated and git-ignored. Production code never imports this package.
