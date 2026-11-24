@@ -1,7 +1,7 @@
 # Spike S7 — Playback-score variants (ROADMAP S2-07)
 
 > Status: done. Owner decision (2026‑11‑24): keep the `midiLoad` hook (ADR-0002 Amendment 2,
-> A7–A8). Manual checklist results (§8) are pending. Isolated spike in `spikes/s2-mhd-to-alphatab`
+> A7–A8). Manual verification by the owner: passed (§8). Isolated spike in `spikes/s2-mhd-to-alphatab`
 > (`src/playback-variants/`, `e2e/`). alphaTab 1.9.0 (pinned). Pass/fail criteria (§5) were
 > written before the experiment ran. No production code, MHD, channel policy (Q-C) or S2-06 code
 > was changed.
@@ -147,10 +147,13 @@ Supporting findings, each with a test:
   tick shift than the Render Score, the hook empties the MIDI and records a failure instead of
   throwing. A throw inside `midiLoad` would abort `loadMidiForScore` before
   `player.loadMidiFile`, and the player would keep the previous Score's MIDI.
+- **No player calls after `detach()`** (added in review): a volume/transposition correction queued
+  by a load just before `detach()` is dropped.
 
 Validation (2026‑11‑24, agent): `pnpm turbo run lint typecheck test build` 21/21 tasks, spike
-tests 575 passed and 4 skipped (22 of them S7); `pnpm test:browser` in the spike 4 passed
-(Chromium, WebKit); `pnpm format:check` and `pnpm depcruise` clean. Manual checks: §8.
+tests 576 passed and 4 skipped (23 of them S7); `pnpm test:browser` in the spike 4 passed
+(Chromium, WebKit); `pnpm format:check` and `pnpm depcruise` clean. Manual check by the owner:
+passed (§8).
 
 ## 7. Constraints for any adoption (from the evidence)
 
@@ -182,23 +185,26 @@ creates the API in spike S1 (`spikes/s1-turbopack/src/app/score-spike.tsx`) and 
 
 ## 8. Manual browser checklist (owner)
 
-Automated tests observe events, not sound. Run
-`pnpm --filter @musichub/spike-s2-mhd-to-alphatab s7:serve` and open http://127.0.0.1:3270/ in
-Chrome, Safari and Firefox:
+Automated tests observe events, not sound. The checklist for a manual run: start
+`pnpm --filter @musichub/spike-s2-mhd-to-alphatab s7:serve` and open http://127.0.0.1:3270/.
 
-| Step | Expected | Chrome | Safari | Firefox |
-|---|---|---|---|---|
-| Play | Piano in bar 1, bass in bar 2; **no strings** (track B is rendered but excluded) | pending | pending | pending |
-| Watch the cursor | It moves over the Render Score, including the strings staff, in time with the sound | pending | pending | pending |
-| Mute A (Playback track), play | Only the bass sounds | pending | pending | pending |
-| Unmute all, Solo C, play | Only the bass sounds | pending | pending | pending |
-| Unmute all, play, press "Replace Render Score (E16)" while playing | Playback stops; E16 is shown; Play plays 15 tracks, not the 16th (key 55) | pending | pending | pending |
-| Open `/?hook=off` and play | Control: strings audible on the piano's channel (what alphaTab does without the hook) | pending | pending | pending |
+| Step | Expected |
+|---|---|
+| Play | Piano in bar 1, bass in bar 2; **no strings** (track B is rendered but excluded) |
+| Watch the cursor | It moves over the Render Score, including the strings staff, in time with the sound |
+| Mute A (Playback track), play | Only the bass sounds |
+| Unmute all, Solo C, play | Only the bass sounds |
+| Unmute all, play, press "Replace Render Score (E16)" while playing | Playback stops; E16 is shown; Play plays 15 tracks, not the 16th (key 55) |
+| Open `/?hook=off` and play | Control: strings audible on the piano's channel (what alphaTab does without the hook) |
 
-**Status (2026‑11‑24):** the owner reports that the checklist was run. The individual results
-(browsers, versions and observations per step) have not been communicated yet, so every cell
-stays *pending*. Nothing in this table is verified by the agent, and no result is inferred. The
-checklist does not test the sustain pedal or the hand split; they remain untested.
+**Result (2026‑11‑24): passed.** The owner tested the S2-07 behaviour manually in the browser and
+reported that everything checked worked correctly, with no issues observed. The owner did not
+specify the browsers, browser versions, environment or which checklist steps were covered;
+none are recorded here, and none are inferred.
+
+This manual verification is separate from the automated browser tests (§6, B1–B4: Playwright
+Chromium and WebKit, sequencer events only). The agent did not perform any manual check. Sustain
+pedal and hand split are not part of the checklist and remain untested (§1).
 
 ## 9. Limitations
 
@@ -232,7 +238,6 @@ implemented and stays an option.
 
 Still open:
 
-1. The individual results of the manual checklist (§8).
-2. UI behaviour for an excluded track (disabled mute/solo, how the exclusion is shown).
-3. The S7 sub-questions not covered here: sustain-pedal audibility and the hand split (§1).
-4. An audio-export path that uses the Playback Score (§7.3).
+1. UI behaviour for an excluded track (disabled mute/solo, how the exclusion is shown).
+2. The S7 sub-questions not covered here: sustain-pedal audibility and the hand split (§1).
+3. An audio-export path that uses the Playback Score (§7.3).
