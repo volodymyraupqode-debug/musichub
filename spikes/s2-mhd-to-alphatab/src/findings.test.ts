@@ -6,12 +6,18 @@ import { canonical } from './fixtures.ts';
 import { midiSummary } from './midi.ts';
 import { newSettings } from './run.ts';
 import { toAlphaTabDirect } from './strategy-a.ts';
-import { toAlphaTabViaTex } from './strategy-b.ts';
+import { toAlphaTabViaTex, toAlphaTex } from './strategy-b.ts';
 import { SYNTHETIC_FIXTURES } from './synthetic.ts';
 
+/** Render Scores of both strategies (model structure). */
 const both = (doc: Parameters<typeof toAlphaTabDirect>[0]) => [
-  toAlphaTabDirect(doc, newSettings()).score,
-  toAlphaTabViaTex(doc, newSettings()).score,
+  toAlphaTabDirect(doc, newSettings()).renderScore,
+  toAlphaTabViaTex(doc, newSettings()).renderScore,
+];
+/** Playback Scores of both strategies (MIDI). */
+const bothPlayback = (doc: Parameters<typeof toAlphaTabDirect>[0]) => [
+  toAlphaTabDirect(doc, newSettings()).playbackScore,
+  toAlphaTabViaTex(doc, newSettings()).playbackScore,
 ];
 
 describe('alphaTab 1.9.0 model invariants (Strategy A)', () => {
@@ -44,8 +50,8 @@ describe('alphaTab 1.9.0 model invariants (Strategy A)', () => {
 
   it('an alphaTex import resets the global id counters, so ids of two live Scores collide', () => {
     const doc = canonical('band-repeats');
-    const a = toAlphaTabDirect(doc, newSettings()).score;
-    const b = toAlphaTabViaTex(doc, newSettings()).score;
+    const a = toAlphaTabDirect(doc, newSettings()).renderScore;
+    const b = toAlphaTabViaTex(doc, newSettings()).renderScore;
     const firstBarId = (s: alphaTab.model.Score) => s.tracks[0]?.staves[0]?.bars[0]?.id;
     const ids = (s: alphaTab.model.Score) =>
       s.tracks.flatMap((t) => t.staves.flatMap((st) => st.bars.map((bar) => bar.id)));
@@ -56,8 +62,8 @@ describe('alphaTab 1.9.0 model invariants (Strategy A)', () => {
 
   it('alphaTab element ids are global counters, different for every new Score', () => {
     const doc = canonical('guitar-basic');
-    const first = toAlphaTabDirect(doc, newSettings()).score;
-    const second = toAlphaTabDirect(doc, newSettings()).score;
+    const first = toAlphaTabDirect(doc, newSettings()).renderScore;
+    const second = toAlphaTabDirect(doc, newSettings()).renderScore;
     const firstBeat = first.tracks[0]?.staves[0]?.bars[0]?.voices[0]?.beats[0];
     const secondBeat = second.tracks[0]?.staves[0]?.bars[0]?.voices[0]?.beats[0];
     expect(firstBeat?.id).not.toBe(secondBeat?.id);
@@ -97,7 +103,7 @@ describe('alphaTab semantics shared by both strategies', () => {
 
   it('generates no sustain pedal (CC 64) MIDI events although the pedal is in the model', () => {
     const doc = canonical('piano-grand-staff');
-    for (const score of both(doc)) {
+    for (const score of bothPlayback(doc)) {
       const pedals = score.tracks[0]?.staves[1]?.bars.flatMap((b) => b.sustainPedals) ?? [];
       expect(pedals.length).toBeGreaterThan(0);
       expect(midiSummary(score, newSettings()).sustainEvents).toBe(0);
@@ -178,5 +184,67 @@ describe('alphaTex pitfalls (Strategy B)', () => {
   it('keeps a builder id source deterministic', () => {
     const id = idSource('XX');
     expect(beat(id, d(4), [{ pitch: 60 }]).id).toBe('XX0000000001');
+  });
+});
+
+describe('alphaTab 1.9.0 native alphaTex channel assignment (before the oracle normalises it)', () => {
+  /** n melodic tracks (distinct programs), optionally followed by a drum track; raw import. */
+  function nativeChannels(n: number, drums: boolean): number[][] {
+    const doc = SYNTHETIC_FIXTURES['multi-voice']?.();
+    if (!doc) throw new Error('fixture missing');
+    const template = doc.tracks[0];
+    if (!template) throw new Error('fixture changed');
+    const tracks = Array.from({ length: n }, (_, k) => ({
+      ...template,
+      id: `NT${String(k).padStart(10, '0')}`,
+      name: `M${k + 1}`,
+      instrument: { family: 'other' as const, midiProgram: k, percussion: false },
+      staves: template.staves.map((s, si) => ({
+        ...s,
+        hand: undefined,
+        id: `NS${String(k * 2 + si).padStart(10, '0')}`,
+        bars: s.bars.map((b, bi) => ({
+          ...b,
+          id: `NB${String(k * 100 + si * 10 + bi).padStart(10, '0')}`,
+          voices: b.voices.map((v, vi) => ({
+            ...v,
+            id: `NV${String(k * 1000 + si * 100 + bi * 10 + vi).padStart(10, '0')}`,
+            beats: [],
+          })),
+        })),
+      })),
+    }));
+    if (drums) {
+      const first = tracks[0];
+      if (first)
+        tracks.push({
+          ...first,
+          id: 'NTDRUMS00000',
+          name: 'Drums',
+          instrument: { family: 'other', midiProgram: 0, percussion: true },
+        });
+    }
+    const tex = toAlphaTex({ ...doc, tracks: tracks as typeof doc.tracks });
+    const score = alphaTab.importer.ScoreLoader.loadAlphaTex(tex, newSettings());
+    return score.tracks.map((t) => [
+      t.playbackInfo.primaryChannel,
+      t.playbackInfo.secondaryChannel,
+    ]);
+  }
+
+  it('gives the fifth melodic track channel 9 (8/9)', () => {
+    expect(nativeChannels(5, false)[4]).toEqual([8, 9]);
+    expect(nativeChannels(5, true)[4]).toEqual([8, 9]);
+    expect(nativeChannels(4, false).flat()).not.toContain(9);
+  });
+
+  it('assigns channels above 15 from the ninth melodic track', () => {
+    const channels = nativeChannels(9, false);
+    expect(channels[8]).toEqual([16, 17]);
+    expect(
+      nativeChannels(8, false)
+        .flat()
+        .every((c) => c <= 15),
+    ).toBe(true);
   });
 });

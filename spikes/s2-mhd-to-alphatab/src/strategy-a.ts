@@ -2,6 +2,7 @@
 // then call `score.finish(settings)` once (spike S2, ROADMAP.md S2-05).
 import * as alphaTab from '@coderline/alphatab';
 import type { Beat, MhdDocument, Note, Staff, Track } from '@musichub/music-model';
+import { allocateChannels, applyChannels, playbackDocument, type ChannelPlan } from './channels.ts';
 import { createIdMap, type IdMap } from './id-map.ts';
 import {
   ACCENT,
@@ -19,7 +20,6 @@ import {
   TRIPLET_FEEL,
   VIBRATO,
   alphaTabString,
-  channelsFor,
   defaultBrushTicks,
   defaultClef,
   durationTicks,
@@ -36,14 +36,30 @@ import {
   resolvedTimeSignatures,
 } from './mapping.ts';
 import type { Loss } from './losses.ts';
+import { asPlaybackScore, asRenderScore, type PlaybackScore, type RenderScore } from './scores.ts';
 
 const { model } = alphaTab;
 
 export interface StrategyAResult {
+  /** Every MHD track, for notation and hit-testing. Never generate MIDI from it. */
+  renderScore: RenderScore;
+  /** Only tracks with a conflict-free playback channel; MIDI is generated from this Score only. */
+  playbackScore: PlaybackScore;
+  /** MHD id ↔ object for the Render Score. */
+  idMap: IdMap;
+  /** MHD id ↔ object for the Playback Score (a different set of objects). */
+  playbackIdMap: IdMap;
+  /** Losses of the Render Score build plus the channel diagnostics (engine-policy). */
+  losses: Loss[];
+  channels: ChannelPlan;
+  /** Milliseconds: Render Score construction and `finish()`; Playback Score build in total. */
+  timings: { build: number; finish: number; playback: number };
+}
+
+interface BuiltScore {
   score: alphaTab.model.Score;
   idMap: IdMap;
   losses: Loss[];
-  /** Milliseconds: object construction, and `score.finish(settings)`. */
   timings: { build: number; finish: number };
 }
 
@@ -64,6 +80,34 @@ const TRACK_COLOR_HEX = [
 ];
 
 export function toAlphaTabDirect(doc: MhdDocument, settings: alphaTab.Settings): StrategyAResult {
+  const channels = allocateChannels(doc);
+  const render = buildScore(doc, settings, channels, 'render');
+  const t0 = performance.now();
+  // The Playback Score gets fresh settings so the two builds share no mutable state.
+  const playback = buildScore(
+    playbackDocument(doc, channels),
+    new alphaTab.Settings(),
+    channels,
+    'playback',
+  );
+  const playbackMs = performance.now() - t0;
+  return {
+    renderScore: asRenderScore(render.score),
+    playbackScore: asPlaybackScore(playback.score),
+    idMap: render.idMap,
+    playbackIdMap: playback.idMap,
+    losses: [...render.losses, ...channels.diagnostics],
+    channels,
+    timings: { ...render.timings, playback: playbackMs },
+  };
+}
+
+function buildScore(
+  doc: MhdDocument,
+  settings: alphaTab.Settings,
+  plan: ChannelPlan,
+  which: 'render' | 'playback',
+): BuiltScore {
   // alphaTab element ids are global static counters and every alphaTex import resets them
   // (Score.resetIds). Load the articulation table first, never in the middle of a build: an import
   // during construction gives later bars duplicate ids and Gp7Exporter then mixes up bars.
@@ -116,8 +160,7 @@ export function toAlphaTabDirect(doc: MhdDocument, settings: alphaTab.Settings):
     idMap.set(mb, mhd.id);
   });
 
-  const channels = channelsFor(doc);
-  doc.tracks.forEach((mhdTrack, trackIndex) => {
+  doc.tracks.forEach((mhdTrack) => {
     const track = new model.Track();
     track.name = mhdTrack.name;
     track.shortName = mhdTrack.shortName ?? '';
@@ -130,9 +173,6 @@ export function toAlphaTabDirect(doc: MhdDocument, settings: alphaTab.Settings):
     info.balance = mixerBalance(mhdTrack.mixer.pan);
     info.isMute = mhdTrack.mixer.mute;
     info.isSolo = mhdTrack.mixer.solo;
-    const ch = channels[trackIndex] ?? { primary: 0, secondary: 1 };
-    info.primaryChannel = ch.primary;
-    info.secondaryChannel = ch.secondary;
     score.addTrack(track);
     idMap.set(track, mhdTrack.id);
     track.ensureStaveCount(mhdTrack.staves.length);
@@ -149,6 +189,7 @@ export function toAlphaTabDirect(doc: MhdDocument, settings: alphaTab.Settings):
       });
   });
 
+  applyChannels(score, doc.tracks, plan, which);
   applyFermatas(doc, score, losses);
   const t1 = performance.now();
   score.finish(settings);

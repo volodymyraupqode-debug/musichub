@@ -97,7 +97,7 @@ for (let i = 0; i <= WARM_RUNS; i++) {
   });
   const b = toAlphaTabViaTex(doc, newSettings());
   const t0 = performance.now();
-  recoverIdMap(doc, b.score as never);
+  recoverIdMap(doc, b.renderScore as never);
   const idMap = performance.now() - t0;
   samples.b.push({
     generate: b.timings.generate,
@@ -135,20 +135,20 @@ console.log(
 );
 console.log(
   'alphaTab objects (A):',
-  JSON.stringify(countObjects(a.score)),
+  JSON.stringify(countObjects(a.renderScore)),
   ' (B):',
-  JSON.stringify(countObjects(b.score)),
+  JSON.stringify(countObjects(b.renderScore)),
 );
 console.log(
   'Retained heap after conversion (MB, gc before/after, single run): A',
-  heapDelta(() => toAlphaTabDirect(doc, newSettings()).score).toFixed(1),
+  heapDelta(() => toAlphaTabDirect(doc, newSettings()).renderScore).toFixed(1),
   ' B',
-  heapDelta(() => toAlphaTabViaTex(doc, newSettings()).score).toFixed(1),
+  heapDelta(() => toAlphaTabViaTex(doc, newSettings()).renderScore).toFixed(1),
 );
 
 const renders: number[] = [];
 for (let i = 0; i < RENDER_RUNS; i++)
-  renders.push(renderScore(toAlphaTabDirect(doc, newSettings()).score, newSettings()).ms);
+  renders.push(renderScore(toAlphaTabDirect(doc, newSettings()).renderScore, newSettings()).ms);
 console.log(
   `\nRendering (separate from conversion; Node SVG, all 8 tracks, width 1300, run 0 cold):`,
   JSON.stringify({ cold: +(renders[0] ?? NaN).toFixed(1), warm: stats(renders.slice(1)) }),

@@ -180,30 +180,6 @@ export function mixerBalance(pan: number): number {
   return Math.round((pan + 1) * 8);
 }
 
-/**
- * MIDI channels per track (alphaTab uses a primary and a secondary channel per track). Channel 9 is
- * only for percussion. Consecutive pairs while they fit; otherwise primaries are assigned first (15 melodic tracks at most get their own),
- * secondaries while channels are free; otherwise the secondary shares the primary. Beyond 15
- * melodic tracks primaries are shared too (MHD allows 64 tracks: open question for music-engine).
- */
-export function channelsFor(doc: MhdDocument): { primary: number; secondary: number }[] {
-  const free = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15];
-  const melodic = doc.tracks.map((t) => !t.instrument.percussion);
-  if (melodic.filter(Boolean).length * 2 <= free.length) {
-    // Enough channels: consecutive pairs, as alphaTab's importers assign them (but never 9).
-    return melodic.map((m) =>
-      m
-        ? { primary: free.shift() ?? 0, secondary: free.shift() ?? 0 }
-        : { primary: 9, secondary: 9 },
-    );
-  }
-  const primary = melodic.map((m, i) => (m ? (free.shift() ?? i % 15) : 9));
-  return melodic.map((m, i) => {
-    const p = primary[i] ?? 9;
-    return m ? { primary: p, secondary: free.shift() ?? p } : { primary: 9, secondary: 9 };
-  });
-}
-
 /** Bitmask of alternate endings (alphaTab `MasterBar.alternateEndings`, bit n-1 = ending n). */
 export function endingsMask(endings: readonly number[]): number {
   let mask = 0;

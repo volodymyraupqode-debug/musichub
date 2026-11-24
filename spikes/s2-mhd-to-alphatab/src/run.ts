@@ -42,13 +42,13 @@ function diffAll(expected: Facts, actual: Facts): FactDiff[] {
     .filter((d): d is FactDiff => d !== null);
 }
 
-function outcome<R extends { score: alphaTab.model.Score }>(
+function outcome<R extends { renderScore: alphaTab.model.Score }>(
   run: () => R,
   expected: Facts,
 ): StrategyOutcome<R> {
   try {
     const result = run();
-    const facts = scoreFacts(result.score);
+    const facts = scoreFacts(result.renderScore);
     return { result, facts, vsMhd: diffAll(expected, projectToMhd(facts)) };
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e), vsMhd: [] };
