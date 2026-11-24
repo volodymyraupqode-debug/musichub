@@ -220,6 +220,7 @@ describe.each(variantPairs().map((p) => [p.name, p] as const))('pair %s', (_name
       generatePlaybackMidi(pair.playback, settings).transpositionPitches,
     );
     hook.detach();
+    expect([midiLoad.size, ready.size]).toEqual([0, 1]); // only alphaTab's own listener stays
   });
 });
 
@@ -315,5 +316,31 @@ describe('hook without a Playback Score', () => {
     expect(file.events).toEqual([]);
     expect(hook.stats).toMatchObject({ midiLoads: 1, rewritten: 0 });
     expect(hook.stats.failures).toHaveLength(1);
+  });
+
+  it('fails closed when the Playback Score does not fit the Render time axis (larger tick shift)', () => {
+    const [e3, e3grace] = variantPairs();
+    if (!e3 || !e3grace) throw new Error('pairs missing');
+    const settings = newSettings();
+    const listeners: ((f: alphaTab.midi.MidiFile) => void)[] = [];
+    const api = {
+      score: e3.render,
+      settings,
+      player: null,
+      midiLoad: {
+        on: (f: (x: alphaTab.midi.MidiFile) => void) => (listeners.push(f), () => {}),
+        off: () => {},
+      },
+      playerReady: { on: () => () => {}, off: () => {} },
+    };
+    // E3-grace's Render Score needs tick shift 120; E3's Render Score has 0: not a subset.
+    const hook = attachPlaybackScore(api, () => e3grace.render);
+    const { file } = renderMidi(e3.render, settings);
+    expect(() => {
+      for (const f of listeners) f(file);
+    }).not.toThrow();
+    expect(file.events).toEqual([]);
+    expect(hook.stats.rewritten).toBe(0);
+    expect(hook.stats.failures[0]).toMatch(/tick shift 120/);
   });
 });

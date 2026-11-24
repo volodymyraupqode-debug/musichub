@@ -133,13 +133,24 @@ export function attachPlaybackScore(
     stats.midiLoads++;
     const render = api.score;
     const playback = render ? playbackFor(render) : undefined;
-    if (!playback) {
-      stats.failures.push('no Playback Score for the rendered Score: MIDI emptied');
+    const failClosed = (reason: string) => {
+      stats.failures.push(`${reason}: MIDI emptied`);
       file.tracks.splice(0, file.tracks.length);
       current = undefined;
+    };
+    if (!playback) {
+      failClosed('no Playback Score for the rendered Score');
       return;
     }
-    const result = rewriteMidiFile(file, playback, api.settings);
+    let result: PlaybackMidi;
+    try {
+      result = rewriteMidiFile(file, playback, api.settings);
+    } catch (error) {
+      // A throw here would abort alphaTab's loadMidiForScore before player.loadMidiFile, and the
+      // player would keep the previous Score's MIDI. Fail closed instead.
+      failClosed(error instanceof Error ? error.message : String(error));
+      return;
+    }
     stats.rewritten++;
     stats.lastTickShift = result.tickShift;
     stats.lastNaturalTickShift = result.naturalTickShift;
