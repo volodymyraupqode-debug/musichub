@@ -5,6 +5,11 @@
 > small document only; for 50 bars × 8 tracks it is borderline (Chromium) or missed (WebKit), for
 > 300 bars × 8 tracks it is missed by every measured variant. **No fallback reaches the target on
 > the large document, so none is selected.** Player position preservation works.
+>
+> **Acceptance criterion (added 2026‑11‑24, after the measurements):** the owner defined the S3
+> target in ADR-0002 Amendment 3, A9 (§1.2). Under A9 the target is **not met** for the 300 × 8
+> reference document and S3 stays partly done. The measurements in this report were taken before A9
+> and with a different method (§1.2); they are lower bounds under A9, not evidence of compliance.
 
 ## 1. Question and acceptance criteria
 
@@ -24,7 +29,7 @@ edit during playback stores `tickPosition` and restores it after `midiLoaded`, a
 fallbacks "if spike S3 shows unacceptable latency on 300-bar scores": Horizontal layout, a render
 window via `display.startBar`/`barCount`, rendering the edited track only.
 
-### 1.1 Ambiguities in the definition (not resolved here)
+### 1.1 Ambiguities in the definition (as found before the measurements)
 
 | # | Open in the documentation | How this spike handles it |
 |---|---|---|
@@ -34,7 +39,26 @@ window via `display.startBar`/`barCount`, rendering the edited track only.
 | A4 | Document size the target applies to | Three sizes (8 × 4, 50 × 8, 300 × 8); §6 only names 300-bar scores for the fallbacks |
 | A5 | Which tracks are visible | All tracks (baseline) and edited track only (fallback 3) |
 
-The owner decides A1–A5; this report does not choose them.
+The owner decides A1–A5; this report does not choose them. They were decided after the
+measurements, see §1.2.
+
+### 1.2 Acceptance criterion decided after the measurements (ADR-0002 A9)
+
+| # | Decision (owner, 2026‑11‑24) | Difference from the method used in this spike |
+|---|---|---|
+| A1 | Start: receipt of a single-note edit command by the editor, before RenderScheduler processing | Here t0 is the start of the modelled command; the RenderScheduler was not part of the interval |
+| A2 | End: the first actually painted frame in which the edited notation is visible | Here: the first animation frame after `renderFinished`, and the arrival of the edited bar's image (`partialRenderFinished`); neither confirms the painted frame |
+| A3 | p95 < 150 ms; ≥ 100 single-note edits in ≥ 2 independent sessions per reference environment; median, p95, maximum and sample count reported | Here: 30 measured edits, one session per scenario |
+| A4 | Reference document: S2 `performanceDocument(300)` (300 × 8), page layout, alphaTab 1.9.0 defaults; all eight tracks need not fit in the viewport; the visible-track and viewport configuration recorded per measurement | Same document; configuration recorded in the raw metadata (`renderedTracks`, `viewport`, `display`) |
+| A5 | The edited note is inside the visible viewport | Met only by the bars 0–1 runs and the runs whose edited bar was drawn (§2, §4) |
+
+Further A9 rules: typing bursts form a separate scenario including the RenderScheduler's 50 ms
+minimum interval; MIDI readiness is a separate metric outside the 150 ms; the playback position
+must be restored after an edit during playback (separate requirement); S3 can close without the
+target only through an owner-selected, A9-measured fallback whose trade-offs and remaining excess
+the owner accepts. Consequences for this report: the bars 2–9 runs of the 8-track documents cannot
+show the end point (edited bar not visible); all other values are lower bounds. No result in this
+report was re-measured or re-labelled under A9.
 
 ## 2. Method
 
@@ -85,7 +109,10 @@ nomidi variants were measured only with bars 0–1.
 
 **Environment:** MacBook, Intel Core i7-9750H, 16 GB, macOS 26.7.3; Node 26.13.1; Playwright 1.65.1
 Chromium and WebKit, headless, viewport 1280 × 720; alphaTab 1.9.0 with `useWorkers` and lazy
-loading. 2026‑11‑24.
+loading. 2026‑11‑24. Provenance: the CPU model, memory, macOS version and Playwright version were
+read on the machine during the session; the raw artifacts record only the host platform (`darwin`,
+`x64`), Node v26.13.1, each browser's user agent (Chromium: Chrome/159.0.8154.6; Playwright WebKit:
+Version/27.2, not Safari), `navigator.hardwareConcurrency` and the viewport.
 
 **Reproduce:** `S3_MEASURE=1 pnpm --filter @musichub/spike-s2-mhd-to-alphatab exec playwright test
 e2e/edit-loop-measure.spec.ts --workers=1`, then `pnpm --filter @musichub/spike-s2-mhd-to-alphatab
@@ -155,6 +182,8 @@ Endpoint "t0 → next frame" (the earliest frame that can show the edit; schedul
 browsers; the partial image can arrive before the frame callback), so both endpoints give the same
 verdicts, except horizontal layout, where the edited bar is drawn 0.5–1 s later.
 
+These evaluations use the spike's own end points; under ADR-0002 A9 they are lower bounds (§1.2).
+
 **Verdict:** the target is met for the small document in both browsers. It is not met for
 300 × 8 in any measured variant, and not reliably for 50 × 8 (Chromium p95 147–185 ms over two runs;
 WebKit p95 245–558 ms).
@@ -219,7 +248,9 @@ S1 end-to-end 2/2.
 
 ## 10. Open decisions
 
-1. A1–A5 (§1.1): start and end points, statistic, document size and visible tracks of the target.
+1. ~~A1–A5 (§1.1)~~: decided in ADR-0002 A9 (§1.2). Under A9 the target is not met for 300 × 8; a
+   pass claim needs new measurements that include the RenderScheduler, confirm the painted frame and
+   meet the sample-size and environment rules.
 2. Whether to pursue an unmeasured option of §8 for large scores (partial Render Score, off-main-thread
    conversion, MIDI only on play), each needing its own measurement and an ADR.
 3. Whether the S7 hook's second MIDI generation is acceptable in the edit loop (§6.2).
