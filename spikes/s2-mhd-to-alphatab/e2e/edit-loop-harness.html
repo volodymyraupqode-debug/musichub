@@ -1,0 +1,210 @@
+<!doctype html>
+<!-- Spike S3 (ROADMAP S2-10) edit-loop harness: the real AlphaTabApi (workers, SoundFont, player)
+     re-rendering after single-note edits. The page converts MHD with the S2 Strategy A adapter and
+     plays through the S7 playback hook, both loaded from their TypeScript sources (types stripped
+     by e2e/edit-loop-server.ts). Query: doc=small|medium|large,
+     variant=baseline|track|horizontal|window|nomidi|window-nomidi, caret=first. Exposes window.__s3 for the Playwright specs. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>S3 edit-loop latency</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@coderline/alphatab": "/alphatab/alphaTab.mjs",
+          "@musichub/music-model": "/mm/index.js",
+          "zod": "/zod/index.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <p><button id="play" type="button">Play</button> <span id="status">loading…</span></p>
+    <div id="at"></div>
+    <script type="module">
+      import * as alphaTab from '@coderline/alphatab';
+      import { toAlphaTabDirect } from '/s2/strategy-a.ts';
+      import { attachPlaybackScore } from '/s2/playback-variants/hook.ts';
+      import { editNote, notesOf } from '/s2/edit-loop/edit.ts';
+
+      const q = new URLSearchParams(location.search);
+      const config = {
+        doc: q.get('doc') ?? 'small',
+        variant: q.get('variant') ?? 'baseline',
+        caret: q.get('caret') ?? 'bars2to9',
+      };
+      let doc = await (await fetch(`/docs/${config.doc}.json`)).json();
+      const errors = [];
+      window.addEventListener('error', (e) => errors.push(String(e.message)));
+
+      // caret=first: notes of track 0 in bars 0–1 (always in the first system, so lazy loading draws
+      // them). Default: bars 2–9, which in 8-track documents lie below a 720 px viewport.
+      const caret = q.get('caret') === 'first' ? [0, 1] : [2, 9];
+      const candidates = notesOf(doc, 0).filter((n) => n.bar >= caret[0] && n.bar <= caret[1]);
+      const caretBar = candidates[0]?.bar ?? 0;
+      const display = {};
+      if (config.variant === 'horizontal') display.layoutMode = alphaTab.LayoutMode.Horizontal;
+      if (config.variant === 'window' || config.variant === 'window-nomidi') {
+        // Render window of 16 bars around the caret (display.startBar is 1-based).
+        display.startBar = Math.max(1, caretBar + 1 - 4);
+        display.barCount = 16;
+      }
+      const api = new alphaTab.AlphaTabApi(document.getElementById('at'), {
+        core: {
+          scriptFile: '/alphatab/alphaTab.mjs',
+          fontDirectory: '/alphatab/font/',
+          useWorkers: true,
+        },
+        display,
+        player: {
+          enablePlayer: true,
+          playerMode: alphaTab.PlayerMode.EnabledSynthesizer,
+          soundFont: '/alphatab/soundfont/sonivox.sf2',
+          enableCursor: true,
+        },
+      });
+      api.error.on((e) => errors.push(String(e.message)));
+      const playbackOf = new WeakMap();
+      const hook = attachPlaybackScore(api, (render) => playbackOf.get(render));
+      const trackIndexes = config.variant === 'track' ? [0] : doc.tracks.map((_, i) => i);
+      // Next event after subscribing. Some alphaTab emitters (e.g. midiLoaded) replay their last
+      // value synchronously inside on(); that replay is ignored, it is not a new event.
+      const once = (emitter) =>
+        new Promise((resolve) => {
+          let subscribing = true;
+          let done = false;
+          const off = emitter.on((arg) => {
+            if (subscribing || done) return;
+            done = true;
+            off();
+            resolve({ t: performance.now(), arg });
+          });
+          subscribing = false;
+        });
+      const frame = () =>
+        new Promise((resolve) => requestAnimationFrame(() => resolve(performance.now())));
+      const idle = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      let readyForPlayback = false;
+      api.playerReady.on(() => (readyForPlayback = true));
+      let partials = [];
+      api.renderer.partialRenderFinished.on((e) =>
+        partials.push({
+          t: performance.now(),
+          first: e.firstMasterBarIndex,
+          last: e.lastMasterBarIndex,
+        }),
+      );
+
+      function render(newDoc) {
+        const conv = toAlphaTabDirect(newDoc, api.settings);
+        playbackOf.set(conv.renderScore, conv.playbackScore);
+        return conv;
+      }
+
+      // Initial render (not measured as edit latency).
+      const first = once(api.renderFinished);
+      api.renderScore(render(doc).renderScore, trackIndexes);
+      await first;
+
+      /** One measured edit: every timestamp is performance.now() on the main thread. */
+      async function edit(i) {
+        const ref = candidates[i % candidates.length];
+        partials = [];
+        const finished = once(api.renderFinished);
+        const midi = once(api.midiLoaded);
+        const t0 = performance.now();
+        doc = editNote(doc, ref, i % 2 === 0 ? 1 : -1);
+        const t1 = performance.now();
+        const conv = render(doc);
+        const t2 = performance.now();
+        // variant=nomidi: render through the renderer only; alphaTab's renderScore would also
+        // regenerate the MIDI (and the S7 hook the Playback MIDI). Player and api.score stay on the
+        // previous Score until MIDI is regenerated (trade-off, see the S3 report).
+        if (config.variant.endsWith('nomidi'))
+          api.renderer.renderScore(conv.renderScore, trackIndexes);
+        else api.renderScore(conv.renderScore, trackIndexes);
+        const t3 = performance.now();
+        const done = await finished;
+        // Hit-test index rebuild (§6): walk the bounds lookup of the new render.
+        let beats = 0;
+        for (const system of api.renderer.boundsLookup?.staffSystems ?? [])
+          for (const mb of system.bars) for (const b of mb.bars) beats += b.beats.length;
+        const t5 = performance.now();
+        const t6 = await frame();
+        const m = config.variant.endsWith('nomidi')
+          ? null
+          : await Promise.race([midi, idle(5000).then(() => null)]);
+        // First partial image that contains the edited bar (lazy loading draws on demand).
+        let t7 = null;
+        for (let k = 0; k < 40 && t7 === null; k++) {
+          const hit = partials.find((p) => p.first <= ref.bar && ref.bar <= p.last);
+          if (hit) t7 = hit.t;
+          else await idle(25);
+        }
+        return {
+          i,
+          bar: ref.bar,
+          t0,
+          edit: t1 - t0,
+          convert: t2 - t1,
+          renderCall: t3 - t2,
+          renderFinished: done.t - t0,
+          hitTest: t5 - done.t,
+          frame: t6 - t0,
+          editedBarDrawn: t7 === null ? null : t7 - t0,
+          midiLoaded: m ? m.t - t0 : null,
+          beatsInBounds: beats,
+          conversionTimings: conv.timings,
+          partials: partials.length,
+        };
+      }
+
+      /** Edit while playing: store tickPosition, restore it after midiLoaded (MUSIC_ENGINE.md §6). */
+      async function editWhilePlaying(i) {
+        const before = api.tickPosition;
+        const state = api.playerState;
+        const midi = once(api.midiLoaded);
+        const t0 = performance.now();
+        doc = editNote(doc, candidates[i % candidates.length], i % 2 === 0 ? 1 : -1);
+        api.renderScore(render(doc).renderScore, trackIndexes);
+        const m = await Promise.race([midi, idle(5000).then(() => null)]);
+        const stateAfterLoad = api.playerState;
+        api.tickPosition = before;
+        await idle(50);
+        return {
+          i,
+          stateBefore: state,
+          stateAfterLoad,
+          tickBefore: before,
+          tickAfterRestore: api.tickPosition,
+          midiLoaded: m ? m.t - t0 : null,
+        };
+      }
+
+      document.getElementById('play').onclick = () => api.play();
+      document.getElementById('status').textContent = 'ready';
+      window.__s3 = {
+        config,
+        errors,
+        hook,
+        edit,
+        editWhilePlaying,
+        ready: () => readyForPlayback,
+        state: () => api.playerState,
+        meta: () => ({
+          userAgent: navigator.userAgent,
+          bars: doc.masterBars.length,
+          tracks: doc.tracks.length,
+          renderedTracks: trackIndexes.length,
+          caretBar,
+          candidates: candidates.length,
+          display: { ...display },
+          lazyLoading: api.settings.core.enableLazyLoading,
+          useWorkers: api.settings.core.useWorkers,
+          hardwareConcurrency: navigator.hardwareConcurrency,
+          viewport: { width: innerWidth, height: innerHeight },
+        }),
+      };
+    </script>
+  </body>
+</html>

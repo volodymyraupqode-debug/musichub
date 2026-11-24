@@ -1,10 +1,10 @@
 # ADR-0002: Own canonical document model (MHD) instead of alphaTab Score/JSON
 
-- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07)
+- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) and the S3 acceptance criterion recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10) (criterion A9; S3 not met, no fallback selected)
 - **Date:** 2026-11-21
 - **Deciders:** project owner
 - **Spec sections:** MUSIC_ENGINE.md §1–4; ARCHITECTURE.md §1.2
-- **Evidence:** [docs/spikes/s2-mhd-to-alphatab.md](../spikes/s2-mhd-to-alphatab.md), [docs/spikes/s7-playback-score-variants.md](../spikes/s7-playback-score-variants.md)
+- **Evidence:** [docs/spikes/s2-mhd-to-alphatab.md](../spikes/s2-mhd-to-alphatab.md), [docs/spikes/s7-playback-score-variants.md](../spikes/s7-playback-score-variants.md), [docs/spikes/s3-edit-loop-latency.md](../spikes/s3-edit-loop-latency.md)
 
 ## Context
 
@@ -138,3 +138,69 @@ Amendment 1 and its decisions A1–A6 are unchanged. This amendment answers open
 8. **Fallback kept open.** If the hook proves unstable, the fallback in MUSIC_ENGINE.md §5.2 stays available: render the Playback Score as well, which hides excluded tracks from the notation. It is not implemented.
 
 **Not verified by S7:** whether the sustain pedal is audible, and the hand split for one-hand practice (MUSIC_ENGINE.md §5.2); `exportAudio`, backing tracks, count-in, metronome, playback ranges and looping with the hook; the cost of generating MIDI twice per load. Manual browser verification by the owner passed with no issues observed (S7 report §8); browsers and covered steps were not specified, and it did not include the sustain pedal or the hand split.
+
+## Amendment 3 (2026-11-24): edit-loop latency (spike S3, S2-10)
+
+Records the measured numbers MUSIC_ENGINE.md §10 asks for and, in A9, the owner's decision on the S3 acceptance criterion. **No fallback is selected.** A1–A8 are unchanged. Evidence: [S3 report](../spikes/s3-edit-loop-latency.md).
+
+**Historical measurements (collected before A9 was defined).** They were taken with the S3 spike's own method, not with A9: the RenderScheduler was not part of the interval, and the end point was the first animation frame after `renderFinished` (or the arrival of the rendered image of the edited bar), not a confirmed painted frame. Under A9 they are **lower bounds**, never evidence of compliance.
+
+- Measured: the full edit loop of A1 + A7 (Strategy A conversion of the whole document into Render and Playback Score, `api.renderScore`, MIDI regeneration with the `midiLoad` hook) in Playwright Chromium and WebKit, headless, from the edit command to the next frame (median / p95): 8 bars × 4 tracks 16 / 22 ms (Chromium), 27 / 79 ms (WebKit); 50 × 8 84–98 / 147–185 ms (Chromium), 114–169 / 245–558 ms (WebKit); 300 × 8 535 / 726 ms (Chromium), 619 / 1312 ms (WebKit).
+- The < 150 ms target is met for the small document only. On 300 × 8 none of the MUSIC_ENGINE.md §6 fallbacks (horizontal layout, render window, edited track only) nor decoupled MIDI reaches it; the best measured combination (render window + no MIDI regeneration) is 244 / 352 ms (Chromium). No fallback is selected.
+- Bottlenecks: whole-document conversion on every edit, MIDI generated twice on the main thread (alphaTab's Render-Score MIDI and the A7 hook's Playback-Score MIDI), and worker layout of the full sheet.
+- Player position: an edit during playback stops it (A8.7); restoring `tickPosition` after `midiLoaded` works within 1 tick.
+- Environment as recorded in the raw artifacts (`spikes/s2-mhd-to-alphatab/data/edit-loop/`): host platform `darwin`, arch `x64`, Node v26.13.1; headless Playwright Chromium (user agent reports Chrome/159.0.8154.6; its platform text is Playwright's device emulation) and Playwright WebKit (user agent "Version/27.2"; Playwright's engine build, **not Safari**); `navigator.hardwareConcurrency` 6 (Chromium) and 8 (WebKit); viewport 1280 × 720. Firefox, Safari, mobile devices and other hardware were not measured. These runs are historical evidence only, not reference-environment results under A9.
+- Not decided: whether to pursue unmeasured options for large scores (partial Render Score for the displayed bars, off-main-thread conversion, MIDI regeneration only on play).
+
+### A9. Edit-loop latency acceptance criterion (S3, owner decision 2026-11-24)
+
+Defines the "< 150 ms target" of MUSIC_ENGINE.md §10 (S3) and ROADMAP.md S2-10. It does not change how the historical measurements above were taken.
+
+**Measurement interval**
+
+- **Start:** receipt of a single-note edit command by the editor, before RenderScheduler processing.
+- **End:** the first actually painted frame in which the edited notation is visible.
+- **Single edits** are the primary acceptance scenario.
+- **Typing bursts** are a separate scenario. Their measurements include the RenderScheduler's minimum 50 ms interval between renders and are never mixed with single-edit results.
+
+**Performance target**
+
+- **p95 below 150 ms**, from at least 100 measured single-note edits across at least 2 independent sessions per reference environment.
+- Reported per scenario and environment: median, p95, maximum and sample count.
+
+**Reference document**
+
+- 300 master bars × 8 tracks: the existing S2 `performanceDocument(300)` fixture, page layout, alphaTab 1.9.0 defaults.
+- All eight tracks need not fit inside the viewport at the same time. The exact visible-track and viewport configuration is recorded for every measurement.
+- The edited note is inside the visible viewport, so that the first painted frame can be verified.
+
+**Reference environments**
+
+- The headless Playwright Chromium and WebKit results on the Intel Mac (above) are historical evidence only.
+- A future pass claim names the tested browser versions and the hardware configuration. Playwright WebKit is never reported as Safari; no coverage is claimed for browsers, devices or hardware that were not measured.
+
+**Playback position (separate requirement, unchanged)**
+
+- After an edit during playback, the player position is restored. Existing evidence: restored within 1 tick; playback stops on every edit and does **not** resume automatically.
+
+**MIDI readiness (separate metric)**
+
+- The time until MIDI is ready after an edit is measured and reported. It is not part of the 150 ms notation-rendering interval.
+- A fallback that defers MIDI regeneration documents when playback becomes available again.
+
+**Fallback policy.** The alternative "or fallback selected" of the original S3 definition stays. S3 may be closed without meeting the 150 ms target only if all of the following hold:
+
+1. the owner explicitly selects a specific fallback;
+2. its latency is measured with the A9 methodology;
+3. its trade-offs and remaining latency are documented;
+4. the owner explicitly accepts those trade-offs and the remaining excess over 150 ms;
+5. its implications for playback-position preservation and MIDI readiness are documented separately.
+
+No fallback is selected. No measured fallback or combination has demonstrated the 150 ms target; the best measured combination (render window + no MIDI regeneration) exceeds it.
+
+**Status (2026-11-24)**
+
+- S3 target: **not met** for the 300 × 8 reference document.
+- S3 overall: **partly done**. No fallback selected.
+- The existing measurements establish the failure (they are lower bounds, and even the fastest measured edit with a visible edited bar exceeds 150 ms in every large-document variant). They cannot establish a future pass: they include neither RenderScheduler processing nor confirmation of the painted frame, and they do not meet the sample-size and environment requirements of A9.
+- A future pass claim requires new measurements that include the scheduler, confirm the painted frame, and satisfy the sample-size and environment requirements above.

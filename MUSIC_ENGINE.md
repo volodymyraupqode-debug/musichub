@@ -401,8 +401,8 @@ editor-core command ─▶ new immutable MHD (structural sharing)
 ```
 
 - Only visible tracks are passed in `trackIndexes`.
-- Playback across re-render: a new Score triggers `loadMidiForScore()`, which **stops playback** (verified in source). Therefore an edit during playback stops playback. The controller stores `tickPosition` before rendering and restores it after `midiLoaded`. Auto-resume is off by default. Re-render latency including MIDI regeneration is measured in S3.
-- Fallbacks if spike S3 shows unacceptable latency on 300-bar scores: (1) `Horizontal` layout in edit mode, (2) render window of N bars around caret using `display.startBar`/`barCount`, (3) render edited track only.
+- Playback across re-render: a new Score triggers `loadMidiForScore()`, which **stops playback** (verified in source). Therefore an edit during playback stops playback. The controller stores `tickPosition` before rendering and restores it after `midiLoaded`. Auto-resume is off by default. Re-render latency including MIDI regeneration is measured in S3. The S3 acceptance interval (edit command received → first painted frame showing the edit, p95 < 150 ms on 300 × 8) and the separate MIDI-readiness metric are defined in ADR-0002 A9.
+- Fallbacks if spike S3 shows unacceptable latency on 300-bar scores: (1) `Horizontal` layout in edit mode, (2) render window of N bars around caret using `display.startBar`/`barCount`, (3) render edited track only. Selecting one is governed by the fallback policy of ADR-0002 A9; none is selected (S3's historical measurements put all three above 150 ms on 300 × 8).
 - Rendering errors (`error` event) are caught, reported to Sentry with document hash, and the last good render stays visible.
 
 ## 7. Editing (`editor-core`)
@@ -446,7 +446,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 |---|---|---|
 | S1 | alphaTab 1.9.0 in Next.js 16 + Turbopack: render, worker, worklet playback, prod build, theming via `display.resources` | Renders + plays in Chrome/Firefox/Safari; documents whether the render worker is active |
 | S2 | `toAlphaTab` strategy A vs B on fixtures | Correct render for fixture set; time for 300-bar 8-track doc |
-| S3 | Edit-loop latency: re-render after single note change; player position preservation | Measured numbers recorded in ADR; < 150 ms target or fallback selected |
+| S3 | Edit-loop latency: re-render after single note change; player position preservation | Measured numbers recorded in ADR; < 150 ms target or fallback selected (target, methodology and fallback policy defined in ADR-0002 A9) |
 | S4 | Import fidelity: 20 public-domain/own GP3–8 + MusicXML files → MHD → GP7 round-trip | Coverage matrix drafted |
 | S5 | Timeline parity vs `MidiFileGenerator` (repeats, endings, D.S./coda, ties, grace) | 100 % note-on parity on fixtures |
 | S6 | Clock accuracy: `playerPositionChanged` frequency and jitter; per-browser output latency | Interpolated clock error < 10 ms vs a reference (Playwright + audio loopback, or manual metronome tap test) |

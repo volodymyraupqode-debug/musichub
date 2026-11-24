@@ -1,0 +1,11 @@
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/edit-loop-measure.spec.ts:48:3 › edit loop medium-baseline-caret0 (15.7s)
+  ✓  2 [chromium] › e2e/edit-loop-measure.spec.ts:48:3 › edit loop large-baseline-caret0 (31.3s)
+  ✓  3 [chromium] › e2e/edit-loop-measure.spec.ts:48:3 › edit loop large-window-caret0 (27.4s)
+  ✓  4 [webkit] › e2e/edit-loop-measure.spec.ts:48:3 › edit loop medium-baseline-caret0 (19.3s)
+  ✓  5 [webkit] › e2e/edit-loop-measure.spec.ts:48:3 › edit loop large-baseline-caret0 (36.9s)
+  ✓  6 [webkit] › e2e/edit-loop-measure.spec.ts:48:3 › edit loop large-window-caret0 (30.2s)
+
+  6 passed (2.8m)

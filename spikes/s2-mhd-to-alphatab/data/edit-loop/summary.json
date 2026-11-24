@@ -1,0 +1,2430 @@
+[
+  {
+    "file": "chromium-large-baseline-caret0.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "large",
+      "variant": "baseline",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 83,
+        "p95": 152.89999999850988,
+        "max": 189.29999999701977,
+        "min": 71.5,
+        "over": 2,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 296.70000000298023,
+        "p95": 509.5,
+        "max": 636.1000000014901,
+        "min": 220.79999999701977,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 532.3999999985099,
+        "p95": 709.1000000014901,
+        "max": 1160.5,
+        "min": 379.5,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0.29999999701976776,
+        "p95": 0.6000000014901161,
+        "max": 0.6000000014901161,
+        "min": 0.19999999552965164,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 534.5,
+        "p95": 725.7000000029802,
+        "max": 1173.3999999985099,
+        "min": 387,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 548.5,
+        "p95": 762,
+        "max": 1172.3999999985099,
+        "min": 390.5,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 433.59999999403954,
+        "p95": 654.8000000044703,
+        "max": 875.5,
+        "min": 323,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "chromium-large-baseline.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "large",
+      "variant": "baseline"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 30,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 76.79999999701977,
+        "p95": 111.5,
+        "max": 154.09999999403954,
+        "min": 67.19999999552965,
+        "over": 1,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 234.69999999552965,
+        "p95": 539.2000000029802,
+        "max": 545.1000000014901,
+        "min": 200.90000000596046,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 509.79999999701977,
+        "p95": 884.3999999985099,
+        "max": 924.1000000014901,
+        "min": 370.80000000447035,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0.30000000447034836,
+        "p95": 0.5,
+        "max": 0.6000000014901161,
+        "min": 0.10000000149011612,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 518.5999999940395,
+        "p95": 902.5,
+        "max": 936.8999999985099,
+        "min": 379.1000000014901,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": null,
+      "midiLoaded": {
+        "n": 30,
+        "median": 393.8999999985099,
+        "p95": 664.3999999985099,
+        "max": 720.5999999940395,
+        "min": 303.1000000014901,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "chromium-large-horizontal.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "large",
+      "variant": "horizontal"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {
+        "layoutMode": 1
+      },
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.29999999701976776,
+        "max": 0.7000000029802322,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 77.30000000447035,
+        "p95": 224.19999999552965,
+        "max": 282.1000000014901,
+        "min": 66.89999999850988,
+        "over": 5,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 517.5999999940395,
+        "p95": 933.7000000029802,
+        "max": 1072,
+        "min": 279.59999999403954,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 755,
+        "p95": 1309.9000000059605,
+        "max": 1426.8999999985099,
+        "min": 466,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0.29999999701976776,
+        "p95": 0.5999999940395355,
+        "max": 0.6000000014901161,
+        "min": 0.10000000149011612,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 767.1000000014901,
+        "p95": 1377.3000000044703,
+        "max": 1440,
+        "min": 482.6000000014901,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 1291,
+        "p95": 2110.5,
+        "max": 2357.39999999851,
+        "min": 976.3999999985099,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 766.9000000059605,
+        "p95": 1377.1000000014901,
+        "max": 1434.5999999940395,
+        "min": 482.29999999701977,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "chromium-large-nomidi-caret0.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "large",
+      "variant": "nomidi",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 65.5,
+        "p95": 81.59999999403954,
+        "max": 83,
+        "min": 55.5,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 36.5,
+        "p95": 48.70000000298023,
+        "max": 111.79999999701977,
+        "min": 34.599999994039536,
+        "over": 0,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 492.70000000298023,
+        "p95": 600.7000000029802,
+        "max": 631.8999999985099,
+        "min": 345.20000000298023,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0.29999999701976776,
+        "p95": 0.5,
+        "max": 0.5,
+        "min": 0.10000000149011612,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 498.79999999701977,
+        "p95": 609.1000000014901,
+        "max": 636.8999999985099,
+        "min": 356,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 508.1000000014901,
+        "p95": 642,
+        "max": 646.0999999940395,
+        "min": 356,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": null
+    }
+  },
+  {
+    "file": "chromium-large-track.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "large",
+      "variant": "track"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 1,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 86.89999999850988,
+        "p95": 166.60000000149012,
+        "max": 198.60000000149012,
+        "min": 72.40000000596046,
+        "over": 2,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 368,
+        "p95": 618,
+        "max": 706.5,
+        "min": 221,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 452.90000000596046,
+        "p95": 790.1999999955297,
+        "max": 826.8999999985099,
+        "min": 312.30000000447035,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0.10000000149011612,
+        "p95": 0.5,
+        "max": 1.1000000014901161,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 464.90000000596046,
+        "p95": 801.5,
+        "max": 853.3999999985099,
+        "min": 330.8999999985099,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 472.30000000447035,
+        "p95": 798.8999999985099,
+        "max": 874.3999999985099,
+        "min": 324.5,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 502,
+        "p95": 812.6999999955297,
+        "max": 865.3000000044703,
+        "min": 347.1000000014901,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "chromium-large-window-caret0.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "large",
+      "variant": "window",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {
+        "startBar": 1,
+        "barCount": 16
+      },
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 79.89999999850988,
+        "p95": 151.40000000596046,
+        "max": 204.5,
+        "min": 72.5,
+        "over": 2,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 343,
+        "p95": 531.5999999940395,
+        "max": 532.2999999970198,
+        "min": 222.79999999701977,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 439.30000000447035,
+        "p95": 610.7999999970198,
+        "max": 620.4000000059605,
+        "min": 304.69999999552965,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 477.8999999985099,
+        "p95": 630.9000000059605,
+        "max": 633.7999999970198,
+        "min": 321.70000000298023,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 462.29999999701977,
+        "p95": 626.2000000029802,
+        "max": 638.2000000029802,
+        "min": 316,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 491,
+        "p95": 640.2000000029802,
+        "max": 645.4000000059605,
+        "min": 337,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "chromium-large-window-nomidi-caret0.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "large",
+      "variant": "window-nomidi",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {
+        "startBar": 1,
+        "barCount": 16
+      },
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 74.39999999850988,
+        "p95": 140.60000000149012,
+        "max": 185.10000000149012,
+        "min": 57.899999998509884,
+        "over": 1,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 40.5,
+        "p95": 123.39999999850988,
+        "max": 164.60000000149012,
+        "min": 35.099999994039536,
+        "over": 1,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 232.79999999701977,
+        "p95": 350.80000000447035,
+        "max": 366.20000000298023,
+        "min": 180.10000000149012,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0.09999999403953552,
+        "p95": 0.10000000149011612,
+        "max": 0.19999999552965164,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 244.10000000149012,
+        "p95": 352,
+        "max": 372.8999999985099,
+        "min": 181.89999999850988,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 238.79999999701977,
+        "p95": 356.20000000298023,
+        "max": 372.79999999701977,
+        "min": 186.20000000298023,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": null
+    }
+  },
+  {
+    "file": "chromium-large-window.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "large",
+      "variant": "window"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {
+        "startBar": 1,
+        "barCount": 16
+      },
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 30,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.20000000298023224,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 75.29999999701977,
+        "p95": 96.30000000447035,
+        "max": 97.79999999701977,
+        "min": 64.89999999850988,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 275.70000000298023,
+        "p95": 403.79999999701977,
+        "max": 501.3999999985099,
+        "min": 214.89999999850988,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 351.19999999552965,
+        "p95": 577.8999999985099,
+        "max": 621.7999999970198,
+        "min": 281.5,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.20000000298023224,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 384.69999999552965,
+        "p95": 588,
+        "max": 622,
+        "min": 294.69999999552965,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": null,
+      "midiLoaded": {
+        "n": 30,
+        "median": 387,
+        "p95": 601.8999999985099,
+        "max": 622.8999999985099,
+        "min": 305.29999999701977,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "chromium-medium-baseline-caret0.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "medium",
+      "variant": "baseline",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 50,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 7.299999997019768,
+        "p95": 9.5,
+        "max": 12.799999997019768,
+        "min": 6.600000001490116,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 39.5,
+        "p95": 59.29999999701977,
+        "max": 67.20000000298023,
+        "min": 32.399999998509884,
+        "over": 0,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 83.20000000298023,
+        "p95": 178.79999999701977,
+        "max": 213,
+        "min": 57.20000000298023,
+        "over": 2,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0.10000000149011612,
+        "p95": 0.19999999552965164,
+        "max": 0.20000000298023224,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 97.89999999850988,
+        "p95": 185.29999999701977,
+        "max": 229,
+        "min": 66,
+        "over": 3,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 88.69999999552965,
+        "p95": 183.19999999552965,
+        "max": 219.5,
+        "min": 60.80000000447035,
+        "over": 4,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 55.100000001490116,
+        "p95": 78.20000000298023,
+        "max": 87.5,
+        "min": 43.20000000298023,
+        "over": 0,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "chromium-medium-baseline.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "medium",
+      "variant": "baseline"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 50,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 30,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 7.4000000059604645,
+        "p95": 10.600000001490116,
+        "max": 11.5,
+        "min": 6.899999998509884,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 43.600000001490116,
+        "p95": 49,
+        "max": 53.79999999701977,
+        "min": 34.5,
+        "over": 0,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 77.90000000596046,
+        "p95": 136.39999999850988,
+        "max": 175.30000000447035,
+        "min": 60.69999999552965,
+        "over": 1,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "max": 0.20000000298023224,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 83.69999999552965,
+        "p95": 147.39999999850988,
+        "max": 190.89999999850988,
+        "min": 65.5,
+        "over": 1,
+        "budget": 150
+      },
+      "editedBarDrawn": null,
+      "midiLoaded": {
+        "n": 30,
+        "median": 56.899999998509884,
+        "p95": 73.10000000149012,
+        "max": 74.80000000447035,
+        "min": 46.5,
+        "over": 0,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "chromium-medium-nomidi-caret0.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "medium",
+      "variant": "nomidi",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 50,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 7.100000001490116,
+        "p95": 11.700000002980232,
+        "max": 14.5,
+        "min": 6.5,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 6.5,
+        "p95": 7.799999997019768,
+        "max": 12.200000002980232,
+        "min": 6.199999995529652,
+        "over": 0,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 69.10000000149012,
+        "p95": 164.10000000149012,
+        "max": 194.10000000149012,
+        "min": 57.600000001490116,
+        "over": 3,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "max": 0.20000000298023224,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 76.70000000298023,
+        "p95": 166.40000000596046,
+        "max": 195.79999999701977,
+        "min": 60.600000001490116,
+        "over": 3,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 73.90000000596046,
+        "p95": 168.5,
+        "max": 199.60000000149012,
+        "min": 61.899999998509884,
+        "over": 3,
+        "budget": 150
+      },
+      "midiLoaded": null
+    }
+  },
+  {
+    "file": "chromium-medium-playing.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "medium",
+      "variant": "baseline",
+      "playing": true
+    },
+    "n": 10,
+    "stopped": 10,
+    "maxTickDelta": 1,
+    "midiLoaded": {
+      "n": 10,
+      "median": 52.29999999701977,
+      "p95": 92.39999999850988,
+      "max": 92.39999999850988,
+      "min": 47.29999999701977,
+      "over": 0,
+      "budget": 150
+    }
+  },
+  {
+    "file": "chromium-small-baseline.json.gz",
+    "project": "chromium",
+    "scenario": {
+      "doc": "small",
+      "variant": "baseline"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36",
+      "bars": 8,
+      "tracks": 4,
+      "renderedTracks": 4,
+      "caretBar": 2,
+      "candidates": 6,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 6,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 0.7000000029802322,
+        "p95": 1.1000000014901161,
+        "max": 1.3999999985098839,
+        "min": 0.4000000059604645,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 1,
+        "p95": 1.6000000014901161,
+        "max": 1.8999999985098839,
+        "min": 0.7999999970197678,
+        "over": 0,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 5.699999995529652,
+        "p95": 11.200000002980232,
+        "max": 11.300000004470348,
+        "min": 4.5,
+        "over": 0,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 0.10000000149011612,
+        "max": 0.10000000149011612,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 15.899999998509884,
+        "p95": 21.5,
+        "max": 21.600000001490116,
+        "min": 14,
+        "over": 0,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 19.899999998509884,
+        "p95": 26.299999997019768,
+        "max": 26.299999997019768,
+        "min": 17.400000005960464,
+        "over": 0,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 2.2000000029802322,
+        "p95": 4.299999997019768,
+        "max": 4.899999998509884,
+        "min": 1.7999999970197678,
+        "over": 0,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "webkit-large-baseline-caret0.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "large",
+      "variant": "baseline",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 68,
+        "p95": 120,
+        "max": 131,
+        "min": 59,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 327,
+        "p95": 654,
+        "max": 920,
+        "min": 181,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 585,
+        "p95": 1299,
+        "max": 1339,
+        "min": 383,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 619,
+        "p95": 1312,
+        "max": 1521,
+        "min": 404,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 616,
+        "p95": 1360,
+        "max": 2333,
+        "min": 395,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 453,
+        "p95": 799,
+        "max": 1073,
+        "min": 269,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "webkit-large-baseline.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "large",
+      "variant": "baseline"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 30,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 2,
+        "max": 2,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 104,
+        "p95": 269,
+        "max": 493,
+        "min": 60,
+        "over": 8,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 481,
+        "p95": 778,
+        "max": 788,
+        "min": 177,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 910,
+        "p95": 1770,
+        "max": 1801,
+        "min": 382,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 977,
+        "p95": 1770,
+        "max": 1821,
+        "min": 406,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": null,
+      "midiLoaded": {
+        "n": 30,
+        "median": 647,
+        "p95": 1146,
+        "max": 1171,
+        "min": 281,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "webkit-large-horizontal.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "large",
+      "variant": "horizontal"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {
+        "layoutMode": 1
+      },
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 1,
+        "p95": 2,
+        "max": 2,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 83,
+        "p95": 367,
+        "max": 465,
+        "min": 62,
+        "over": 11,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 380,
+        "p95": 898,
+        "max": 912,
+        "min": 215,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 904,
+        "p95": 2007,
+        "max": 2755,
+        "min": 534,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 3,
+        "max": 4,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 930,
+        "p95": 2015,
+        "max": 2776,
+        "min": 544,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 1905,
+        "p95": 3211,
+        "max": 4686,
+        "min": 1293,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 615,
+        "p95": 1324,
+        "max": 1407,
+        "min": 327,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "webkit-large-nomidi-caret0.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "large",
+      "variant": "nomidi",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 2,
+        "max": 2,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 73,
+        "p95": 240,
+        "max": 305,
+        "min": 63,
+        "over": 3,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 53,
+        "p95": 151,
+        "max": 166,
+        "min": 48,
+        "over": 2,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 564,
+        "p95": 944,
+        "max": 2934,
+        "min": 382,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 573,
+        "p95": 994,
+        "max": 2948,
+        "min": 393,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 576,
+        "p95": 980,
+        "max": 2969,
+        "min": 402,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": null
+    }
+  },
+  {
+    "file": "webkit-large-track.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "large",
+      "variant": "track"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 1,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 89,
+        "p95": 159,
+        "max": 298,
+        "min": 64,
+        "over": 4,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 422,
+        "p95": 770,
+        "max": 1296,
+        "min": 182,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 542,
+        "p95": 866,
+        "max": 1636,
+        "min": 263,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 0,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 546,
+        "p95": 876,
+        "max": 1640,
+        "min": 267,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 572,
+        "p95": 901,
+        "max": 1664,
+        "min": 279,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 621,
+        "p95": 894,
+        "max": 1640,
+        "min": 314,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "webkit-large-window-caret0.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "large",
+      "variant": "window",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {
+        "startBar": 1,
+        "barCount": 16
+      },
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 77,
+        "p95": 166,
+        "max": 216,
+        "min": 64,
+        "over": 3,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 246,
+        "p95": 659,
+        "max": 748,
+        "min": 175,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 359,
+        "p95": 822,
+        "max": 873,
+        "min": 245,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 363,
+        "p95": 826,
+        "max": 874,
+        "min": 246,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 382,
+        "p95": 844,
+        "max": 1008,
+        "min": 253,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 388,
+        "p95": 873,
+        "max": 1027,
+        "min": 264,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "webkit-large-window-nomidi-caret0.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "large",
+      "variant": "window-nomidi",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {
+        "startBar": 1,
+        "barCount": 16
+      },
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 68,
+        "p95": 139,
+        "max": 166,
+        "min": 61,
+        "over": 1,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 40,
+        "p95": 103,
+        "max": 119,
+        "min": 38,
+        "over": 0,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 251,
+        "p95": 327,
+        "max": 369,
+        "min": 174,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 255,
+        "p95": 339,
+        "max": 381,
+        "min": 201,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 264,
+        "p95": 376,
+        "max": 415,
+        "min": 192,
+        "over": 30,
+        "budget": 150
+      },
+      "midiLoaded": null
+    }
+  },
+  {
+    "file": "webkit-large-window.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "large",
+      "variant": "window"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 300,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {
+        "startBar": 1,
+        "barCount": 16
+      },
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 30,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 2,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 75,
+        "p95": 153,
+        "max": 174,
+        "min": 65,
+        "over": 2,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 306,
+        "p95": 442,
+        "max": 527,
+        "min": 170,
+        "over": 30,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 408,
+        "p95": 599,
+        "max": 758,
+        "min": 238,
+        "over": 30,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 410,
+        "p95": 600,
+        "max": 760,
+        "min": 239,
+        "over": 30,
+        "budget": 150
+      },
+      "editedBarDrawn": null,
+      "midiLoaded": {
+        "n": 30,
+        "median": 447,
+        "p95": 744,
+        "max": 759,
+        "min": 289,
+        "over": 30,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "webkit-medium-baseline-caret0.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "medium",
+      "variant": "baseline",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 50,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 10,
+        "p95": 15,
+        "max": 26,
+        "min": 9,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 42,
+        "p95": 94,
+        "max": 112,
+        "min": 35,
+        "over": 0,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 98,
+        "p95": 227,
+        "max": 278,
+        "min": 63,
+        "over": 6,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 114,
+        "p95": 245,
+        "max": 330,
+        "min": 73,
+        "over": 11,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 106,
+        "p95": 234,
+        "max": 286,
+        "min": 70,
+        "over": 6,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 61,
+        "p95": 145,
+        "max": 302,
+        "min": 47,
+        "over": 1,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "webkit-medium-baseline.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "medium",
+      "variant": "baseline"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 50,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 2,
+      "candidates": 62,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 30,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0,
+        "max": 0,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 13,
+        "p95": 90,
+        "max": 92,
+        "min": 9,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 38,
+        "p95": 182,
+        "max": 207,
+        "min": 34,
+        "over": 5,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 146,
+        "p95": 500,
+        "max": 1104,
+        "min": 68,
+        "over": 14,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 169,
+        "p95": 558,
+        "max": 1130,
+        "min": 93,
+        "over": 20,
+        "budget": 150
+      },
+      "editedBarDrawn": null,
+      "midiLoaded": {
+        "n": 30,
+        "median": 101,
+        "p95": 225,
+        "max": 326,
+        "min": 47,
+        "over": 7,
+        "budget": 150
+      }
+    }
+  },
+  {
+    "file": "webkit-medium-nomidi-caret0.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "medium",
+      "variant": "nomidi",
+      "caret": "first"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 50,
+      "tracks": 8,
+      "renderedTracks": 8,
+      "caretBar": 0,
+      "candidates": 16,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 11,
+        "p95": 18,
+        "max": 19,
+        "min": 9,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 7,
+        "p95": 8,
+        "max": 8,
+        "min": 6,
+        "over": 0,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 91,
+        "p95": 225,
+        "max": 229,
+        "min": 63,
+        "over": 5,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 0,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 108,
+        "p95": 232,
+        "max": 245,
+        "min": 67,
+        "over": 7,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 97,
+        "p95": 235,
+        "max": 238,
+        "min": 75,
+        "over": 6,
+        "budget": 150
+      },
+      "midiLoaded": null
+    }
+  },
+  {
+    "file": "webkit-medium-playing.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "medium",
+      "variant": "baseline",
+      "playing": true
+    },
+    "n": 10,
+    "stopped": 10,
+    "maxTickDelta": 1,
+    "midiLoaded": {
+      "n": 10,
+      "median": 77,
+      "p95": 181,
+      "max": 181,
+      "min": 53,
+      "over": 1,
+      "budget": 150
+    }
+  },
+  {
+    "file": "webkit-small-baseline.json.gz",
+    "project": "webkit",
+    "scenario": {
+      "doc": "small",
+      "variant": "baseline"
+    },
+    "n": 30,
+    "meta": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+      "bars": 8,
+      "tracks": 4,
+      "renderedTracks": 4,
+      "caretBar": 2,
+      "candidates": 6,
+      "display": {},
+      "lazyLoading": true,
+      "useWorkers": true,
+      "hardwareConcurrency": 8,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "errors": [],
+    "pageErrors": [],
+    "missingDrawn": 0,
+    "stages": {
+      "edit": {
+        "n": 30,
+        "median": 0,
+        "p95": 0,
+        "max": 0,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "convert": {
+        "n": 30,
+        "median": 1,
+        "p95": 4,
+        "max": 4,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "renderCall": {
+        "n": 30,
+        "median": 2,
+        "p95": 6,
+        "max": 71,
+        "min": 1,
+        "over": 0,
+        "budget": 150
+      },
+      "renderFinished": {
+        "n": 30,
+        "median": 14,
+        "p95": 55,
+        "max": 75,
+        "min": 8,
+        "over": 0,
+        "budget": 150
+      },
+      "hitTest": {
+        "n": 30,
+        "median": 0,
+        "p95": 1,
+        "max": 1,
+        "min": 0,
+        "over": 0,
+        "budget": 150
+      },
+      "frame": {
+        "n": 30,
+        "median": 27,
+        "p95": 79,
+        "max": 150,
+        "min": 15,
+        "over": 0,
+        "budget": 150
+      },
+      "editedBarDrawn": {
+        "n": 30,
+        "median": 35,
+        "p95": 99,
+        "max": 159,
+        "min": 20,
+        "over": 1,
+        "budget": 150
+      },
+      "midiLoaded": {
+        "n": 30,
+        "median": 4,
+        "p95": 10,
+        "max": 77,
+        "min": 2,
+        "over": 0,
+        "budget": 150
+      }
+    }
+  }
+]
