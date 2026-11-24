@@ -1,0 +1,118 @@
+<!doctype html>
+<!-- Spike S7 browser harness: real AlphaTabApi (workers, audio worklet, SoundFont) with the
+     playback hook (src/playback-variants/hook.ts, served with types stripped). Served by
+     e2e/s7-browser.spec.ts; exposes window.__s7 for the test and for manual checks. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>S7 playback-score variants</title>
+    <script type="importmap">
+      { "imports": { "@coderline/alphatab": "/alphatab/alphaTab.mjs" } }
+    </script>
+  </head>
+  <body>
+    <p>
+      <button id="play" type="button">Play / pause</button>
+      <button id="mute-a" type="button">Mute A (Playback track)</button>
+      <button id="solo-c" type="button">Solo C (Playback track)</button>
+      <button id="reset" type="button">Unmute / unsolo all</button>
+      <button id="replace" type="button">Replace Render Score (E16)</button>
+      <span id="state"></span>
+    </p>
+    <div id="at"></div>
+    <script type="module">
+      import * as alphaTab from '@coderline/alphatab';
+      import { attachPlaybackScore } from '/hook.js';
+
+      const data = await (await fetch('/pairs.json')).json();
+      const log = {
+        notes: [],
+        beats: [],
+        midiLoads: 0,
+        midiLoaded: 0,
+        renderFinished: 0,
+        playerReady: 0,
+        finished: 0,
+        states: [],
+        errors: [],
+      };
+      window.addEventListener('error', (e) => log.errors.push(String(e.message)));
+      const api = new alphaTab.AlphaTabApi(document.getElementById('at'), {
+        core: {
+          scriptFile: '/alphatab/alphaTab.mjs',
+          fontDirectory: '/alphatab/font/',
+          useWorkers: true,
+        },
+        player: {
+          enablePlayer: true,
+          playerMode: alphaTab.PlayerMode.EnabledSynthesizer,
+          soundFont: '/alphatab/soundfont/sonivox.sf2',
+          enableCursor: true,
+        },
+      });
+      const pairs = {};
+      const playbackOf = new Map();
+      const nameOf = new Map();
+      for (const [name, p] of Object.entries(data)) {
+        const render = alphaTab.model.JsonConverter.jsonToScore(p.render, api.settings);
+        const playback = alphaTab.model.JsonConverter.jsonToScore(p.playback, api.settings);
+        playbackOf.set(render, playback);
+        nameOf.set(render, name);
+        nameOf.set(playback, `${name}:playback`);
+        pairs[name] = { render, playback };
+      }
+      // ?hook=off is the control: alphaTab alone plays the Render Score's MIDI.
+      const hookOn = new URLSearchParams(location.search).get('hook') !== 'off';
+      const hook = hookOn
+        ? attachPlaybackScore(api, (render) => playbackOf.get(render))
+        : { stats: { midiLoads: 0, rewritten: 0, failures: [] }, detach() {} };
+      api.midiLoad.on(() => log.midiLoads++);
+      api.midiLoaded.on(() => log.midiLoaded++);
+      api.renderFinished.on(() => log.renderFinished++);
+      api.playerReady.on(() => log.playerReady++);
+      api.playerFinished.on(() => log.finished++);
+      api.error.on((e) => log.errors.push(String(e.message)));
+      api.playerStateChanged.on((e) => {
+        log.states.push({ state: e.state, stopped: e.stopped, score: nameOf.get(api.score) });
+        document.getElementById('state').textContent = e.state === 1 ? 'playing' : 'paused';
+      });
+      api.midiEventsPlayedFilter = [alphaTab.midi.MidiEventType.NoteOn];
+      api.midiEventsPlayed.on((e) => {
+        for (const ev of e.events)
+          log.notes.push({ channel: ev.channel, key: ev.noteKey, score: nameOf.get(api.score) });
+      });
+      api.playedBeatChanged.on((beat) => {
+        log.beats.push({
+          owner: nameOf.get(beat.voice.bar.staff.track.score) ?? 'unknown',
+          bar: beat.voice.bar.index,
+        });
+      });
+      const playbackTrack = (name, index) => [pairs[name].playback.tracks[index]];
+      window.__s7 = {
+        api,
+        hook,
+        log,
+        pairs,
+        nameOfScore: () => nameOf.get(api.score),
+        render: (name, indexes = [-1]) => api.renderScore(pairs[name].render, indexes),
+        play: () => api.play(),
+        stop: () => api.stop(),
+        clearLog: () => {
+          log.notes.length = 0;
+          log.beats.length = 0;
+        },
+      };
+      document.getElementById('play').onclick = () => api.playPause();
+      document.getElementById('mute-a').onclick = () =>
+        api.changeTrackMute(playbackTrack('E3', 0), true);
+      document.getElementById('solo-c').onclick = () =>
+        api.changeTrackSolo(playbackTrack('E3', 1), true);
+      document.getElementById('reset').onclick = () => {
+        api.changeTrackMute(pairs.E3.playback.tracks, false);
+        api.changeTrackSolo(pairs.E3.playback.tracks, false);
+      };
+      document.getElementById('replace').onclick = () => api.renderScore(pairs.E16.render, [-1]);
+      api.renderScore(pairs.E3.render, [-1]); // [-1]: all tracks (default is the first only)
+    </script>
+  </body>
+</html>
