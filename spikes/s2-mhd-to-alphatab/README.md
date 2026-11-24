@@ -15,4 +15,6 @@ pnpm bench     # 300 × 8 benchmark
 pnpm render    # screenshots of A and B (Playwright Chromium); --docs updates docs/spikes/
 ```
 
+`src/timeline/` holds spike S5 (ROADMAP.md S2-06): an independent MHD playback-order and MIDI-event prototype compared with alphaTab's `MidiFileGenerator` on the Playback Score. Report: [docs/spikes/s5-timeline-parity.md](../../docs/spikes/s5-timeline-parity.md). Run it with `pnpm exec vitest run src/timeline`.
+
 `results/` is generated and git-ignored. Production code never imports this package.
