@@ -1,6 +1,7 @@
 # Spike S7 — Playback-score variants (ROADMAP S2-07)
 
-> Status: done, pending owner review. Isolated spike in `spikes/s2-mhd-to-alphatab`
+> Status: done. Owner decision (2026‑11‑24): keep the `midiLoad` hook (ADR-0002 Amendment 2,
+> A7–A8). Manual checklist results (§8) are pending. Isolated spike in `spikes/s2-mhd-to-alphatab`
 > (`src/playback-variants/`, `e2e/`). alphaTab 1.9.0 (pinned). Pass/fail criteria (§5) were
 > written before the experiment ran. No production code, MHD, channel policy (Q-C) or S2-06 code
 > was changed.
@@ -142,6 +143,15 @@ Supporting findings, each with a test:
 - **Control** (`?hook=off`, both browsers): alphaTab alone plays the excluded track's keys on
   channel 0, the first track's channel.
 
+- **Fail-closed on a mismatched pair** (added in review): when the Playback Score needs a larger
+  tick shift than the Render Score, the hook empties the MIDI and records a failure instead of
+  throwing. A throw inside `midiLoad` would abort `loadMidiForScore` before
+  `player.loadMidiFile`, and the player would keep the previous Score's MIDI.
+
+Validation (2026‑11‑24, agent): `pnpm turbo run lint typecheck test build` 21/21 tasks, spike
+tests 575 passed and 4 skipped (22 of them S7); `pnpm test:browser` in the spike 4 passed
+(Chromium, WebKit); `pnpm format:check` and `pnpm depcruise` clean. Manual checks: §8.
+
 ## 7. Constraints for any adoption (from the evidence)
 
 1. **Mute, solo and volume calls must use Playback Score tracks**, resolved from MHD ids. An
@@ -176,16 +186,19 @@ Automated tests observe events, not sound. Run
 `pnpm --filter @musichub/spike-s2-mhd-to-alphatab s7:serve` and open http://127.0.0.1:3270/ in
 Chrome, Safari and Firefox:
 
-| Step | Expected |
-|---|---|
-| Play | Piano in bar 1, bass in bar 2; **no strings** (track B is rendered but excluded) |
-| Watch the cursor | It moves over the Render Score, including the strings staff, in time with the sound |
-| Mute A (Playback track), play | Only the bass sounds |
-| Unmute all, Solo C, play | Only the bass sounds |
-| Unmute all, play, press "Replace Render Score (E16)" while playing | Playback stops; E16 is shown; Play plays 15 tracks, not the 16th (key 55) |
-| Open `/?hook=off` and play | Control: strings audible on the piano's channel (what alphaTab does without the hook) |
+| Step | Expected | Chrome | Safari | Firefox |
+|---|---|---|---|---|
+| Play | Piano in bar 1, bass in bar 2; **no strings** (track B is rendered but excluded) | pending | pending | pending |
+| Watch the cursor | It moves over the Render Score, including the strings staff, in time with the sound | pending | pending | pending |
+| Mute A (Playback track), play | Only the bass sounds | pending | pending | pending |
+| Unmute all, Solo C, play | Only the bass sounds | pending | pending | pending |
+| Unmute all, play, press "Replace Render Score (E16)" while playing | Playback stops; E16 is shown; Play plays 15 tracks, not the 16th (key 55) | pending | pending | pending |
+| Open `/?hook=off` and play | Control: strings audible on the piano's channel (what alphaTab does without the hook) | pending | pending | pending |
 
-Not run yet. Results go here when the owner has checked.
+**Status (2026‑11‑24):** the owner reports that the checklist was run. The individual results
+(browsers, versions and observations per step) have not been communicated yet, so every cell
+stays *pending*. Nothing in this table is verified by the agent, and no result is inferred. The
+checklist does not test the sustain pedal or the hand split; they remain untested.
 
 ## 9. Limitations
 
@@ -211,10 +224,15 @@ dependence on changing the `midiLoad` payload, the documented fallback is the on
 MUSIC_ENGINE.md §5.2: render the Playback Score as well (excluded tracks not shown), which avoids
 the hook but hides tracks from the notation.
 
-## 11. Open decisions for the owner
+## 11. Owner decision and remaining questions
 
-1. Accept the `midiLoad` hook as the playback mechanism for Phase 1, or use the fallback (§10).
-2. Whether ADR-0002 records the S7 result (open question 1 of A5) now or with the other Phase 0
-   spike results (ROADMAP S2-12 is TBD).
-3. UI behaviour for an excluded track (disabled mute/solo, how the exclusion is shown).
-4. The S7 sub-questions not covered here: sustain-pedal audibility and the hand split (§1).
+Decided (2026‑11‑24): keep the Render Score / Playback Score separation and the `midiLoad` hook,
+with the constraints recorded in ADR-0002 Amendment 2 (A7–A8). The fallback (§10) is not
+implemented and stays an option.
+
+Still open:
+
+1. The individual results of the manual checklist (§8).
+2. UI behaviour for an excluded track (disabled mute/solo, how the exclusion is shown).
+3. The S7 sub-questions not covered here: sustain-pedal audibility and the hand split (§1).
+4. An audio-export path that uses the Playback Score (§7.3).
