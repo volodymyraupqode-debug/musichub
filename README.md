@@ -41,10 +41,14 @@ cd apps/api && composer install && cp .env.example .env && php artisan key:gener
 Web (second terminal, repository root):
 
 ```bash
-cp apps/web/.env.example apps/web/.env.local && pnpm --filter @musichub/web dev
+cp apps/web/.env.example apps/web/.env.local && pnpm turbo run dev --filter=@musichub/web
 ```
 
 Open http://localhost:3000. It shows `API: ok` when the API and its PostgreSQL/Redis are up.
+
+Use the Turbo command: it builds the workspace packages the web app imports first (the `dev` task depends on `^build`). `pnpm --filter @musichub/web dev` does not, and fails in a clean clone with `Module not found: Can't resolve '@musichub/api-client'` because `packages/api-client/dist` does not exist yet.
+
+`pnpm dev` (repository root) starts every dev server through Turbo: the web app on :3000 and spike S1 on :3200 (port fixed in `spikes/s1-turbopack/package.json`). If :3200 is already in use, the whole run stops.
 
 ## Checks
 

@@ -50,7 +50,8 @@ JS (repository root):
 
 ```
 pnpm install --frozen-lockfile
-pnpm dev                                  # all dev servers (web on :3000)
+pnpm dev                                  # all dev servers (web on :3000, spike S1 on :3200)
+pnpm turbo run dev --filter=@musichub/web # web only (builds its workspace dependencies first)
 pnpm format:check                         # Prettier (Markdown specs and generated code excluded)
 pnpm turbo run lint typecheck test build  # all JS packages
 pnpm depcruise                            # package boundary rules (.dependency-cruiser.cjs)
