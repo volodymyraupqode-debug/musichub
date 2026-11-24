@@ -1,0 +1,11 @@
+{
+  "extends": "@musichub/config/tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": ["src", "scripts", "e2e", "harness", "*.ts"]
+}

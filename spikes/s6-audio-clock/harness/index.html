@@ -1,0 +1,254 @@
+<!doctype html>
+<!-- Spike S6 (ROADMAP S2-08) measurement harness. Plain HTML + alphaTab 1.9.0 (workers, audio
+     worklet, SoundFont), served by harness/server.ts. Query parameters:
+       interval  player.positionUpdateIntervalInMilliseconds (default 10)
+       speed     api.playbackSpeed (default 1)
+       seconds   approximate playback duration in real time (default 30)
+       volume    api.masterVolume (default 1)
+       loopback  1 = also record onsets from the audio input (manual measurement, needs a mic or
+                 a loopback device and the browser's microphone permission)
+     Results are exposed as window.__s6 (raw arrays + metadata) and can be downloaded. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>S6 audio clock accuracy</title>
+    <script type="importmap">
+      { "imports": { "@coderline/alphatab": "/alphatab/alphaTab.mjs" } }
+    </script>
+    <style>
+      body {
+        font:
+          14px system-ui,
+          sans-serif;
+        margin: 16px;
+      }
+      #status {
+        white-space: pre;
+        font-family: ui-monospace, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      <button id="start" type="button" disabled>Start measurement</button>
+      <button id="download" type="button" disabled>Download raw data</button>
+    </p>
+    <pre id="status">loading…</pre>
+    <div id="at"></div>
+    <script type="module">
+      // Capture the AudioContexts alphaTab creates, to read their latency properties.
+      const contexts = [];
+      const NativeAudioContext = window.AudioContext;
+      window.AudioContext = class extends NativeAudioContext {
+        constructor(options) {
+          super(options);
+          contexts.push(this);
+        }
+      };
+
+      const q = new URLSearchParams(location.search);
+      const config = {
+        interval: Number(q.get('interval') ?? 10),
+        speed: Number(q.get('speed') ?? 1),
+        seconds: Number(q.get('seconds') ?? 30),
+        volume: Number(q.get('volume') ?? 1),
+        loopback: q.get('loopback') === '1',
+        bpm: 120,
+      };
+      // One short piano note on every beat (an eighth and an eighth rest): sharp onsets for loopback.
+      const bars = Math.max(1, Math.ceil((config.seconds * config.speed * config.bpm) / 240));
+      const tex = `\\title "S6 clock" \\tempo ${config.bpm} . \\track "Piano" \\staff {score} ${Array.from(
+        { length: bars },
+        () => ':8 c4 r c4 r c4 r c4 r |',
+      ).join(' ')}`;
+
+      const alphaTab = await import('@coderline/alphatab');
+      const raw = {
+        meta: {
+          config,
+          noteMs: 60000 / config.bpm,
+          userAgent: navigator.userAgent,
+          hardwareConcurrency: navigator.hardwareConcurrency,
+          alphaTab: '1.9.0',
+          bars,
+          columns: {
+            events: ['arrival', 'currentTime', 'currentTick', 'isSeek', 'contextTime'],
+            frames: ['rafTime'],
+            contextPairs: ['contextTime', 'performanceNow'],
+            outputTimestamps: ['contextTime', 'performanceTime', 'performanceNow'],
+            onsets: ['contextTime', 'peak'],
+            inputPairs: ['contextTime', 'performanceNow'],
+          },
+          states: [],
+          errors: [],
+        },
+        events: [],
+        frames: [],
+        contextPairs: [],
+        outputTimestamps: [],
+        onsets: [],
+        inputPairs: [],
+      };
+      const status = { phase: 'loading', done: false };
+      const show = () =>
+        (document.getElementById('status').textContent = JSON.stringify(
+          {
+            ...status,
+            config,
+            events: raw.events.length,
+            frames: raw.frames.length,
+            onsets: raw.onsets.length,
+          },
+          null,
+          2,
+        ));
+      window.addEventListener('error', (e) => raw.meta.errors.push(String(e.message)));
+
+      const api = new alphaTab.AlphaTabApi(document.getElementById('at'), {
+        core: {
+          scriptFile: '/alphatab/alphaTab.mjs',
+          fontDirectory: '/alphatab/font/',
+          useWorkers: true,
+        },
+        player: {
+          enablePlayer: true,
+          playerMode: alphaTab.PlayerMode.EnabledSynthesizer,
+          outputMode: alphaTab.PlayerOutputMode.WebAudioAudioWorklets,
+          soundFont: '/alphatab/soundfont/sonivox.sf2',
+          enableCursor: false,
+          positionUpdateIntervalInMilliseconds: config.interval,
+        },
+      });
+      api.error.on((e) => raw.meta.errors.push(String(e.message)));
+      let playing = false;
+      api.playerPositionChanged.on((e) => {
+        const arrival = performance.now();
+        const ctx = contexts[0];
+        raw.events.push([
+          arrival,
+          e.currentTime,
+          e.currentTick,
+          e.isSeek ? 1 : 0,
+          ctx ? ctx.currentTime : -1,
+        ]);
+      });
+      api.playerStateChanged.on((e) => {
+        playing = e.state === 1;
+        raw.meta.states.push([performance.now(), e.state, e.stopped ? 1 : 0]);
+      });
+      api.playerFinished.on(() => {
+        playing = false;
+        status.phase = 'finished';
+        finish();
+      });
+      api.playerReady.on(() => {
+        status.phase = 'ready';
+        document.getElementById('start').disabled = false;
+        show();
+      });
+
+      const frame = (t) => {
+        if (playing) {
+          raw.frames.push(t);
+          const ctx = contexts[0];
+          if (ctx) {
+            raw.contextPairs.push([ctx.currentTime, performance.now()]);
+            if (ctx.getOutputTimestamp) {
+              const ts = ctx.getOutputTimestamp();
+              raw.outputTimestamps.push([
+                ts.contextTime ?? -1,
+                ts.performanceTime ?? -1,
+                performance.now(),
+              ]);
+            }
+          }
+          if (capture) capture.pairs();
+        }
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+
+      let capture = null;
+      async function startCapture() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+        });
+        const ctx = new NativeAudioContext();
+        const source = `registerProcessor('s6-onsets', class extends AudioWorkletProcessor {
+          floor = 0.001; last = -1e9;
+          process(inputs) {
+            const x = inputs[0] && inputs[0][0];
+            if (!x) return true;
+            for (let i = 0; i < x.length; i++) {
+              const v = Math.abs(x[i]);
+              const frame = currentFrame + i;
+              if (v > Math.max(0.02, 8 * this.floor) && frame - this.last > 0.2 * sampleRate) {
+                this.last = frame;
+                this.port.postMessage([frame / sampleRate, v]);
+              }
+              this.floor += (v - this.floor) * 0.0005;
+            }
+            return true;
+          }
+        });`;
+        await ctx.audioWorklet.addModule(
+          URL.createObjectURL(new Blob([source], { type: 'text/javascript' })),
+        );
+        const node = new AudioWorkletNode(ctx, 's6-onsets', { numberOfOutputs: 0 });
+        node.port.onmessage = (e) => raw.onsets.push(e.data);
+        ctx.createMediaStreamSource(stream).connect(node);
+        raw.meta.input = {
+          sampleRate: ctx.sampleRate,
+          baseLatency: ctx.baseLatency ?? null,
+          track: stream.getAudioTracks()[0]?.getSettings?.() ?? null,
+        };
+        capture = {
+          pairs: () => raw.inputPairs.push([ctx.currentTime, performance.now()]),
+          stop: () => {
+            stream.getTracks().forEach((t) => t.stop());
+            ctx.close();
+          },
+        };
+      }
+
+      function finish() {
+        const ctx = contexts[0];
+        raw.meta.output = ctx
+          ? {
+              sampleRate: ctx.sampleRate,
+              baseLatency: ctx.baseLatency ?? null,
+              outputLatency: ctx.outputLatency ?? null,
+              state: ctx.state,
+              contexts: contexts.length,
+            }
+          : null;
+        raw.meta.endedAt = performance.now();
+        capture?.stop();
+        status.done = true;
+        document.getElementById('download').disabled = false;
+        show();
+      }
+
+      document.getElementById('start').onclick = async () => {
+        document.getElementById('start').disabled = true;
+        if (config.loopback) await startCapture();
+        api.masterVolume = config.volume;
+        api.playbackSpeed = config.speed;
+        raw.meta.startedAt = performance.now();
+        status.phase = 'playing';
+        api.play();
+        show();
+      };
+      document.getElementById('download').onclick = () => {
+        const blob = new Blob([JSON.stringify(raw)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `s6-${config.loopback ? 'loopback' : 'clock'}-i${config.interval}-s${config.speed}-${Date.now()}.json`;
+        a.click();
+      };
+      setInterval(show, 500);
+      api.tex(tex);
+      window.__s6 = { raw, status, api, contexts };
+    </script>
+  </body>
+</html>

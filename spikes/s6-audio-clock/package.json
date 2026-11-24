@@ -1,0 +1,27 @@
+{
+  "name": "@musichub/spike-s6-audio-clock",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:browser": "playwright test e2e/smoke.spec.ts",
+    "measure": "playwright test e2e/measure.spec.ts --workers=1",
+    "analyze": "node scripts/analyze.ts",
+    "serve": "node scripts/serve.ts"
+  },
+  "dependencies": {
+    "@coderline/alphatab": "catalog:"
+  },
+  "devDependencies": {
+    "@musichub/config": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "globals": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
