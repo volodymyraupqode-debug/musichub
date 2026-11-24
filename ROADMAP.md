@@ -2,6 +2,8 @@
 
 > Status: Draft v0.2 (audited 2026‑11‑21) — awaiting approval. The order follows the required strategy: **web first → music engine before advanced editing → editor before community → mobile after web → AI after initial release.** Durations are rough estimates for a small team (1–2 developers + AI agents). They will be re-estimated after Phase 0. Sprints are 2 weeks.
 >
+> **Changelog v0.2.28:** Phase 0 exit criterion 1 (clean clone) verified 2026‑11‑25: the literal `pnpm dev` and the corrected README web step (`pnpm turbo run dev --filter=@musichub/web`) pass from an isolated clean clone. The S6 criterion and the other spike results are unchanged; Phase 0 is not complete.
+>
 > **Changelog v0.2.27:** S2-12 (approved 2026‑11‑24): Phase 0 evidence consolidation and exit-criteria audit. ADR-0002 Amendment 4 records the S2, S4 and S5 results (findings only); MUSIC_ENGINE.md §10 gets a results table; §Phase 0 gets an exit-status checklist. S2-08, S2-09, S2-10 stay partly done; S2-11 and S2-13 stay TBD; Phase 0 is not complete.
 >
 > **Changelog v0.2.26:** S3 acceptance criterion defined by the owner (ADR-0002 Amendment 3, A9): single-edit interval from edit command to the first painted frame, p95 < 150 ms on 300 × 8, with sample-size, environment, MIDI-readiness and fallback rules. S2-10 stays partly done (target not met, no fallback selected); Phase 0 is not complete.
@@ -83,7 +85,7 @@ Each phase has exit criteria. A phase is done only when all of them are met and 
 
 | Exit criterion | Status | Evidence | Missing / blocking |
 |---|---|---|---|
-| `pnpm install && pnpm dev` and `docker compose up` work from a clean clone; CI is green | **Partly verified** | CI green on `main` `c8afcea` (JS, PHP, E2E jobs). Clean-clone check below: install, services, API and Pest pass; the web app runs through Turbo's dev pipeline | The literal `pnpm dev` was not verified (port conflict on this machine); the README's web-only step fails in a clean clone (finding below) |
+| `pnpm install && pnpm dev` and `docker compose up` work from a clean clone; CI is green | **Met** (verified 2026‑11‑25) | CI green on `main` `51b6443` (JS, PHP, E2E jobs). Clean-clone recheck below: `pnpm install --frozen-lockfile`, `docker compose up -d --wait` and the literal `pnpm dev` pass; web app HTTP 200 with "API: ok", spike S1 HTTP 200 | Verified on one macOS machine with a warm pnpm store and an isolated compose project name; not a cold network install |
 | Spike numbers are recorded and the `toAlphaTab` strategy is decided | Met for the recording, with gaps in the evidence itself | Strategy A decided (ADR-0002 A1); every spike's numbers and status recorded (ADR-0002 Amendments 1–4, ADR-0004 and its Addendum; index in ADR-0002 Amendment 4) | Recorded results include unmet spike criteria: S3, S4, S6 partly done; S7 sustain pedal and hand split not covered |
 | S6 clock jitter < 10 ms, or a fallback is chosen | **Not met** | p95 < 10 ms in Playwright Chromium (9/9 runs); headless WebKit above 10 ms at the default interval in 3 of 4 speed-1.0 runs; no audio reference (ADR-0004 Addendum) | Owner decision: choose a clock fallback, or define and schedule the missing measurements |
 
@@ -100,6 +102,16 @@ Clean-clone check (2026‑11‑24, S2-12), in an isolated scratch directory: loc
 | `cp apps/web/.env.example apps/web/.env.local && pnpm --filter @musichub/web dev` | **fails**: HTTP 500, `Module not found: Can't resolve '@musichub/api-client'`; the package exports `dist/`, which a clean clone has not built, and this command does not build workspace dependencies. Documentation finding, not fixed in S2-12 |
 | `pnpm turbo run dev --filter=@musichub/web` (builds `^build` first) | pass: HTTP 200, the page shows "API: ok" |
 
+Clean-clone recheck (2026‑11‑25), after the README fix of the web step; isolated scratch clone of branch `docs/phase0-clean-clone-dev` at `bd6a38e` (= `main` `51b6443` + README/AGENTS.md change), compose project `phase0-clean-clone`, `php84`, Node 26.13.1, pnpm 12.21.0. Port :3200 was freed by the owner for the `pnpm dev` run. The owner's containers, volumes and servers were not touched; the isolated containers, network, volumes and clone were removed afterwards.
+
+| Step | Result |
+|---|---|
+| `pnpm install --frozen-lockfile` | pass (`packages/api-client/dist` absent afterwards: 0 files) |
+| `docker compose -f infra/docker-compose.yml up -d --wait` (+ `-p phase0-clean-clone`), `run --rm seaweedfs-init` | pass |
+| API steps of README.md, `GET /api/v1/health` | pass: HTTP 200, database ok, redis ok |
+| README web step `cp apps/web/.env.example apps/web/.env.local && pnpm turbo run dev --filter=@musichub/web` | pass: Turbo builds `api-client` first (`dist`: 4 files); `GET http://localhost:3000/` HTTP 200, page shows "API: ok" |
+| `pnpm dev` (literal, repository root; exit criterion) | pass: Turbo runs dev in 7 packages; `GET http://localhost:3000/` HTTP 200 with "API: ok", `GET http://localhost:3200/` (spike S1) HTTP 200 |
+
 Owner decisions needed before Phase 0 can be declared complete (none is taken by S2-12):
 
 1. **S6:** a clock fallback, or measurements against the audio output (loopback, Safari, Firefox are outside the current scope).
@@ -107,7 +119,7 @@ Owner decisions needed before Phase 0 can be declared complete (none is taken by
 3. **S4:** how to treat the missing GP3–GP8 evidence (criterion not met).
 4. **S5:** D1, D2, the half-open hi-hat key and the [CONV] conventions.
 5. **S7:** the uncovered sustain-pedal and hand-split questions.
-6. **Clean clone:** how to verify the literal `pnpm dev` (a run without the owner's S1 dev server on :3200), and whether to fix the README web-only step (a separate task; S2-12 does not change the README).
+6. ~~**Clean clone:** verify the literal `pnpm dev` and fix the README web-only step~~ — resolved 2026‑11‑25: README web step changed to `pnpm turbo run dev --filter=@musichub/web`; literal `pnpm dev` verified (recheck above).
 
 MUSIC_ENGINE.md §10 requires the spikes to complete before Phase 1 code; Phase 0 is **not complete**.
 
@@ -410,7 +422,7 @@ Sprint 1 is closed pending owner review.
 
 **Goal:** answer the Phase 0 spike questions (MUSIC_ENGINE.md §10, S1–S7), draft MHD v1 in `music-model` with hand-written fixtures, collect legally usable import fixtures, and record the results in ADR‑0002 and ADR‑0004 (Phase 0 scope above). Design tokens are not part of Sprint 2 (Phase 1, decision C1).
 
-**Status (2026‑11‑24):** in progress. Done: S2-00…S2-07. Partly done: S2-08 (automated part), S2-09 (MusicXML part), S2-10 (measured; target not met for large scores). In progress: S2-12. TBD: S2-11, S2-13. Spike ids S3–S7 (MUSIC_ENGINE.md §10) are kept in the technical docs; task ids and spike ids differ (S2-06 = S5, S2-07 = S7, S2-08 = S6, S2-09 = S4, S2-10 = S3).
+**Status (2026‑11‑24):** in progress. Done: S2-00…S2-07. Partly done: S2-08 (automated part), S2-09 (MusicXML part), S2-10 (measured; target not met for large scores). Done: S2-12 (PR #19). TBD: S2-11, S2-13. Spike ids S3–S7 (MUSIC_ENGINE.md §10) are kept in the technical docs; task ids and spike ids differ (S2-06 = S5, S2-07 = S7, S2-08 = S6, S2-09 = S4, S2-10 = S3).
 
 Done research spikes do not by themselves meet the Phase 0 exit criteria (§Phase 0 *Exit*). Phase 0 is not complete: the criterion "S6 clock jitter < 10 ms, or a fallback is chosen" is not met (S2-08 measured event timing only, fails in headless WebKit at the default interval, and no fallback is chosen; the measurements against the audio output that a decision needs are outside the current scope); the import fixtures for S4 (S2-09: 14 of 20 files, MusicXML only, no GP3–GP8); S3 (S2-10) has measured numbers but neither meets the < 150 ms target on large scores nor selects a fallback and the recording of all spike results in ADR‑0002 and ADR‑0004 are also still open.
 
@@ -428,7 +440,7 @@ Done research spikes do not by themselves meet the Phase 0 exit criteria (§Phas
 | S2-09 | Spike S4: import fidelity | S2-05, import fixtures | 🟡 partly done (MusicXML part; criterion not met; PR #17) | `spikes/s2-mhd-to-alphatab` (`src/import`, `fixtures/import`); report `docs/spikes/s4-import-fidelity.md`. Criterion unchanged (MUSIC_ENGINE.md §10: 20 public-domain/own GP3–8 and MusicXML files → MHD → GP7, coverage matrix) and **not met**. **Done:** 14 original hand-authored MusicXML fixtures (13 distinct contents + 1 compressed `.mxl`; synthetic own work, SHA-256 in `SOURCES.md`); spike alphaTab → MHD converter with explicit losses; coverage matrix for import (verified against independent intent), MHD and GP7 round trip (alphaTab on both sides). Deviations: D.S. al Coda → Dal Segno, no-break spaces in part names, grace timing from `steal-time-previous`; tenuto and slur not in MHD v1; GP7 round trip turns non-guitar staves stringed. **Not evaluated:** GP3, GP4, GP5, GP6/GPX, GP7, GP8 — no independent legally usable fixtures (a test-data gap, not evidence of incompatibility); an open gap that can be closed later if legal files appear |
 | S2-10 | Spike S3: edit-loop latency | S2-05 | 🟡 partly done (measured; target not met for large scores, no fallback selected; PR #18) | `spikes/s2-mhd-to-alphatab` (`src/edit-loop`, `e2e/edit-loop*`); report `docs/spikes/s3-edit-loop-latency.md`; raw data `data/edit-loop`; ADR-0002 Amendment 3 (numbers and criterion A9). Edit command → next frame, Playwright Chromium / WebKit (median / p95): 8 × 4 16 / 22 and 27 / 79 ms (< 150 ms met); 50 × 8 84–98 / 147–185 and 114–169 / 245–558 ms (borderline / missed); 300 × 8 535 / 726 and 619 / 1312 ms (missed). No §6 fallback and no measured combination (best: render window + no MIDI, 244 / 352 ms) reaches < 150 ms on 300 × 8; none selected. Position restore after an edit during playback works (within 1 tick). **Acceptance criterion** (owner decision 2026‑11‑24, ADR-0002 A9): edit command received → first painted frame with the edited notation visible, p95 < 150 ms over ≥ 100 single edits in ≥ 2 sessions per reference environment, on `performanceDocument(300)`; MIDI readiness and position restore reported separately. **Status under A9: target not met, no fallback selected**; the historical runs above are lower bounds (no scheduler, no painted-frame confirmation) and cannot establish a pass. **Open:** unmeasured options for large scores (partial Render Score, off-main-thread conversion, MIDI only on play) and new A9-conformant measurements for any future pass claim |
 | S2-11 | TBD | — | ❔ TBD | Not defined yet |
-| S2-12 | Phase 0 evidence consolidation and exit-criteria audit | S2-04…S2-10 | 🚧 in progress | Findings-only: ADR-0002 Amendment 4 records the S2, S4 and S5 results and indexes every Phase 0 spike result; MUSIC_ENGINE.md §10 results table; Phase 0 exit checklist (§Phase 0 *Exit status*); clean-clone check; AGENTS.md status. No decision, criterion or spike status changed |
+| S2-12 | Phase 0 evidence consolidation and exit-criteria audit | S2-04…S2-10 | ✅ done (PR #19) | Findings-only: ADR-0002 Amendment 4 records the S2, S4 and S5 results and indexes every Phase 0 spike result; MUSIC_ENGINE.md §10 results table; Phase 0 exit checklist (§Phase 0 *Exit status*); clean-clone check; AGENTS.md status. No decision, criterion or spike status changed |
 | S2-13 | TBD | — | ❔ TBD | Not defined yet |
 
 A numbering for S2-03…S2-13 was proposed in the Sprint 2 planning audit (2026‑11‑22). S2-00…S2-10 are confirmed by the owner (S2-07…S2-10 on 2026‑11‑24); S2-11…S2-13 get a scope when the owner approves them.
