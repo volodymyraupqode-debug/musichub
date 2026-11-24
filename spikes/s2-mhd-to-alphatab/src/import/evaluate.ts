@@ -15,7 +15,7 @@ export function importFixture(relative: string): alphaTab.model.Score {
   return alphaTab.importer.ScoreLoader.loadScoreFromBytes(bytes, newSettings());
 }
 
-export type Status = 'supported' | 'partial' | 'unsupported' | 'not exercised';
+export type Status = 'supported' | 'partial' | 'unsupported' | 'not exercised' | 'not evaluated';
 
 export interface GroupResult {
   group: string;
@@ -103,12 +103,23 @@ function reduce(f: Facts): Facts {
 
 /** Intent (MHD) against an alphaTab Score, in the shapes of `mhdComparable`. */
 export function compareWithIntent(
-  intent: Parameters<typeof mhdComparable>[0],
+  intent: MhdDocument,
   score: alphaTab.model.Score,
+  notEvaluated: Record<string, string> = {},
 ) {
   const expected = reduce(mhdComparable(intent));
   const actual = reduce(projectToMhd(scoreFacts(score)));
-  return GROUPS.map((g) => compareGroup(g, expected[g], actual[g]));
+  return skip(
+    GROUPS.map((g) => compareGroup(g, expected[g], actual[g])),
+    notEvaluated,
+  );
+}
+
+/** Marks groups the intent does not define (open MHD questions) as not evaluated. */
+function skip(results: GroupResult[], notEvaluated: Record<string, string>): GroupResult[] {
+  return results.map((r) =>
+    r.group in notEvaluated ? { ...r, status: 'not evaluated', missing: [], unexpected: [] } : r,
+  );
 }
 
 /** Two alphaTab Scores against each other (round trip), in the same shapes. */
@@ -119,28 +130,44 @@ export function compareScores(before: alphaTab.model.Score, after: alphaTab.mode
 }
 
 /** MHD against MHD (intent against the converted document), in the shapes of `mhdComparable`. */
-export function compareDocuments(expected: MhdDocument, actual: MhdDocument) {
+export function compareDocuments(
+  expected: MhdDocument,
+  actual: MhdDocument,
+  notEvaluated: Record<string, string> = {},
+) {
   const a = reduce(mhdComparable(expected));
   const b = reduce(mhdComparable(actual));
-  return [
-    ...GROUPS.map((g) => compareGroup(g, a[g], b[g])),
-    compareGroup('dynamics', extras(expected).dynamics, extras(actual).dynamics),
-    compareGroup('noteEffects', extras(expected).effects, extras(actual).effects),
-  ];
+  const ea = extras(expected);
+  const eb = extras(actual);
+  return skip(
+    [
+      ...GROUPS.map((g) => compareGroup(g, a[g], b[g])),
+      compareGroup('dynamics', ea.dynamics, eb.dynamics),
+      compareGroup('noteEffects', ea.effects, eb.effects),
+      compareGroup('lyrics', ea.lyrics, eb.lyrics),
+    ],
+    notEvaluated,
+  );
 }
 
 /** Beat dynamics and note effects of an MHD document (not part of the facts.ts groups). */
-export function extras(doc: MhdDocument): { dynamics: unknown[]; effects: unknown[] } {
+export function extras(doc: MhdDocument): {
+  dynamics: unknown[];
+  effects: unknown[];
+  lyrics: unknown[];
+} {
   const dynamics: unknown[] = [];
   const effects: unknown[] = [];
+  const lyrics: unknown[] = [];
   for (const [ti, t] of doc.tracks.entries())
     for (const [si, s] of t.staves.entries())
       for (const [bi, b] of s.bars.entries())
         for (const [vi, v] of b.voices.entries())
           for (const [bti, bt] of v.beats.entries()) {
             if (bt.dynamic) dynamics.push([ti, si, bi, vi, bti, bt.dynamic]);
+            if (bt.lyrics) lyrics.push([ti, si, bi, vi, bti, bt.lyrics]);
             for (const [ni, n] of bt.notes.entries())
               if (n.effects) effects.push([ti, si, bi, vi, bti, ni, n.effects]);
           }
-  return { dynamics, effects };
+  return { dynamics, effects, lyrics };
 }

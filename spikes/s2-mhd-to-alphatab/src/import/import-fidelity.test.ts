@@ -20,20 +20,31 @@ import {
   type Status,
 } from './evaluate.ts';
 import { fromAlphaTab } from './from-alphatab.ts';
-import { intents } from './intent.ts';
+import { fixtureFile, intents } from './intent.ts';
 
 type Known = Record<string, Partial<Record<string, Status>>>;
 
-/** Import (alphaTab) and MHD conversion: the only groups that differ from the intent. */
-const KNOWN_IMPORT: Known = {
+/** MHD conversion (converted MHD vs intent): the only groups that differ from the intent. */
+const KNOWN_MHD: Known = {
   // `<sound dalsegno>` with the words "D.S. al Coda" becomes plain Dal Segno (code 9, not 10).
   'mx07-repeats-navigation': { directions: 'partial' },
-  // The part name's space becomes U+00A0 (no-break space) on import.
+  // Spaces in part names become U+00A0 (no-break space) on import.
   'mx08-guitar-tab': { trackInfo: 'unsupported' },
+  // An unslashed grace with steal-time-previous is imported as on-beat (alphaTab ignores steal-time).
+  'mx10-grace-notes': { grace: 'partial' },
+  'mx12-transposing': { trackInfo: 'unsupported', keySignature: 'not evaluated' },
+};
+/** Import (alphaTab Score vs intent). As KNOWN_MHD; an on-beat grace also moves its main beat's tick. */
+const KNOWN_IMPORT: Known = {
+  ...KNOWN_MHD,
+  'mx10-grace-notes': { grace: 'partial', rhythm: 'partial' },
 };
 /** Conversion losses expected per fixture (besides `track.instrument.family`, which is always one). */
-const KNOWN_LOSSES: Record<string, string[]> = { 'mx06-articulations': ['note.accent.tenuto'] };
-/** GP7 round trip: Gp7Exporter + Gp7To8Importer give non-stringed staves a tuning and string/fret. */
+const KNOWN_LOSSES: Record<string, string[]> = {
+  'mx06-articulations': ['note.accent.tenuto'],
+  'mx13-lyrics-slur': ['note.slur'],
+};
+/** GP7 round trip: Gp7Exporter + Gp7To8Importer give non-stringed, non-percussion staves a tuning and string/fret. */
 const STRINGED_AFTER_ROUND_TRIP = new Set(['tuning', 'pitch']);
 
 const deviations = (results: GroupResult[]) =>
@@ -48,11 +59,7 @@ describe('fixture inventory', () => {
   const files = readdirSync(path.join(FIXTURE_DIR, 'musicxml')).sort();
 
   it('every fixture file has an intent and a SOURCES.md entry with its SHA-256', () => {
-    expect(files.map((f) => f.replace(/\.musicxml$/, ''))).toEqual(
-      intents()
-        .map((i) => i.name)
-        .sort(),
-    );
+    expect(files.map((f) => `musicxml/${f}`)).toEqual(intents().map(fixtureFile).sort());
     for (const f of files) {
       const sha = createHash('sha256')
         .update(readFileSync(path.join(FIXTURE_DIR, 'musicxml', f)))
@@ -67,7 +74,7 @@ describe('fixture inventory', () => {
 });
 
 describe.each(intents().map((i) => [i.name, i] as const))('%s', (name, intent) => {
-  const imported = importFixture(`musicxml/${name}.musicxml`);
+  const imported = importFixture(fixtureFile(intent));
   const converted = fromAlphaTab(imported, intent.doc.id);
 
   it('intent is valid MHD v1', () => {
@@ -75,16 +82,24 @@ describe.each(intents().map((i) => [i.name, i] as const))('%s', (name, intent) =
   });
 
   it('alphaTab import matches the intent except the documented findings', () => {
-    expect(deviations(compareWithIntent(intent.doc, imported))).toEqual(KNOWN_IMPORT[name] ?? {});
+    expect(deviations(compareWithIntent(intent.doc, imported, intent.notEvaluated))).toEqual(
+      KNOWN_IMPORT[name] ?? {},
+    );
   });
 
   it('the converted MHD is valid and matches the intent except the documented findings', () => {
     const v = validateDocument(converted.doc);
     expect(v.issues).toEqual([]);
     expect(v.valid).toBe(true);
-    expect(deviations(compareDocuments(intent.doc, converted.doc))).toEqual(
-      KNOWN_IMPORT[name] ?? {},
+    expect(deviations(compareDocuments(intent.doc, converted.doc, intent.notEvaluated))).toEqual(
+      KNOWN_MHD[name] ?? {},
     );
+  });
+
+  it('re-import is stable: a second import gives the same converted MHD', () => {
+    const again = fromAlphaTab(importFixture(fixtureFile(intent)), intent.doc.id);
+    expect(JSON.stringify(again.doc)).toBe(JSON.stringify(converted.doc));
+    expect(again.losses).toEqual(converted.losses);
   });
 
   it('conversion reports its losses, never drops them', () => {
@@ -98,9 +113,11 @@ describe.each(intents().map((i) => [i.name, i] as const))('%s', (name, intent) =
     const bytes = new alphaTab.exporter.Gp7Exporter().export(score, newSettings());
     const back = alphaTab.importer.ScoreLoader.loadScoreFromBytes(bytes, newSettings());
     const d = deviations(compareScores(imported, back));
-    const stringed = imported.tracks.every((t) => t.staves.every((s) => s.isStringed));
+    const plain = imported.tracks.some((t) =>
+      t.staves.some((s) => !s.isStringed && !s.isPercussion),
+    );
     expect(d).toEqual(
-      stringed
+      !plain
         ? {}
         : Object.fromEntries([...STRINGED_AFTER_ROUND_TRIP].map((g) => [g, 'unsupported'])),
     );
@@ -169,6 +186,53 @@ describe('documented findings', () => {
     );
     expect(score.tracks[0]?.staves[0]?.isStringed).toBe(false);
     expect(back.tracks[0]?.staves[0]?.tuning).toEqual([64, 59, 55, 50, 45, 40]);
+  });
+});
+
+describe('documented findings (added fixtures)', () => {
+  it('mx10: alphaTab ignores steal-time; slash or make-time decide the grace type', () => {
+    const beats =
+      importFixture('musicxml/mx10-grace-notes.musicxml').tracks[0]?.staves[0]?.bars[0]?.voices[0]
+        ?.beats ?? [];
+    expect(
+      beats.filter((b) => b.graceType !== alphaTab.model.GraceType.None).map((b) => b.graceType),
+    ).toEqual([
+      alphaTab.model.GraceType.BeforeBeat, // slash="yes" steal-time-previous
+      alphaTab.model.GraceType.OnBeat, // steal-time-following
+      alphaTab.model.GraceType.OnBeat, // steal-time-previous without slash: intended before the beat
+    ]);
+  });
+
+  it('mx12: sounding pitch and transposition arrive; alphaTab keeps the written key (observation)', () => {
+    const score = importFixture('musicxml/mx12-transposing.musicxml');
+    const staff = score.tracks[0]?.staves[0];
+    expect(staff?.displayTranspositionPitch).toBe(-2);
+    expect(staff?.bars[0]?.voices[0]?.beats.map((b) => b.notes[0]?.realValue)).toEqual([
+      72, 74, 76,
+    ]);
+    expect(score.masterBars[0]?.keySignature).toBe(2);
+    expect(score.tracks[0]?.name).toBe('Clarinet\u00a0in\u00a0Bb');
+  });
+
+  it('mx13: lyrics convert to MHD; the slur is reported as a loss', () => {
+    const { doc, losses } = fromAlphaTab(
+      importFixture('musicxml/mx13-lyrics-slur.musicxml'),
+      intents()[0]?.doc.id ?? '',
+    );
+    expect(doc.tracks[0]?.staves[0]?.bars[0]?.voices[0]?.beats.map((b) => b.lyrics)).toEqual([
+      ['la'],
+      ['li'],
+      ['lo'],
+    ]);
+    expect(losses.filter((l) => l.feature === 'note.slur')).toHaveLength(1);
+  });
+
+  it('mx14: the compressed .mxl gives the same converted MHD as the uncompressed mx01', () => {
+    const id = intents()[0]?.doc.id ?? '';
+    const a = fromAlphaTab(importFixture('musicxml/mx01-notes-rests.musicxml'), id).doc;
+    const b = fromAlphaTab(importFixture('musicxml/mx14-compressed.mxl'), id).doc;
+    expect(JSON.stringify(b.tracks)).toBe(JSON.stringify(a.tracks));
+    expect(JSON.stringify(b.masterBars)).toBe(JSON.stringify(a.masterBars));
   });
 });
 

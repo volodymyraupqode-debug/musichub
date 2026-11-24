@@ -57,42 +57,75 @@ function single(
   );
 }
 
+/** mx01 content (also the content of the compressed container mx14). */
+function notesAndRests(name: string, uuidSuffix: string): MhdDocument {
+  return single(
+    name,
+    [FIRST_BAR, {}, {}, {}],
+    (id) => [
+      [
+        beat(id, d(4), [n(midi('C', 4))]),
+        beat(id, d(4), [n(midi('D', 4))]),
+        beat(id, d(2), [n(midi('E', 4))]),
+      ],
+      [
+        beat(id, d(8), [n(midi('F', 4))]),
+        beat(id, d(8), [n(midi('G', 4))]),
+        beat(id, d(4, 1), [n(midi('A', 4))]),
+        rest(id, d(4)),
+        beat(id, d(16), [n(midi('B', 4))]),
+        beat(id, d(16), [n(midi('C', 5))]),
+      ],
+      [rest(id, d(1))],
+      [beat(id, d(1), [n(midi('C', 5))])],
+    ],
+    uuidSuffix,
+  );
+}
+
+/** One bar, one track, one staff with an explicit instrument and staff options. */
+function oneBar(
+  name: string,
+  uuidSuffix: string,
+  trackName: string,
+  instrument: Track['instrument'],
+  beats: (id: Id) => Beat[],
+  staffExtra: Parameters<typeof staff>[2] = {},
+  masterBar: MB = FIRST_BAR,
+  barExtra: Parameters<typeof bar>[2] = {},
+): MhdDocument {
+  const id = idSource('S4');
+  const t = track(id, trackName, instrument, [
+    staff(id, [bar(id, [voice(id, beats(id))], barExtra)], staffExtra),
+  ]);
+  return documentOf(
+    `01900000-0000-7000-8000-0000000004${uuidSuffix}`,
+    `MusicHub S4 ${name}`,
+    [masterBar],
+    [t],
+    id,
+  );
+}
+
 export interface Intent {
-  /** File name in fixtures/import/musicxml without extension. */
+  /** Fixture name; the file is `musicxml/<name>.musicxml` unless `file` says otherwise. */
   name: string;
+  /** Path below fixtures/import, for files that are not `.musicxml` (e.g. the compressed `.mxl`). */
+  file?: string;
   doc: MhdDocument;
   /** Musical content of the fixture that MHD v1 cannot express (checked separately, never in `doc`). */
   notInMhd: string[];
   /** Targeted checks on the imported alphaTab Score for content outside the MHD fact groups. */
   dynamics?: { bar: number; beat: number; value: NonNullable<Beat['dynamic']> }[];
+  /** Fact groups not evaluated for this fixture, with the reason (an open MHD question, never a result). */
+  notEvaluated?: Record<string, string>;
 }
 
 export function intents(): Intent[] {
   return [
     {
       name: 'mx01-notes-rests',
-      doc: single(
-        'mx01-notes-rests',
-        [FIRST_BAR, {}, {}, {}],
-        (id) => [
-          [
-            beat(id, d(4), [n(midi('C', 4))]),
-            beat(id, d(4), [n(midi('D', 4))]),
-            beat(id, d(2), [n(midi('E', 4))]),
-          ],
-          [
-            beat(id, d(8), [n(midi('F', 4))]),
-            beat(id, d(8), [n(midi('G', 4))]),
-            beat(id, d(4, 1), [n(midi('A', 4))]),
-            rest(id, d(4)),
-            beat(id, d(16), [n(midi('B', 4))]),
-            beat(id, d(16), [n(midi('C', 5))]),
-          ],
-          [rest(id, d(1))],
-          [beat(id, d(1), [n(midi('C', 5))])],
-        ],
-        '01',
-      ),
+      doc: notesAndRests('mx01-notes-rests', '01'),
       notInMhd: [],
     },
     {
@@ -304,5 +337,109 @@ export function intents(): Intent[] {
       })(),
       notInMhd: [],
     },
+    {
+      name: 'mx09-multiple-parts',
+      doc: (() => {
+        const id = idSource('S4');
+        const flute = track(
+          id,
+          'Flute',
+          { family: 'woodwinds', midiProgram: 73, percussion: false },
+          [staff(id, [bar(id, [voice(id, [beat(id, d(1), [n(midi('C', 5))])])])])],
+        );
+        const cello = track(
+          id,
+          'Cello',
+          { family: 'strings', midiProgram: 42, percussion: false },
+          [staff(id, [bar(id, [voice(id, [beat(id, d(1), [n(midi('C', 3))])])], { clef: 'F4' })])],
+        );
+        return documentOf(
+          '01900000-0000-7000-8000-000000000409',
+          'MusicHub S4 mx09-multiple-parts',
+          [FIRST_BAR],
+          [flute, cello],
+          id,
+        );
+      })(),
+      notInMhd: [],
+    },
+    {
+      name: 'mx10-grace-notes',
+      // Timing intent from the MusicXML attributes: steal-time-previous → before the beat,
+      // steal-time-following → on the beat (slash or not).
+      doc: oneBar('mx10-grace-notes', '10', 'Piano', piano, (id) => [
+        beat(id, d(8), [n(midi('D', 5))], { grace: 'beforeBeat' }),
+        beat(id, d(4), [n(midi('C', 5))]),
+        beat(id, d(8), [n(midi('E', 5))], { grace: 'onBeat' }),
+        beat(id, d(4), [n(midi('D', 5))]),
+        beat(id, d(8), [n(midi('F', 5))], { grace: 'beforeBeat' }),
+        beat(id, d(2), [n(midi('E', 5))]),
+      ]),
+      notInMhd: [],
+    },
+    {
+      name: 'mx11-percussion',
+      doc: oneBar(
+        'mx11-percussion',
+        '11',
+        'Drums',
+        { family: 'drums', midiProgram: 0, percussion: true },
+        (id) => [
+          beat(id, d(4), [n(36), n(42)]),
+          beat(id, d(4), [n(38)]),
+          beat(id, d(4), [n(36), n(42)]),
+          beat(id, d(4), [n(38)]),
+        ],
+      ),
+      notInMhd: [],
+    },
+    {
+      name: 'mx12-transposing',
+      // Written D5 E5 F#5 with transpose -2: MHD stores the sounding pitch and the written-to-sounding offset.
+      doc: oneBar(
+        'mx12-transposing',
+        '12',
+        'Clarinet in Bb',
+        { family: 'woodwinds', midiProgram: 71, percussion: false },
+        (id) => [
+          beat(id, d(4), [n(midi('C', 5))]),
+          beat(id, d(4), [n(midi('D', 5))]),
+          beat(id, d(2), [n(midi('E', 5))]),
+        ],
+        { transpositionPitch: -2 },
+        { ...FIRST_BAR, keySignature: { fifths: 2, mode: 'major' } },
+      ),
+      notInMhd: [],
+      notEvaluated: {
+        keySignature:
+          'MHD v1 does not define whether MasterBar.keySignature is the written or the concert key of a transposing staff (written D major = concert C major)',
+      },
+    },
+    {
+      name: 'mx13-lyrics-slur',
+      doc: oneBar(
+        'mx13-lyrics-slur',
+        '13',
+        'Voice',
+        { family: 'vocals', midiProgram: 52, percussion: false },
+        (id) => [
+          beat(id, d(4), [n(midi('C', 4))], { lyrics: ['la'] }),
+          beat(id, d(4), [n(midi('D', 4))], { lyrics: ['li'] }),
+          beat(id, d(2), [n(midi('E', 4))], { lyrics: ['lo'] }),
+        ],
+      ),
+      // MHD v1 has no slur.
+      notInMhd: ['slur (beats 2–3)'],
+    },
+    {
+      name: 'mx14-compressed',
+      file: 'musicxml/mx14-compressed.mxl',
+      // Same content as mx01 in a compressed .mxl container.
+      doc: notesAndRests('mx14-compressed', '14'),
+      notInMhd: [],
+    },
   ];
 }
+
+export const fixtureFile = (intent: Intent): string =>
+  intent.file ?? `musicxml/${intent.name}.musicxml`;

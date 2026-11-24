@@ -11,22 +11,24 @@ import {
   type GroupResult,
 } from '../src/import/evaluate.ts';
 import { fromAlphaTab } from '../src/import/from-alphatab.ts';
-import { intents } from '../src/import/intent.ts';
+import { fixtureFile, intents } from '../src/import/intent.ts';
 import { newSettings } from '../src/run.ts';
 import { toAlphaTabDirect } from '../src/strategy-a.ts';
 
 const mark = (r: GroupResult | undefined) =>
   !r || r.status === 'not exercised'
     ? '—'
-    : r.status === 'supported'
-      ? '✅'
-      : r.status === 'partial'
-        ? `🟡 ${r.matched}/${r.expected}`
-        : `❌ ${r.matched}/${r.expected}`;
-const groups = [...GROUPS, 'dynamics', 'noteEffects'];
+    : r.status === 'not evaluated'
+      ? 'n/e'
+      : r.status === 'supported'
+        ? '✅'
+        : r.status === 'partial'
+          ? `🟡 ${r.matched}/${r.expected}`
+          : `❌ ${r.matched}/${r.expected}`;
+const groups = [...GROUPS, 'dynamics', 'noteEffects', 'lyrics'];
 const rows: string[] = [];
 for (const intent of intents()) {
-  const imported = importFixture(`musicxml/${intent.name}.musicxml`);
+  const imported = importFixture(fixtureFile(intent));
   const { doc, losses } = fromAlphaTab(imported, intent.doc.id);
   const back = alphaTab.importer.ScoreLoader.loadScoreFromBytes(
     new alphaTab.exporter.Gp7Exporter().export(
@@ -36,8 +38,8 @@ for (const intent of intents()) {
     newSettings(),
   );
   const stages = {
-    import: compareWithIntent(intent.doc, imported),
-    mhd: compareDocuments(intent.doc, doc),
+    import: compareWithIntent(intent.doc, imported, intent.notEvaluated),
+    mhd: compareDocuments(intent.doc, doc, intent.notEvaluated),
     gp7: compareScores(imported, back),
   };
   for (const [stage, results] of Object.entries(stages)) {

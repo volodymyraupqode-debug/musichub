@@ -175,7 +175,7 @@ export function fromAlphaTab(
               else loss(`beat.dynamic.${bt.dynamics}`, where);
             }
             if (bt.text) beat.text = bt.text;
-            if (bt.lyrics && bt.lyrics.length > 0) loss('beat.lyrics', where);
+            if (bt.lyrics && bt.lyrics.length > 0) beat.lyrics = [...bt.lyrics];
             if (bt.vibrato !== model.VibratoType.None) loss('beat.vibrato', where);
             if (bt.brushType !== model.BrushType.None) loss('beat.brush', where);
             if (bt.crescendo !== model.CrescendoType.None) loss('beat.crescendo', where);
