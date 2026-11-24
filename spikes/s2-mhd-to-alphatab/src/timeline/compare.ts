@@ -9,7 +9,9 @@
 // 5. timing mismatch: same track and key, nearest tick;
 // 6. missing (only in the reference) / extra (only in the prototype).
 // A pair or leftover becomes "unsupported" when the prototype flagged the note's construct as not
-// modelled (see prototype.ts), or a reference leftover lies within the tick span of such notes.
+// modelled (see prototype.ts), even if the pair happens to match exactly: an unmodelled construct
+// is no evidence of parity. A reference leftover within the tick span of such notes is unsupported
+// too. Unsupported events are excluded from the note-on parity denominator.
 // No normalisation other than the MHD track id is applied: ticks, keys, channels and velocities
 // are compared as integers.
 import type { EventType, TimelineEvent } from './prototype.ts';
@@ -89,7 +91,7 @@ function compareNotes(
   const protos = prototype.filter((e) => e.type === type);
   const add = (category: Category, r?: TimelineEvent, p?: TimelineEvent) =>
     findings.push({
-      category: p?.unsupported && category !== 'exact' ? 'unsupported' : category,
+      category: p?.unsupported ? 'unsupported' : category,
       type,
       ...(r ? { reference: r } : {}),
       ...(p ? { prototype: p } : {}),

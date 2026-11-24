@@ -45,7 +45,7 @@ This spike builds an independent prototype that computes playback order and MIDI
 
 **Modelled constructs:** notes, chords, rests, ties, grace notes, tuplets, dots, pickup, repeats, endings, all MHD directions, tempo changes, percussion (GM key), multiple tracks and voices, accents, ghost notes, hammer-on velocity, bend/whammy/vibrato channel, staccato.
 
-**Flagged as unsupported** (the prototype emits the note but marks it, and the comparison classifies it as `unsupported`):
+**Flagged as unsupported** (the prototype emits the note but marks it, and the comparison classifies every event of it as `unsupported`, also when it happens to match the reference; such events are no evidence of parity and are left out of the parity denominator):
 
 | Effect on | Constructs |
 |---|---|
@@ -64,7 +64,7 @@ Classification order per event type (`compare.ts`); each step sees only what ear
 4. **pitch mismatch:** same track and tick, different key;
 5. **timing mismatch:** same track and key, nearest tick;
 6. **missing** (reference only) / **extra** (prototype only);
-7. **unsupported:** the prototype flagged the note's construct, or a leftover reference note lies within 960 ticks of a flagged note in the same track.
+7. **unsupported:** the prototype flagged the note's construct (this overrides every step above, including an exact match), or a leftover reference note lies within 960 ticks of a flagged note in the same track.
 
 **No normalisation** besides the track-id mapping: ticks, keys, channels and velocities are compared as integers. Tempo is compared by tick and bpm, rounded to 10⁻⁶. Each category has a unit test.
 
@@ -96,7 +96,7 @@ All are original synthetic MHD v1 documents, valid with zero errors. In the main
 | `fermata-ottava` | fermata at 1/2, 8va bar | 0 1 |
 | `ending-closing-skipped` | endings [2,3] after a closing bar that has ending [1] | undefined (§7) |
 
-The S2-05 corpus (15 documents, 30,760+ note-ons) is compared as well.
+The S2-05 corpus (15 documents, 31,246 reference note-ons) is compared as well.
 
 ## 5. Results
 
@@ -112,24 +112,24 @@ The S2-05 corpus (15 documents, 30,760+ note-ons) is compared as well.
 
 | Document | Note-on | Note-off | Unsupported constructs |
 |---|---|---|---|
-| guitar-basic | 13 exact, 4 unsupported | 15 exact, 2 unsupported | brush, harmonic, palm mute and slide lengths |
+| guitar-basic | 11 exact, 6 unsupported | 8 exact, 9 unsupported | brush, harmonic, palm mute and slide lengths |
 | piano-grand-staff, multi-voice, multi-instrument, ties-grace, navigation, pedal, long-sequence, fermatas-ottava | **all exact** (1,721 note-ons) | all exact | – |
 | band-repeats | 76 exact, 1 pitch | same | – |
 | percussion | 33 exact, 1 pitch | same | – |
 | performance-300x8 | 28,815 exact, 452 pitch | same | – |
 | repeats | 27 exact, 2 pitch, 4 missing | same | – (contains D2) |
-| rhythm | 46 exact, 1 unsupported | same | triplet feel |
-| effects | 29 exact, 21 unsupported | 28 exact, 22 unsupported | harmonic, trill, tremolo, brush, legato slide, dead note, let ring, slide lengths |
+| rhythm | 41 exact, 6 unsupported | same | triplet feel |
+| effects | 24 exact, 26 unsupported | 21 exact, 29 unsupported | harmonic, trill, tremolo, brush, legato slide, dead note, let ring, slide lengths |
 
 ### 5.3 Totals by category (note-on)
 
 | Category | Golden scenarios | S2 corpus | Explanation |
 |---|---|---|---|
-| exact | 194 | 30,760 | |
+| exact | 194 | 30,748 | |
 | pitch | 5 | 456 | 454 = half-open hi-hat (§6); 2 + 5 = D1/D2 order differences seen as pitch |
 | missing | 5 | 4 | D1/D2 order differences |
 | timing, ordering, velocity, channel, extra | 0 | 0 | |
-| unsupported | 0 | 26 | constructs listed in §2 |
+| unsupported | 0 | 38 | every event of the constructs listed in §2, also those that happen to match |
 
 Tick, velocity and channel matched for every compared note: no timing, velocity or channel mismatch occurred.
 
@@ -166,7 +166,7 @@ Fermatas and ottava caused no difference: alphaTab's MIDI ignores both, and the 
 
 ## 8. Conclusion
 
-- **S5 pass criterion:** met for every construct whose semantics MHD defines or leaves to the engine. Across 17 golden scenarios, note-on, note-off and tempo events match alphaTab exactly (repeats, endings, D.S., D.C., coda, Fine, ties, graces, tuplets, pickup, tempo changes, multiple tracks). The 30,760 comparable note-ons of the S2 corpus are also exact, except for the explained differences.
+- **S5 pass criterion:** met for every construct whose semantics MHD defines or leaves to the engine. Across 17 golden scenarios, note-on, note-off and tempo events match alphaTab exactly (repeats, endings, D.S., D.C., coda, Fine, ties, graces, tuplets, pickup, tempo changes, multiple tracks). The 30,748 comparable note-ons of the S2 corpus are also exact, except for the explained differences.
 - **Not met** for two constructs where MHD and alphaTab disagree (D1) or MHD is silent (D2). These need owner decisions, not more code.
 - **Architecture:** the timeline can be built independently from MHD with integer tick rules that reproduce alphaTab. No hidden data from alphaTab was needed beyond documented rules: grace lengths, tuplet truncation, tick shift and velocity formula. These rules are now pinned by tests and golden snapshots, which must be rerun on every alphaTab upgrade.
 - **Readiness:** the playback-order and note-event design is ready to move into `music-model/timeline` in Phase 1 once D1, D2 and the [CONV] rules are decided. The unsupported constructs need either their own parity rules or a documented "engine-only" status.
@@ -176,8 +176,8 @@ Fermatas and ottava caused no difference: alphaTab's MIDI ignores both, and the 
 From `spikes/s2-mhd-to-alphatab` (Node 26.13.1; `@musichub/music-model` built):
 
 ```bash
-pnpm exec vitest run src/timeline   # 93 tests + 3 intentional skips; golden snapshots
-pnpm test                           # whole spike (552 + 4 skipped)
+pnpm exec vitest run src/timeline   # 94 tests + 3 intentional skips; golden snapshots
+pnpm test                           # whole spike (553 + 4 skipped)
 ```
 
 Updating the golden snapshots (only after an intended alphaTab change): `pnpm exec vitest run src/timeline -u`.

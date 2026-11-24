@@ -178,4 +178,10 @@ describe('comparison categories', () => {
     expect(categories([], [on(0, 60)])).toEqual(['extra']);
     expect(categories([on(0, 60)], [on(0, 61, { unsupported: 'trill' })])).toEqual(['unsupported']);
   });
+
+  it('classifies an exactly matching event of an unmodelled construct as unsupported, not exact', () => {
+    const result = compareEvents([on(0, 60)], [on(0, 60, { unsupported: 'brush' })]);
+    expect(result.findings.map((f) => f.category)).toEqual(['unsupported']);
+    expect(result.noteOnParity).toEqual({ exact: 0, comparable: 0 });
+  });
 });
