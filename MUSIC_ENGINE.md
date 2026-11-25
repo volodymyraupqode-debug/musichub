@@ -453,6 +453,8 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 
 ## 10. Phase 0 spikes (must complete before Phase 1 code)
 
+**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. Open dispositions: S3, S4, S5, S7. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
+
 | ID | Question | Pass criteria |
 |---|---|---|
 | S1 | alphaTab 1.9.0 in Next.js 16 + Turbopack: render, worker, worklet playback, prod build, theming via `display.resources` | Renders + plays in Chrome/Firefox/Safari; documents whether the render worker is active |
