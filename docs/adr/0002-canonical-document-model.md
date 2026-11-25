@@ -1,6 +1,6 @@
 # ADR-0002: Own canonical document model (MHD) instead of alphaTab Score/JSON
 
-- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) and the S3 acceptance criterion recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10) (criterion A9; S3 not met, no fallback selected); findings of spikes S2, S4 and S5 and an index of all Phase 0 spike results in [Amendment 4](#amendment-4-2026-11-24-phase-0-spike-findings-s2-12--status-deferred) (findings only); owner decisions on the open S5 timeline semantics (D1, D2, half-open hi-hat key, [CONV]) recorded 2026-11-25 in [Amendment 5](#amendment-5-2026-11-25-s5-timeline-semantics-owner-decisions) (decisions A10–A15; the S5 parity criterion is not yet established)
+- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) and the S3 acceptance criterion recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10) (criterion A9; S3 not met, no fallback selected); findings of spikes S2, S4 and S5 and an index of all Phase 0 spike results in [Amendment 4](#amendment-4-2026-11-24-phase-0-spike-findings-s2-12--status-deferred) (findings only); owner decisions on the open S5 timeline semantics (D1, D2, half-open hi-hat key, [CONV]) recorded 2026-11-25 in [Amendment 5](#amendment-5-2026-11-25-s5-timeline-semantics-owner-decisions) (decisions A10–A15; the S5 parity criterion is not yet established); the owner's S3 disposition under Q0 Option C (gap placed in Phase 3, Phase 1 architecture constraint) recorded 2026-11-25 in [Amendment 6](#amendment-6-2026-11-25-s3-owner-disposition-q0-option-c) (decision A16; A9 unchanged, S3 not met)
 - **Date:** 2026-11-21
 - **Deciders:** project owner
 - **Spec sections:** MUSIC_ENGINE.md §1–4; ARCHITECTURE.md §1.2
@@ -302,3 +302,25 @@ Rules that the S5 prototype used and that match alphaTab 1.9.0 in every golden s
 - [CONV] 4: implement invariant 15 with an issue code and test it (A14).
 - Default dynamic: decide during MHD v1 finalisation (A15).
 - The Phase 1 exit criterion "Timeline parity tests (S5) pass" applies under these rules. MHD v1 is unreleased, so these runtime invariants need no `schemaVersion` bump (MUSIC_ENGINE.md §3.4); they are not structural schema changes.
+
+## Amendment 6 (2026-11-25): S3 owner disposition (Q0 Option C)
+
+The original decision, Amendments 1–5 and A1–A15 are unchanged; numbering continues from A15. **A9 is unchanged**: its measurement interval, p95 < 150 ms target, sample and session requirements, reference document, reference-environment rules and fallback policy apply as written. This amendment records the owner's disposition of spike S3 required by the Q0 rule (ROADMAP.md §Phase 0, owner decision 2), selected from the S3 decision brief as **Option B + D**. Evidence: [S3 report](../spikes/s3-edit-loop-latency.md) and Amendment 3; both are historical and unchanged.
+
+### A16. S3 disposition (owner decision 2026-11-25, approved)
+
+> **S3 disposition (owner, 2026-11-25):** The S3 gap is placed in Phase 3 (Editor). ADR-0002 A9 remains unchanged; S3 remains technically not met. In Phase 3, with the real `editor-core` and RenderScheduler, the edit loop must be measured under A9 on the 300 × 8 reference document. S3 closes only through an A9 pass or an A9-compliant fallback explicitly selected and accepted by the owner.
+>
+> Phase 1's `toAlphaTab`, render-controller and Playback Score architecture must not preclude a partial Render Score, off-main-thread conversion, or MIDI regeneration on play.
+
+**B — gap placed in Phase 3 (Editor).**
+
+- **S3 remains technically not met.** The historical Playwright Chromium and WebKit measurements (Amendment 3) stay historical evidence and lower bounds under A9; none is an A9 pass, and no measured variant is a selected or accepted fallback. The best measured combination (render window + no MIDI regeneration, 244 / 352 ms Chromium, 255 / 339 ms Playwright WebKit, median / p95) exceeds the target. Playwright WebKit is not Safari.
+- **Phase 3 owns the remaining S3 work** (ROADMAP.md §Phase 3): measure the real edit loop, with the real `editor-core` and RenderScheduler, under the unchanged A9 method on the 300 master bars × 8 tracks reference document (`performanceDocument(300)`), including typing bursts as A9's separate scenario; evaluate the unmeasured approaches below and/or an A9 fallback; report MIDI readiness and playback-position restoration separately from the 150 ms interval, as A9 requires.
+- **Closure:** S3 closes only through an A9 pass, or through an A9-compliant fallback that the owner explicitly selects and accepts under A9's fallback policy (all five conditions). No pass claim is made without A9-compliant evidence.
+- Under Q0 Option C this records S3's owner disposition (the gap is placed in a named later phase). It does not meet the S3 pass criterion of MUSIC_ENGINE.md §10.
+
+**D — Phase 1 architecture constraint.**
+
+- Phase 1's `toAlphaTab`, render controller and Playback Score design (A1, A5, A7, A8) must keep three approaches feasible for later evaluation: (1) partial Render Score conversion for the displayed bars, (2) off-main-thread conversion, (3) MIDI regeneration when playback starts instead of on every edit.
+- These are **architectural options to keep feasible**, not approved implementations or proven optimisations. None has been measured, and no latency is claimed for any of them. Phase 1 does not have to implement them. Choosing one later needs its own measurement under A9 and, where it changes an approved decision, an ADR.
