@@ -51,6 +51,11 @@ export const ISSUE_CODES = {
   percussionNoteWithString: 'percussion-note-with-string',
   // Invariant 15
   navigationMarkerDuplicate: 'navigation-marker-duplicate',
+  // Invariant 16
+  slurEndpointMissing: 'slur-endpoint-missing',
+  slurEndpointOtherTrack: 'slur-endpoint-other-track',
+  slurOrderInvalid: 'slur-order-invalid',
+  slurDuplicate: 'slur-duplicate',
   // Instrument and effect rules
   drumsNotPercussion: 'drums-not-percussion',
   drumTechniquePitchMismatch: 'drum-technique-pitch-mismatch',

@@ -1,0 +1,743 @@
+{
+  "format": "musichub",
+  "schemaVersion": 1,
+  "id": "0195f2a4-7c3e-7a10-9b2d-00000000d001",
+  "meta": {
+    "title": "MusicHub fixture D — notation semantics (tenuto, slurs, transposition, dynamics)",
+    "copyright": "MusicHub test fixture"
+  },
+  "masterBars": [
+    {
+      "id": "NS0000000001",
+      "timeSignature": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "keySignature": {
+        "fifths": -1,
+        "mode": "major"
+      },
+      "tempoChanges": [
+        {
+          "position": [0, 1],
+          "bpm": 96
+        }
+      ]
+    },
+    {
+      "id": "NS0000000002"
+    },
+    {
+      "id": "NS0000000003",
+      "keySignature": {
+        "fifths": 2,
+        "mode": "major"
+      }
+    }
+  ],
+  "tracks": [
+    {
+      "id": "NS0000000033",
+      "name": "Clarinet in B♭",
+      "color": "track.3",
+      "instrument": {
+        "family": "woodwinds",
+        "midiProgram": 71,
+        "percussion": false
+      },
+      "mixer": {
+        "volume": 0.8,
+        "pan": 0,
+        "mute": false,
+        "solo": false
+      },
+      "staves": [
+        {
+          "id": "NS0000000026",
+          "display": {
+            "standard": true,
+            "tab": false,
+            "slash": false,
+            "numbered": false
+          },
+          "transpositionPitch": -2,
+          "bars": [
+            {
+              "id": "NS0000000028",
+              "voices": [
+                {
+                  "id": "NS0000000027",
+                  "beats": [
+                    {
+                      "id": "NS0000000005",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000004",
+                          "pitch": 65,
+                          "spelling": {
+                            "step": "F",
+                            "alter": 0
+                          }
+                        }
+                      ],
+                      "dynamic": "p"
+                    },
+                    {
+                      "id": "NS0000000007",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000006",
+                          "pitch": 67,
+                          "spelling": {
+                            "step": "G",
+                            "alter": 0
+                          },
+                          "effects": {
+                            "tenuto": true
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000009",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000008",
+                          "pitch": 69,
+                          "spelling": {
+                            "step": "A",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000011",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000010",
+                          "pitch": 70,
+                          "spelling": {
+                            "step": "B",
+                            "alter": -1
+                          },
+                          "effects": {
+                            "tenuto": true,
+                            "accent": "normal"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "NS0000000030",
+              "voices": [
+                {
+                  "id": "NS0000000029",
+                  "beats": [
+                    {
+                      "id": "NS0000000013",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000012",
+                          "pitch": 72,
+                          "spelling": {
+                            "step": "C",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000015",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000014",
+                          "pitch": 70,
+                          "spelling": {
+                            "step": "B",
+                            "alter": -1
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000017",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000016",
+                          "pitch": 69,
+                          "spelling": {
+                            "step": "A",
+                            "alter": 0
+                          },
+                          "effects": {
+                            "tenuto": true,
+                            "staccato": true
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000019",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000018",
+                          "pitch": 67,
+                          "spelling": {
+                            "step": "G",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "NS0000000032",
+              "voices": [
+                {
+                  "id": "NS0000000031",
+                  "beats": [
+                    {
+                      "id": "NS0000000021",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000020",
+                          "pitch": 66,
+                          "spelling": {
+                            "step": "F",
+                            "alter": 1
+                          }
+                        }
+                      ],
+                      "dynamic": "mf"
+                    },
+                    {
+                      "id": "NS0000000023",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000022",
+                          "pitch": 69,
+                          "spelling": {
+                            "step": "A",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000025",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000024",
+                          "pitch": 74,
+                          "spelling": {
+                            "step": "D",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "slurs": [
+        {
+          "id": "NS0000000081",
+          "from": "NS0000000004",
+          "to": "NS0000000008"
+        },
+        {
+          "id": "NS0000000082",
+          "from": "NS0000000006",
+          "to": "NS0000000010"
+        },
+        {
+          "id": "NS0000000083",
+          "from": "NS0000000004",
+          "to": "NS0000000018"
+        },
+        {
+          "id": "NS0000000084",
+          "from": "NS0000000018",
+          "to": "NS0000000020"
+        }
+      ]
+    },
+    {
+      "id": "NS0000000085",
+      "name": "Piano",
+      "color": "track.2",
+      "instrument": {
+        "family": "piano",
+        "midiProgram": 0,
+        "percussion": false
+      },
+      "mixer": {
+        "volume": 0.9,
+        "pan": 0,
+        "mute": false,
+        "solo": false
+      },
+      "staves": [
+        {
+          "id": "NS0000000066",
+          "display": {
+            "standard": true,
+            "tab": false,
+            "slash": false,
+            "numbered": false
+          },
+          "hand": "right",
+          "bars": [
+            {
+              "id": "NS0000000068",
+              "voices": [
+                {
+                  "id": "NS0000000067",
+                  "beats": [
+                    {
+                      "id": "NS0000000035",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000034",
+                          "pitch": 77,
+                          "spelling": {
+                            "step": "F",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000037",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000036",
+                          "pitch": 76,
+                          "spelling": {
+                            "step": "E",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000039",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000038",
+                          "pitch": 74,
+                          "spelling": {
+                            "step": "D",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000041",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000040",
+                          "pitch": 72,
+                          "spelling": {
+                            "step": "C",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "clef": "G2"
+            },
+            {
+              "id": "NS0000000071",
+              "voices": [
+                {
+                  "id": "NS0000000069",
+                  "beats": [
+                    {
+                      "id": "NS0000000043",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000042",
+                          "pitch": 81,
+                          "spelling": {
+                            "step": "A",
+                            "alter": 0
+                          }
+                        }
+                      ],
+                      "dynamic": "mp"
+                    },
+                    {
+                      "id": "NS0000000045",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000044",
+                          "pitch": 79,
+                          "spelling": {
+                            "step": "G",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "NS0000000070",
+                  "beats": [
+                    {
+                      "id": "NS0000000047",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000046",
+                          "pitch": 72,
+                          "spelling": {
+                            "step": "C",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000049",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000048",
+                          "pitch": 74,
+                          "spelling": {
+                            "step": "D",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "NS0000000073",
+              "voices": [
+                {
+                  "id": "NS0000000072",
+                  "beats": [
+                    {
+                      "id": "NS0000000051",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000050",
+                          "pitch": 78,
+                          "spelling": {
+                            "step": "F",
+                            "alter": 1
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000053",
+                      "duration": {
+                        "value": 4,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000052",
+                          "pitch": 81,
+                          "spelling": {
+                            "step": "A",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000055",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000054",
+                          "pitch": 86,
+                          "spelling": {
+                            "step": "D",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "NS0000000074",
+          "display": {
+            "standard": true,
+            "tab": false,
+            "slash": false,
+            "numbered": false
+          },
+          "hand": "left",
+          "bars": [
+            {
+              "id": "NS0000000076",
+              "voices": [
+                {
+                  "id": "NS0000000075",
+                  "beats": [
+                    {
+                      "id": "NS0000000057",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000056",
+                          "pitch": 53,
+                          "spelling": {
+                            "step": "F",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000059",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000058",
+                          "pitch": 48,
+                          "spelling": {
+                            "step": "C",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "clef": "F4"
+            },
+            {
+              "id": "NS0000000078",
+              "voices": [
+                {
+                  "id": "NS0000000077",
+                  "beats": [
+                    {
+                      "id": "NS0000000061",
+                      "duration": {
+                        "value": 1,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000060",
+                          "pitch": 50,
+                          "spelling": {
+                            "step": "D",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "NS0000000080",
+              "voices": [
+                {
+                  "id": "NS0000000079",
+                  "beats": [
+                    {
+                      "id": "NS0000000063",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000062",
+                          "pitch": 50,
+                          "spelling": {
+                            "step": "D",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "NS0000000065",
+                      "duration": {
+                        "value": 2,
+                        "dots": 0
+                      },
+                      "rest": false,
+                      "notes": [
+                        {
+                          "id": "NS0000000064",
+                          "pitch": 45,
+                          "spelling": {
+                            "step": "A",
+                            "alter": 0
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "slurs": [
+        {
+          "id": "NS0000000086",
+          "from": "NS0000000042",
+          "to": "NS0000000048"
+        },
+        {
+          "id": "NS0000000087",
+          "from": "NS0000000060",
+          "to": "NS0000000050"
+        }
+      ]
+    }
+  ]
+}
