@@ -32,12 +32,12 @@ MhdDocument  format 'musichub', schemaVersion 1, id (UUIDv7), meta, masterBars[1
 
 `pitch` is always the General MIDI percussion key and is required; it selects the instrument and sound. `drumTechnique` is optional (`DRUM_TECHNIQUES`) and adds only what GM has no key for. Each technique is allowed for these GM keys:
 
-| Technique  | GM keys                                          |
-| ---------- | ------------------------------------------------ |
-| `halfOpen` | 42, 46 (hi-hat)                                  |
-| `rimshot`  | 38, 40 (snare)                                   |
-| `edge`     | 51, 59 (ride 1, ride 2)                          |
-| `choke`    | 49, 52, 55, 57 (crash 1, china, splash, crash 2) |
+| Technique | GM keys |
+|---|---|
+| `halfOpen` | 42, 46 (hi-hat) |
+| `rimshot` | 38, 40 (snare) |
+| `edge` | 51, 59 (ride 1, ride 2) |
+| `choke` | 49, 52, 55, 57 (crash 1, china, splash, crash 2) |
 
 No technique means the plain GM sound: 42 is a closed hi-hat, 46 an open hi-hat, 44 a pedal hi-hat, 37 a side stick, 53 a ride bell. Examples: 42 + `halfOpen` = half-open hi-hat, 38 + `rimshot`, 51 + `edge`, 55 + `choke` = splash choke, 52 + `choke` = china choke. A `drums` track must have `percussion: true`; other families may also be percussion tracks. Mapping to and from alphaTab lives in `music-engine` (MUSIC_ENGINE.md §4.2), never here.
 
@@ -75,26 +75,26 @@ const { valid, issues, document } = validateDocument(json);
 2. The Zod schema checks structure; its issues are reported as `schema.<zod code>`. Cross-field checks run only when the structure is valid.
 3. Cross-field invariants (`ISSUE_CODES`):
 
-| #   | Invariant                                                                                                                                                                                                                                                                                                             | Codes                                                                                                                                    |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Element ids are unique in the document                                                                                                                                                                                                                                                                                | `duplicate-id`                                                                                                                           |
-| 2   | Every staff has one bar per master bar                                                                                                                                                                                                                                                                                | `bar-count-mismatch`                                                                                                                     |
-| 3   | Voices may be incomplete (warning), never overfull. Grace beats take no time; empty secondary voices and a pickup bar 0 are not incomplete                                                                                                                                                                            | `voice-overfull`, `voice-incomplete`                                                                                                     |
-| 4   | Stringed notes: string ∈ [1, strings], fret ∈ [0, fretCount], one note per string per beat; capo ≤ fretCount; one pitch authority                                                                                                                                                                                     | `string-out-of-range`, `fret-out-of-range`, `duplicate-string-in-beat`, `capo-out-of-range`, `note-pitch-missing`, `note-pitch-conflict` |
-| 5   | Rest ⇔ no notes                                                                                                                                                                                                                                                                                                       | `rest-with-notes`, `beat-without-notes`                                                                                                  |
-| 6   | A tie needs the same pitch in the previous beat of the same voice (also across the bar line)                                                                                                                                                                                                                          | `tie-without-origin`                                                                                                                     |
-| 7   | Repeats are not nested; a repeat end without a start is allowed; jump targets exist (`dalSegno*` → segno, `*AlCoda` → to coda + coda, `toCoda` → coda, `*AlFine` → fine)                                                                                                                                              | `repeat-start-nested`, `direction-target-missing`                                                                                        |
-| 8   | Bar 0 defines time signature, key signature and tempo at `[0, 1]`; repeating the current time or key signature later is an error (tempo is not checked); pickup only on bar 0                                                                                                                                         | `first-bar-*-missing`, `redundant-time-signature`, `redundant-key-signature`, `anacrusis-not-first-bar`                                  |
-| 9   | Alternate endings belong to the repeat closed in their group; a bar that opens the next repeat ends the group; numbers are unique in the group and ≤ its count                                                                                                                                                        | `alternate-ending-*`                                                                                                                     |
-| 10  | Hands and sustain pedal only on keyboard tracks (`piano`, `synth`); a keyboard track has 1–2 staves                                                                                                                                                                                                                   | `keyboard-only-hand`, `keyboard-only-pedal`, `keyboard-staff-count`                                                                      |
-| 11  | Tempo, pedal and fermata positions strictly increase; pedal alternates down/up (a pedal may stay down to the end)                                                                                                                                                                                                     | `positions-not-increasing`, `pedal-sequence-invalid`                                                                                     |
-| 12  | Ties on stringed staves keep string and fret                                                                                                                                                                                                                                                                          | `tie-string-fret-mismatch`                                                                                                               |
-| 13  | Percussion notes have no string or fret; `drumTechnique` only on percussion tracks, with a GM key allowed for it                                                                                                                                                                                                      | `percussion-note-with-string`, `drum-technique-*`                                                                                        |
-| 14  | Every pass before the last of a repeat reaches a played repeat end of its ending group: for each pass 1…count − 1, at least one repeat-end bar of the group has no alternate endings or lists that pass (several repeat ends per group allowed; ADR-0002 A11, A19). Checks pass coverage only, not the playback order | `repeat-pass-without-repeat-end`                                                                                                         |
-| 15  | At most one `segno` and one `coda` direction per document (`segnoSegno` and `doubleCoda` are not counted; ADR-0002 A14)                                                                                                                                                                                               | `navigation-marker-duplicate`                                                                                                            |
-| —   | A `drums` track has `percussion: true`; a brush is not longer than its beat                                                                                                                                                                                                                                           | `drums-not-percussion`, `brush-longer-than-beat`                                                                                         |
-| —   | Warning: no non-grace beat (rests count) of any voice, staff or track starts at a fermata position                                                                                                                                                                                                                    | `fermata-not-on-beat`                                                                                                                    |
-| —   | Warning: an ottava on a percussion staff or a staff without standard notation is not shown                                                                                                                                                                                                                            | `ottava-not-displayed`                                                                                                                   |
+| # | Invariant | Codes |
+|---|---|---|
+| 1 | Element ids are unique in the document | `duplicate-id` |
+| 2 | Every staff has one bar per master bar | `bar-count-mismatch` |
+| 3 | Voices may be incomplete (warning), never overfull. Grace beats take no time; empty secondary voices and a pickup bar 0 are not incomplete | `voice-overfull`, `voice-incomplete` |
+| 4 | Stringed notes: string ∈ [1, strings], fret ∈ [0, fretCount], one note per string per beat; capo ≤ fretCount; one pitch authority | `string-out-of-range`, `fret-out-of-range`, `duplicate-string-in-beat`, `capo-out-of-range`, `note-pitch-missing`, `note-pitch-conflict` |
+| 5 | Rest ⇔ no notes | `rest-with-notes`, `beat-without-notes` |
+| 6 | A tie needs the same pitch in the previous beat of the same voice (also across the bar line) | `tie-without-origin` |
+| 7 | Repeats are not nested; a repeat end without a start is allowed; jump targets exist (`dalSegno*` → segno, `*AlCoda` → to coda + coda, `toCoda` → coda, `*AlFine` → fine) | `repeat-start-nested`, `direction-target-missing` |
+| 8 | Bar 0 defines time signature, key signature and tempo at `[0, 1]`; repeating the current time or key signature later is an error (tempo is not checked); pickup only on bar 0 | `first-bar-*-missing`, `redundant-time-signature`, `redundant-key-signature`, `anacrusis-not-first-bar` |
+| 9 | Alternate endings belong to the repeat closed in their group; a bar that opens the next repeat ends the group; numbers are unique in the group and ≤ its count | `alternate-ending-*` |
+| 10 | Hands and sustain pedal only on keyboard tracks (`piano`, `synth`); a keyboard track has 1–2 staves | `keyboard-only-hand`, `keyboard-only-pedal`, `keyboard-staff-count` |
+| 11 | Tempo, pedal and fermata positions strictly increase; pedal alternates down/up (a pedal may stay down to the end) | `positions-not-increasing`, `pedal-sequence-invalid` |
+| 12 | Ties on stringed staves keep string and fret | `tie-string-fret-mismatch` |
+| 13 | Percussion notes have no string or fret; `drumTechnique` only on percussion tracks, with a GM key allowed for it | `percussion-note-with-string`, `drum-technique-*` |
+| 14 | Every pass before the last of a repeat reaches a played repeat end of its ending group: for each pass 1…count − 1, at least one repeat-end bar of the group has no alternate endings or lists that pass (several repeat ends per group allowed; ADR-0002 A11, A19). Checks pass coverage only, not the playback order | `repeat-pass-without-repeat-end` |
+| 15 | At most one `segno` and one `coda` direction per document (`segnoSegno` and `doubleCoda` are not counted; ADR-0002 A14) | `navigation-marker-duplicate` |
+| — | A `drums` track has `percussion: true`; a brush is not longer than its beat | `drums-not-percussion`, `brush-longer-than-beat` |
+| — | Warning: no non-grace beat (rests count) of any voice, staff or track starts at a fermata position | `fermata-not-on-beat` |
+| — | Warning: an ottava on a percussion staff or a staff without standard notation is not shown | `ottava-not-displayed` |
 
 `validateDocument` is pure: it does not mutate the input, generate ids, normalise data or touch `extensions`.
 
@@ -102,18 +102,18 @@ const { valid, issues, document } = validateDocument(json);
 
 MHD sanity limits, independent of any engine (engine limits are handled by the adapter in `music-engine`):
 
-| Field                        | Limit                                                     |
-| ---------------------------- | --------------------------------------------------------- |
-| Tracks / master bars         | 1–64 / 1–5000 (shared with the API)                       |
-| Time signature               | numerator 1–32, denominator 1, 2, 4, 8, 16, 32            |
-| Tempo                        | 20–400 bpm (quarter notes)                                |
-| Repeat count / ending number | 2–99 / 1–99                                               |
-| Strings / fret / capo        | 4–10 strings, fret 0–36, fretCount 1–36, capo ≤ fretCount |
-| Duration                     | value 1–128, dots 0–2, tuplet actual 2–15, normal 1–15    |
-| Bend / whammy                | offset 0–60, value ±24 quarter tones                      |
-| Transposition                | ±48 semitones                                             |
-| MIDI                         | program 0–127, bank 0–16383, pitch 0–127, velocity 1–127  |
-| Text                         | title 1–200; other meta fields 1–200; notes 1–10 000      |
+| Field | Limit |
+|---|---|
+| Tracks / master bars | 1–64 / 1–5000 (shared with the API) |
+| Time signature | numerator 1–32, denominator 1, 2, 4, 8, 16, 32 |
+| Tempo | 20–400 bpm (quarter notes) |
+| Repeat count / ending number | 2–99 / 1–99 |
+| Strings / fret / capo | 4–10 strings, fret 0–36, fretCount 1–36, capo ≤ fretCount |
+| Duration | value 1–128, dots 0–2, tuplet actual 2–15, normal 1–15 |
+| Bend / whammy | offset 0–60, value ±24 quarter tones |
+| Transposition | ±48 semitones |
+| MIDI | program 0–127, bank 0–16383, pitch 0–127, velocity 1–127 |
+| Text | title 1–200; other meta fields 1–200; notes 1–10 000 |
 
 ## JSON Schema
 
