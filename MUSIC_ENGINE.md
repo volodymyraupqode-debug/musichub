@@ -10,6 +10,8 @@
 > - Added §5.2 (playback-score variants) and spike S7.
 > - MIDI devices moved to `midi-engine`.
 >
+> **Changelog v0.2.6:** S3 owner disposition (2026‑11‑25, ADR-0002 Amendment 6, A16; Option B + D): the S3 gap is placed in Phase 3 (Editor) with the real `editor-core` and RenderScheduler measured under the unchanged A9; Phase 1's `toAlphaTab`, render-controller and Playback Score design must keep a partial Render Score, off-main-thread conversion and MIDI regeneration on play feasible (§6). §10 S3 row and Q0 note updated. S3 remains not met.
+>
 > **Changelog v0.2.5:** S5 owner decisions (2026‑11‑25, ADR-0002 Amendment 5, A10–A15): §3.2 gets *Repeats and navigation* ([CONV] rules 1–3 adopted; D1 kept with an implicit Playback Score `repeatStart`, not yet verified), the half-open hi-hat key rule (timeline reports the MHD GM key) and the open default dynamic; §3.3 gets invariants 14 (skipped closing bar rejected, D2) and 15 (at most one segno and one coda); §10 S5 row updated. No `schemaVersion` change (§3.4). The S5 pass criterion is not met by these decisions.
 >
 > **Changelog v0.2.4:** Decisions Q-D and Q-E after the S2-05 review. `Bar.ottava` is a display-only octave line over the current bar (not carried forward, not a clef ottava; pitch stays sounding). `MasterBar.fermata: true` is replaced by positioned `fermatas: { position; type?: 'short'|'long' }[]`; fermata positions join invariant 11; new warnings `fermata-not-on-beat` and `ottava-not-displayed`. Fermata playback length belongs to the timeline. No `schemaVersion` bump (pre-release rule, §3.4).
@@ -429,6 +431,8 @@ editor-core command ─▶ new immutable MHD (structural sharing)
 - Only visible tracks are passed in `trackIndexes`.
 - Playback across re-render: a new Score triggers `loadMidiForScore()`, which **stops playback** (verified in source). Therefore an edit during playback stops playback. The controller stores `tickPosition` before rendering and restores it after `midiLoaded`. Auto-resume is off by default. Re-render latency including MIDI regeneration is measured in S3. The S3 acceptance interval (edit command received → first painted frame showing the edit, p95 < 150 ms on 300 × 8) and the separate MIDI-readiness metric are defined in ADR-0002 A9.
 - Fallbacks if spike S3 shows unacceptable latency on 300-bar scores: (1) `Horizontal` layout in edit mode, (2) render window of N bars around caret using `display.startBar`/`barCount`, (3) render edited track only. Selecting one is governed by the fallback policy of ADR-0002 A9; none is selected (S3's historical measurements put all three above 150 ms on 300 × 8).
+- **S3 disposition** (owner decision 2026‑11‑25, ADR-0002 A16): the S3 gap is placed in Phase 3 (Editor). There, with the real `editor-core` and RenderScheduler, the edit loop is measured under the unchanged A9 on the 300 × 8 reference document; MIDI readiness and playback-position restoration are reported separately from the 150 ms interval. S3 closes only through an A9 pass or an A9-compliant fallback that the owner explicitly selects and accepts.
+- **Phase 1 architecture constraint** (ADR-0002 A16): Phase 1's `toAlphaTab`, render-controller and Playback Score architecture must not preclude a partial Render Score, off-main-thread conversion, or MIDI regeneration on play. These are options to keep feasible for the Phase 3 evaluation, not approved or measured optimisations; Phase 1 does not implement them.
 - Rendering errors (`error` event) are caught, reported to Sentry with document hash, and the last good render stays visible.
 
 ## 7. Editing (`editor-core`)
@@ -468,7 +472,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 
 ## 10. Phase 0 spikes (must complete before Phase 1 code)
 
-**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. Open dispositions: S3, S4, S7. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
+**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. Open dispositions: S4, S7. S3's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 6: gap placed in Phase 3, Phase 1 architecture constraint); its pass criterion is not met. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
 
 | ID | Question | Pass criteria |
 |---|---|---|
@@ -487,7 +491,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 |---|---|---|
 | S1 | Done | ADR-0004 |
 | S2 | Done (Strategy A, decision A1) | ADR-0002 A1–A6, Amendment 4 |
-| S3 | Partly done: < 150 ms not met on 300 × 8, no fallback selected | ADR-0002 Amendment 3 (A9) |
+| S3 | Partly done: < 150 ms not met on 300 × 8, no fallback selected. Owner disposition 2026-11-25: gap placed in Phase 3 (real `editor-core` + RenderScheduler, measured under the unchanged A9 on 300 × 8); Phase 1 must keep a partial Render Score, off-main-thread conversion and MIDI regeneration on play feasible (§6). Pass criterion not met | ADR-0002 Amendment 3 (A9), Amendment 6 (A16) |
 | S4 | Partly done: 14 synthetic MusicXML fixtures, GP3–GP8 not evaluated; criterion not met | ADR-0002 Amendment 4 |
 | S5 | Done for defined semantics (17 of 19 scenarios at 100 %). Owner decisions 2026-11-25: D1 kept with implicit Playback Score start (unverified), D2 rejected by validation, hi-hat reports the MHD key, [CONV] 1–3 adopted, at most one segno and one coda; default dynamic open (Phase 1). Pass criterion not met until Phase 1 parity tests pass under these rules | ADR-0002 Amendment 4, Amendment 5 |
 | S6 | Pass criterion above not verified (no audio reference); fallback accepted by the owner on 2026-11-25 (§5.1), which meets ROADMAP Phase 0 exit criterion 3 | ADR-0004 Addendum, Addendum 2 |
