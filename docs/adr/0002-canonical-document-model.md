@@ -1,6 +1,6 @@
 # ADR-0002: Own canonical document model (MHD) instead of alphaTab Score/JSON
 
-- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) and the S3 acceptance criterion recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10) (criterion A9; S3 not met, no fallback selected); findings of spikes S2, S4 and S5 and an index of all Phase 0 spike results in [Amendment 4](#amendment-4-2026-11-24-phase-0-spike-findings-s2-12--status-deferred) (findings only)
+- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) and the S3 acceptance criterion recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10) (criterion A9; S3 not met, no fallback selected); findings of spikes S2, S4 and S5 and an index of all Phase 0 spike results in [Amendment 4](#amendment-4-2026-11-24-phase-0-spike-findings-s2-12--status-deferred) (findings only); owner decisions on the open S5 timeline semantics (D1, D2, half-open hi-hat key, [CONV]) recorded 2026-11-25 in [Amendment 5](#amendment-5-2026-11-25-s5-timeline-semantics-owner-decisions) (decisions A10–A15; the S5 parity criterion is not yet established)
 - **Date:** 2026-11-21
 - **Deciders:** project owner
 - **Spec sections:** MUSIC_ENGINE.md §1–4; ARCHITECTURE.md §1.2
@@ -244,3 +244,61 @@ Records the results of spikes S2, S4 and S5 that the amendments above did not ye
 | S6 audio clock accuracy | S2-08 | partly done: automated part only, criterion not verified | ADR-0004 Addendum (findings, Deferred) |
 | S7 playback-score variants | S2-07 | done (ROADMAP); the sustain-pedal and hand-split questions of MUSIC_ENGINE.md §10 S7 were not covered ([S7 report](../spikes/s7-playback-score-variants.md) §1), so "one-hand practice audible correctly" has no evidence | ADR-0002 Amendment 2 (A7, A8) |
 
+
+## Amendment 5 (2026-11-25): S5 timeline semantics (owner decisions)
+
+The original decision, Amendments 1–4 and A1–A9 are unchanged; numbering continues from A9. On 2026-11-25 the owner approved the S5 decision package (ROADMAP.md §Phase 0, owner decision 4) for the questions that spike S5 left open ([S5 report](../spikes/s5-timeline-parity.md) §6–§7; findings in Amendment 4). The spike ran on 2026-11-24, before these decisions; its report, prototype ([`spikes/s2-mhd-to-alphatab/src/timeline/`](../../spikes/s2-mhd-to-alphatab/src/timeline/)), golden scenarios ([`scenarios.ts`](../../spikes/s2-mhd-to-alphatab/src/timeline/scenarios.ts)) and tests ([`timeline.test.ts`](../../spikes/s2-mhd-to-alphatab/src/timeline/timeline.test.ts)) are unchanged and describe the state at that time. Nothing here is implemented: `music-model` and `music-engine` are Phase 1 work.
+
+**These decisions do not establish the S5 pass criterion** (MUSIC_ENGINE.md §10: 100 % note-on parity on fixtures). They define the semantics the Phase 1 timeline must reproduce; parity under them must still be shown by the Phase 1 timeline parity tests (ROADMAP.md §Phase 1 *Exit*).
+
+### A10. D1 — repeat end after an earlier repeat (option D1-a, approved)
+
+- **MHD rule kept:** MUSIC_ENGINE.md §3.3 invariant 7 stays as written: a `repeatEnd` without its own `repeatStart` repeats from the start of the piece or from the previous repeat end. For `|: 1 2 :| 3 4 :|` the MHD order is `0 1 2 1 2 3 4 3 4 5`.
+- **Finding:** alphaTab 1.9.0 plays `0 1 2 1 2 3 4 1 2 1 2 3 4 5` (one repeat group from bar 1; scenario `repeat-end-after-repeat`, S5 report §6 row 2).
+- **Adapter responsibility:** to reproduce the MHD order, the Playback Score built by `toAlphaTab` may set an implicit `repeatStart` on the bar after the previous repeat end. The Render Score is unchanged, so the notation shows no repeat sign the document does not have. This uses the Render Score / Playback Score separation of A5, A7 and A8.
+- **Not verified:** whether alphaTab honours such an inserted start has not been tested. Phase 1 implements it and verifies it with a parity test against `MidiFileGenerator` (scenario `repeat-end-after-repeat`). If that test shows that alphaTab does not honour the implicit start, the result is reported to the owner; MHD semantics are not changed and options D1-b (adopt alphaTab's order) or D1-c (require an explicit `repeatStart`) are not chosen without a new owner decision.
+
+### A11. D2 — closing bar skipped in a repeat pass (option D2-a, approved)
+
+- **New MHD invariant** (MUSIC_ENGINE.md §3.3 invariant 14): in every pass before the final pass of a repeat, the pass must reach a played repeat end of that repeat's ending group. Each repeat has one closing bar, so its `alternateEndings`, if present, must list every pass from 1 to count − 1. `validateDocument` rejects documents that break it.
+- **Example rejected:** `|: 1 |1. 2 :|(3×) |2.3. 3 | 4` (scenario `ending-closing-skipped`): on passes 2 and 3 the closing bar is not played.
+- **alphaTab's behaviour is not adopted:** alphaTab repeats from the skipped closing bar (`0 1 2 1 1 3 4`, `Repeat.onClosing`; S5 report §6 row 3). The pattern has no MHD meaning; it is invalid.
+- **Consequences:** the S2-05 fixture `repeats` contains the pattern and must be reviewed and adapted in a separately scoped Phase 1 task. Importers must report or normalise the structure; that behaviour is not specified here. Rejecting the pattern removes it from the parity denominator; it is no evidence of parity.
+
+### A12. Half-open hi-hat — GM key 42 vs 46 (option H-a, approved)
+
+- **MHD key kept:** the timeline reports the GM key stored in `Note.pitch` (MUSIC_ENGINE.md §3.2). A note with `pitch: 42` and `drumTechnique: 'halfOpen'` is reported as 42; the timeline never rewrites it to 46. The MHD distinction between 42 + `halfOpen` and 46 + `halfOpen` is preserved.
+- **Accepted alphaTab limitation:** alphaTab 1.9.0 has one half-open articulation (92) that sounds as GM 46 and cannot distinguish 42 + `halfOpen` from 46 + `halfOpen` ([S2 report](../spikes/s2-mhd-to-alphatab.md) §5.3). Audio therefore plays 46 where the timeline reports 42 (454 note-ons in the S2-05 corpus, S5 report §6 row 1).
+- **Parity tests:** the difference stays a documented exception (`pitch` category, `halfOpen`, reference key 46), as in the S5 corpus test today.
+- **GP7 export risk (known, from the S2 report §5.3 and §9):** because alphaTab collapses both into one articulation, a GP7 export written from the alphaTab model cannot keep the distinction (risk "medium"; the report's mitigation "accept, or warn on export"). How the export reports it is not decided here; it belongs to the A2 diagnostics contract in Phase 1.
+
+### A13. [CONV] rules 1–3 adopted as MHD semantics (approved)
+
+Rules that the S5 prototype used and that match alphaTab 1.9.0 in every golden scenario that exercises them (S5 report §2, §4, §5.1) become normative MHD rules (MUSIC_ENGINE.md §3.2 *Repeats and navigation*):
+
+1. After a D.C. or D.S. jump, repeats play only their final pass (scenarios `segno-with-repeat`, `combined`).
+2. A jump inside a repeated section is taken on its last pass only (scenario `jump-inside-repeat`).
+3. To Coda and Fine are ignored before the jump (scenarios `coda`, `da-capo-al-coda`, `combined` for To Coda; `da-capo-al-fine`, `segno-with-repeat` for Fine).
+
+### A14. [CONV] rule 4 replaced by a validation limit (approved)
+
+- **New MHD invariant** (MUSIC_ENGINE.md §3.3 invariant 15): a document contains at most one `segno` and at most one `coda` direction. `validateDocument` rejects more.
+- With one marker of each, the spike's rule 4 (which segno D.S. uses, which coda To Coda uses) has a single answer. Behaviour with several segnos or codas is **not tested**: no golden scenario contains more than one, neither in the prototype nor against alphaTab. MHD claims no support for it.
+- Relaxing the limit later needs its own semantic decision with tests against alphaTab.
+- `segnoSegno` and `doubleCoda` are not affected: in MHD v1 they are markers that no direction jumps to (S5 report §6).
+
+### A15. Default dynamic before the first marking (disposition, approved)
+
+- **No MHD rule is added now.** MHD v1 does not define the dynamic before the first `Beat.dynamic`; the question stays **open** in the specification. The adapter's current assumption, *f* (Strategy A, S5 report §2 *Adapter convention*), is not an MHD rule.
+- **Decision required in Phase 1**, during MHD v1 finalisation: whether *f* becomes the MHD default dynamic, or the default stays an adapter responsibility.
+- **Velocity-parity implication:** alphaTab derives velocity from the dynamic (15 + 16 × dynamic, S5 report §2) and ignores `Note.velocity` (S2-05). The S5 velocity parity holds only because the prototype applies the same *f* default; MUSIC_ENGINE.md §3.2's `Note.velocity` "default from dynamic" is undefined before the first marking until this is decided.
+
+### Phase 1 implementation and verification requirements
+
+- D1: implement the implicit Playback Score `repeatStart` in `music-engine` and verify the MHD order against `MidiFileGenerator`; report a failure to the owner (A10).
+- D2: implement invariant 14 in `validateDocument` with an issue code; review and adapt the S2-05 `repeats` fixture in a separately scoped task (A11).
+- Half-open hi-hat: keep the timeline on the MHD key and keep the documented exception in the parity tests (A12).
+- [CONV] 1–3: implement and test them in `music-model/timeline` (A13).
+- [CONV] 4: implement invariant 15 with an issue code and test it (A14).
+- Default dynamic: decide during MHD v1 finalisation (A15).
+- The Phase 1 exit criterion "Timeline parity tests (S5) pass" applies under these rules. MHD v1 is unreleased, so these runtime invariants need no `schemaVersion` bump (MUSIC_ENGINE.md §3.4); they are not structural schema changes.
