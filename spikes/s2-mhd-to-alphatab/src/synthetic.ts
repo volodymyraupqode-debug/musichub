@@ -352,7 +352,14 @@ function tiesGrace(): MhdDocument {
   );
 }
 
-/** S-repeats: two repeats, a three-pass repeat with endings [1,2] and [3], and endings above 8. */
+/**
+ * S-repeats: two repeats, a three-pass repeat with endings [1,2] and [3], and endings above 8.
+ * Adapted 2026-11-25 to MHD invariant 14 (ADR-0002 A11, A19): the 12-pass repeat originally had a
+ * single repeat end on [1–8], so passes 9–11 reached none. Its [9,10] and [11,12] brackets now
+ * carry their own repeat ends (count 12), so every pass before the last reaches one. A group with
+ * several repeat ends is valid MHD, but its playback order is not defined yet (deferred to the
+ * Phase 1 timeline work); this fixture is therefore no playback-order evidence.
+ */
 function repeats(): MhdDocument {
   const id = idSource('SP');
   const masterBars = [
@@ -363,8 +370,8 @@ function repeats(): MhdDocument {
     { repeatEnd: { count: 2 } },
     { repeatStart: true as const },
     { alternateEndings: [1, 2, 3, 4, 5, 6, 7, 8], repeatEnd: { count: 12 } },
-    { alternateEndings: [9, 10] },
-    { alternateEndings: [11, 12] },
+    { alternateEndings: [9, 10], repeatEnd: { count: 12 } },
+    { alternateEndings: [11, 12], repeatEnd: { count: 12 } },
     {},
   ];
   const s = staff(

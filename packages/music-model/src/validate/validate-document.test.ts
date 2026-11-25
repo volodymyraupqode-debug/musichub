@@ -759,6 +759,210 @@ describe('invariant 13: percussion notes have no string and fret', () => {
   });
 });
 
+describe('invariant 14: every pass before the last reaches a repeat end of its ending group', () => {
+  const codesOf = (doc: unknown) => issuesOf(doc).map((issue) => issue.code);
+
+  it('rejects the D2 example |: 1 |1. 2 :|(3×) |2.3. 3 | 4 (ADR-0002 A11)', () => {
+    const doc = masterBars(minimalDocument(), [
+      { repeatStart: true },
+      { alternateEndings: [1], repeatEnd: { count: 3 } },
+      { alternateEndings: [2, 3] },
+      {},
+    ]);
+    expect(issuesOf(doc)).toEqual([
+      expect.objectContaining({
+        code: ISSUE_CODES.repeatPassWithoutRepeatEnd,
+        path: ['masterBars', 1, 'alternateEndings'],
+        severity: 'error',
+        message: 'Pass 2 of the 3× repeat reaches no repeat end in this ending group',
+      }),
+    ]);
+  });
+
+  it('accepts several repeat ends that cover different passes (owner decision C2)', () => {
+    // |: A |1. B :|(3×) |2. C :|(3×) |3. D |
+    expectClean(
+      masterBars(minimalDocument(), [
+        { repeatStart: true },
+        { alternateEndings: [1], repeatEnd: { count: 3 } },
+        { alternateEndings: [2], repeatEnd: { count: 3 } },
+        { alternateEndings: [3] },
+      ]),
+    );
+  });
+
+  it('reports the passes no repeat end of the group covers', () => {
+    // |: A |1. B :|(4×) |2. C :|(4×) |4. D |: pass 3 reaches no repeat end.
+    const doc = masterBars(minimalDocument(), [
+      { repeatStart: true },
+      { alternateEndings: [1], repeatEnd: { count: 4 } },
+      { alternateEndings: [2], repeatEnd: { count: 4 } },
+      { alternateEndings: [4] },
+    ]);
+    expect(codesOf(doc)).toEqual([ISSUE_CODES.repeatPassWithoutRepeatEnd]);
+    expectIssue(doc, ISSUE_CODES.repeatPassWithoutRepeatEnd, ['masterBars', 1, 'alternateEndings']);
+  });
+
+  it('lists every missing pass in one issue', () => {
+    const doc = masterBars(minimalDocument(), [
+      { repeatStart: true },
+      { alternateEndings: [1], repeatEnd: { count: 4 } },
+      { alternateEndings: [2, 3, 4] },
+    ]);
+    expect(issuesOf(doc)).toEqual([
+      expect.objectContaining({
+        code: ISSUE_CODES.repeatPassWithoutRepeatEnd,
+        message: 'Passes 2, 3 of the 4× repeat reach no repeat end in this ending group',
+      }),
+    ]);
+  });
+
+  it('accepts repeat ends without alternate endings, which are played on every pass', () => {
+    expectClean(
+      masterBars(minimalDocument(), [{ repeatStart: true }, { repeatEnd: { count: 3 } }]),
+    );
+    expectClean(masterBars(minimalDocument(), [{}, { repeatEnd: { count: 99 } }]));
+  });
+
+  it('accepts a closing bar that also lists the final pass', () => {
+    expectClean(
+      masterBars(minimalDocument(), [
+        { repeatStart: true },
+        { alternateEndings: [1, 2, 3], repeatEnd: { count: 3 } },
+      ]),
+    );
+  });
+
+  it('checks the lowest count: count 2 needs pass 1 to reach a repeat end', () => {
+    expectClean(
+      masterBars(minimalDocument(), [
+        { repeatStart: true },
+        { alternateEndings: [1], repeatEnd: { count: 2 } },
+        { alternateEndings: [2] },
+      ]),
+    );
+    // |: A |1. B |2. C :|(2×): pass 1 skips the closing bar C.
+    expectIssue(
+      masterBars(minimalDocument(), [
+        { repeatStart: true },
+        { alternateEndings: [1] },
+        { alternateEndings: [2], repeatEnd: { count: 2 } },
+      ]),
+      ISSUE_CODES.repeatPassWithoutRepeatEnd,
+      ['masterBars', 2, 'alternateEndings'],
+    );
+  });
+
+  it('checks the highest count: count 99 needs passes 1–98', () => {
+    const doc = masterBars(minimalDocument(), [
+      { repeatStart: true },
+      { alternateEndings: Array.from({ length: 97 }, (_, i) => i + 1), repeatEnd: { count: 99 } },
+      { alternateEndings: [98, 99] },
+    ]);
+    expect(issuesOf(doc)).toEqual([
+      expect.objectContaining({
+        code: ISSUE_CODES.repeatPassWithoutRepeatEnd,
+        message: 'Pass 98 of the 99× repeat reaches no repeat end in this ending group',
+      }),
+    ]);
+  });
+
+  it('checks adjacent ending groups independently', () => {
+    // |: A |1. B :|(2×) |2. C |: … |1. D :|(3×) |2.3. E |: the second group misses pass 2.
+    const doc = masterBars(minimalDocument(), [
+      { repeatStart: true },
+      { alternateEndings: [1], repeatEnd: { count: 2 } },
+      { alternateEndings: [2], repeatStart: true },
+      { alternateEndings: [1], repeatEnd: { count: 3 } },
+      { alternateEndings: [2, 3] },
+    ]);
+    expect(codesOf(doc)).toEqual([ISSUE_CODES.repeatPassWithoutRepeatEnd]);
+    expectIssue(doc, ISSUE_CODES.repeatPassWithoutRepeatEnd, ['masterBars', 3, 'alternateEndings']);
+  });
+
+  it('leaves a group without a repeat end to invariant 9', () => {
+    const doc = masterBars(minimalDocument(), [{ repeatStart: true }, { alternateEndings: [1] }]);
+    expect(codesOf(doc)).toEqual([ISSUE_CODES.alternateEndingWithoutRepeat]);
+  });
+
+  it('regression: keeps the invariant 9 result for a group with several repeat ends', () => {
+    // The document of the invariant 9 "number reused by another bracket" test: passes 1 and 2
+    // reach a repeat end, so invariant 14 adds nothing.
+    const doc = masterBars(minimalDocument(), [
+      { repeatStart: true },
+      { alternateEndings: [1], repeatEnd: { count: 3 } },
+      { alternateEndings: [2], repeatEnd: { count: 3 } },
+      { alternateEndings: [1] },
+    ]);
+    expect(codesOf(doc)).toEqual([ISSUE_CODES.alternateEndingDuplicate]);
+  });
+});
+
+describe('invariant 15: at most one segno and one coda', () => {
+  it('accepts one segno and one coda', () => {
+    expectClean(
+      masterBars(minimalDocument(), [
+        {},
+        { direction: 'segno' },
+        { direction: 'toCoda' },
+        { direction: 'dalSegnoAlCoda' },
+        { direction: 'coda' },
+      ]),
+    );
+  });
+
+  it('reports every segno after the first', () => {
+    const doc = masterBars(minimalDocument(), [
+      { direction: 'segno' },
+      { direction: 'segno' },
+      {},
+      { direction: 'segno' },
+      { direction: 'dalSegno' },
+    ]);
+    expect(issuesOf(doc)).toEqual([
+      expect.objectContaining({
+        code: ISSUE_CODES.navigationMarkerDuplicate,
+        path: ['masterBars', 1, 'direction'],
+        severity: 'error',
+        message: 'A document may contain only one "segno"; the first is at bar 0',
+      }),
+      expect.objectContaining({
+        code: ISSUE_CODES.navigationMarkerDuplicate,
+        path: ['masterBars', 3, 'direction'],
+      }),
+    ]);
+  });
+
+  it('reports a second coda', () => {
+    const doc = masterBars(minimalDocument(), [
+      {},
+      { direction: 'toCoda' },
+      { direction: 'coda' },
+      { direction: 'coda' },
+    ]);
+    expect(issuesOf(doc)).toEqual([
+      expect.objectContaining({
+        code: ISSUE_CODES.navigationMarkerDuplicate,
+        path: ['masterBars', 3, 'direction'],
+        message: 'A document may contain only one "coda"; the first is at bar 2',
+      }),
+    ]);
+  });
+
+  it('does not count segnoSegno or doubleCoda', () => {
+    expectClean(
+      masterBars(minimalDocument(), [
+        { direction: 'segno' },
+        { direction: 'segnoSegno' },
+        { direction: 'segnoSegno' },
+        { direction: 'coda' },
+        { direction: 'doubleCoda' },
+        { direction: 'doubleCoda' },
+      ]),
+    );
+  });
+});
+
 // ── Corrective decisions after the S2-02 architecture review ──────────────────
 
 describe('regression: adjacent alternate-ending groups (audit finding 2)', () => {
@@ -825,10 +1029,12 @@ describe('regression: adjacent alternate-ending groups (audit finding 2)', () =>
 
 describe('repeat counts and ending numbers allow up to 99', () => {
   it('accepts count 99 and ending 99', () => {
+    // Passes 1–98 return from the closing bar (invariant 14); pass 99 plays the last ending.
+    const firstPasses = Array.from({ length: 98 }, (_, i) => i + 1);
     expectClean(
       masterBars(minimalDocument(), [
         { repeatStart: true },
-        { alternateEndings: [1], repeatEnd: { count: 99 } },
+        { alternateEndings: firstPasses, repeatEnd: { count: 99 } },
         { alternateEndings: [99] },
       ]),
     );

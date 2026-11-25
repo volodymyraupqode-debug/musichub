@@ -90,6 +90,8 @@ const { valid, issues, document } = validateDocument(json);
 | 11 | Tempo, pedal and fermata positions strictly increase; pedal alternates down/up (a pedal may stay down to the end) | `positions-not-increasing`, `pedal-sequence-invalid` |
 | 12 | Ties on stringed staves keep string and fret | `tie-string-fret-mismatch` |
 | 13 | Percussion notes have no string or fret; `drumTechnique` only on percussion tracks, with a GM key allowed for it | `percussion-note-with-string`, `drum-technique-*` |
+| 14 | Every pass before the last of a repeat reaches a played repeat end of its ending group: for each pass 1…count − 1, at least one repeat-end bar of the group has no alternate endings or lists that pass (several repeat ends per group allowed; ADR-0002 A11, A19). Checks pass coverage only, not the playback order | `repeat-pass-without-repeat-end` |
+| 15 | At most one `segno` and one `coda` direction per document (`segnoSegno` and `doubleCoda` are not counted; ADR-0002 A14) | `navigation-marker-duplicate` |
 | — | A `drums` track has `percussion: true`; a brush is not longer than its beat | `drums-not-percussion`, `brush-longer-than-beat` |
 | — | Warning: no non-grace beat (rests count) of any voice, staff or track starts at a fermata position | `fermata-not-on-beat` |
 | — | Warning: an ottava on a percussion staff or a staff without standard notation is not shown | `ottava-not-displayed` |

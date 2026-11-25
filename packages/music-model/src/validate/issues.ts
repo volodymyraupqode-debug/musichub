@@ -36,6 +36,8 @@ export const ISSUE_CODES = {
   alternateEndingExceedsCount: 'alternate-ending-exceeds-count',
   alternateEndingDuplicate: 'alternate-ending-duplicate',
   alternateEndingCountMismatch: 'alternate-ending-count-mismatch',
+  // Invariant 14
+  repeatPassWithoutRepeatEnd: 'repeat-pass-without-repeat-end',
   // Invariant 10
   keyboardOnlyHand: 'keyboard-only-hand',
   keyboardOnlyPedal: 'keyboard-only-pedal',
@@ -47,6 +49,8 @@ export const ISSUE_CODES = {
   fermataNotOnBeat: 'fermata-not-on-beat',
   // Invariant 13
   percussionNoteWithString: 'percussion-note-with-string',
+  // Invariant 15
+  navigationMarkerDuplicate: 'navigation-marker-duplicate',
   // Instrument and effect rules
   drumsNotPercussion: 'drums-not-percussion',
   drumTechniquePitchMismatch: 'drum-technique-pitch-mismatch',

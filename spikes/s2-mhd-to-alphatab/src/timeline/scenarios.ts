@@ -359,7 +359,7 @@ export function scenarios(): Scenario[] {
         {},
       ]),
       expectedOrder: null,
-      note: 'Valid MHD, but MHD does not say whether a repeat end that is skipped in a pass still repeats. alphaTab repeats from it (Repeat.onClosing on the last closing).',
+      note: 'Invalid MHD since 2026-11-25: invariant 14 (owner decision D2-a, ADR-0002 A11, A19) rejects a repeat whose passes 2 and 3 reach no repeat end. Kept as historical S5 evidence of what alphaTab plays (it repeats from the skipped closing bar, Repeat.onClosing); that order is not MHD semantics.',
     },
   ];
 }

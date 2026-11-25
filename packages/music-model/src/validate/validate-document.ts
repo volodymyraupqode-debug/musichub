@@ -136,7 +136,7 @@ function checkUniqueIds(doc: MhdDocument, issues: Collector): void {
   });
 }
 
-// ── Master bars: invariants 7, 8, 9, 11 ──────────────────────────────────────
+// ── Master bars: invariants 7, 8, 9, 11, 14, 15 ──────────────────────────────────────
 
 function checkMasterBars(masterBars: readonly MasterBar[], issues: Collector): void {
   checkFirstBar(masterBars, issues);
@@ -166,7 +166,9 @@ function checkMasterBars(masterBars: readonly MasterBar[], issues: Collector): v
   });
   checkRepeats(masterBars, issues);
   checkAlternateEndings(masterBars, issues);
+  checkRepeatPasses(masterBars, issues);
   checkDirections(masterBars, issues);
+  checkNavigationMarkers(masterBars, issues);
 }
 
 function checkFirstBar(masterBars: readonly MasterBar[], issues: Collector): void {
@@ -312,6 +314,39 @@ function checkAlternateEndings(masterBars: readonly MasterBar[], issues: Collect
   }
 }
 
+/**
+ * Invariant 14 (ADR-0002 A11, owner decision C2): every pass before the final pass of a repeat
+ * reaches a played repeat end of its ending group. For each pass p in 1…count − 1, at least one
+ * repeat-end bar of the group is played on pass p: it has no alternate endings, or they list p.
+ * A group may hold several repeat ends that cover different passes (invariant 9 allows them).
+ * This checks pass coverage only; it does not define the playback order of a group with several
+ * repeat ends, which is left to the Phase 1 timeline work. A repeat end without alternate endings
+ * is played on every pass and never forms an ending group, so it always satisfies this rule.
+ */
+function checkRepeatPasses(masterBars: readonly MasterBar[], issues: Collector): void {
+  for (const group of endingGroups(masterBars)) {
+    const repeatEnds = group.filter(({ bar }) => bar.repeatEnd);
+    const first = repeatEnds[0];
+    const count = first?.bar.repeatEnd?.count;
+    // No repeat end in the group: invariant 9 reports it (alternate-ending-without-repeat).
+    if (first === undefined || count === undefined) continue;
+    const missing: number[] = [];
+    for (let pass = 1; pass < count; pass++) {
+      const reached = repeatEnds.some(
+        ({ bar }) => bar.alternateEndings === undefined || bar.alternateEndings.includes(pass),
+      );
+      if (!reached) missing.push(pass);
+    }
+    if (missing.length > 0) {
+      issues.error(
+        ISSUE_CODES.repeatPassWithoutRepeatEnd,
+        ['masterBars', first.index, 'alternateEndings'],
+        `${missing.length > 1 ? 'Passes' : 'Pass'} ${missing.join(', ')} of the ${count}× repeat ${missing.length > 1 ? 'reach' : 'reaches'} no repeat end in this ending group`,
+      );
+    }
+  }
+}
+
 type IndexedBar = { bar: MasterBar; index: number };
 
 function endingGroups(masterBars: readonly MasterBar[]): IndexedBar[][] {
@@ -334,6 +369,23 @@ function endingGroups(masterBars: readonly MasterBar[]): IndexedBar[][] {
   });
   flush();
   return groups;
+}
+
+/**
+ * Invariant 15 (ADR-0002 A14): at most one `segno` and at most one `coda` direction per document.
+ * `segnoSegno` and `doubleCoda` are separate markers and are not counted.
+ */
+function checkNavigationMarkers(masterBars: readonly MasterBar[], issues: Collector): void {
+  for (const marker of ['segno', 'coda'] as const) {
+    const bars = masterBars.flatMap((bar, index) => (bar.direction === marker ? [index] : []));
+    for (const index of bars.slice(1)) {
+      issues.error(
+        ISSUE_CODES.navigationMarkerDuplicate,
+        ['masterBars', index, 'direction'],
+        `A document may contain only one "${marker}"; the first is at bar ${bars[0]}`,
+      );
+    }
+  }
 }
 
 /** Jump directions need their targets (invariant 7). */
