@@ -65,6 +65,14 @@ module.exports = {
       to: { path: '^packages/config/eslint/spike\\.js$' },
     },
     {
+      name: 'music-engine-eslint-preset-only-in-music-engine',
+      comment:
+        'The music-engine ESLint preset lifts the alphaTab ban, so only packages/music-engine may use it.',
+      severity: 'error',
+      from: { pathNot: '^packages/music-engine/' },
+      to: { path: '^packages/config/eslint/music-engine\\.js$' },
+    },
+    {
       name: 'pure-packages-no-ui-frameworks',
       comment: 'Pure packages must not depend on React, Next.js or React Native.',
       severity: 'error',
