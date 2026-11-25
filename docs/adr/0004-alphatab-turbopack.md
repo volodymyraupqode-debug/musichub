@@ -6,6 +6,7 @@
 - **Spec sections:** ARCHITECTURE.md §4; MUSIC_ENGINE.md §2.3, §10 (S1)
 - **Evidence:** [docs/spikes/s1-turbopack.md](../spikes/s1-turbopack.md)
 - **Addendum:** 2026-11-24, spike S6 clock findings, status *Deferred* (no decision), see [Addendum](#addendum-2026-11-24-spike-s6-clock-measurements--status-deferred)
+- **Addendum 2:** 2026-11-25, S6 audio clock fallback accepted by the owner, see [Addendum 2](#addendum-2-2026-11-25-s6-audio-clock-fallback--accepted-owner-decision)
 
 ## Context
 
@@ -65,4 +66,29 @@ This addendum records findings only; the decision above is unchanged and no cloc
 - alphaTab 1.9.0 `playerPositionChanged` timing was measured against the browser's audio-frame clock in Playwright Chromium and Playwright WebKit (headless, macOS). p95 anchor jitter: Chromium below 10 ms in 9/9 runs; WebKit above 10 ms at the default `positionUpdateIntervalInMilliseconds = 10` in 3 of 4 speed-1.0 runs and below 10 ms at `0` in 3/3 runs.
 - Only browser-reported latency values were recorded (`outputLatency` 24 ms in Chromium, 8.94 ms in WebKit). The *Not measured* item above (real latency to audible sound) remains open: no loopback was performed, and Safari on a real device and Firefox were not measured.
 - Provisional, not accepted: 10 ms as the base interval for Chromium; `0` as a possible fallback for WebKit, not confirmed for Safari. A decision is deferred until measurements against the audio output exist.
+
+## Addendum 2 (2026-11-25): S6 audio clock fallback — accepted (owner decision)
+
+The decision above and the 2026-11-24 addendum are unchanged; this addendum records a new decision. The 2026-11-24 addendum deferred a clock decision "until measurements against the audio output exist". The owner has decided **not** to wait for such measurements and accepts the fallback below on the evidence of the offline replay, with the limitations listed. ROADMAP.md Phase 0 exit criterion 3 ("S6 clock jitter < 10 ms, or a fallback is chosen") is met through the fallback alternative; the 10 ms target itself is unchanged and not claimed as met.
+
+Evidence: offline replay of the 18 historical S6 runs through a research clock model, [spikes/s6-audio-clock/REPLAY.md](../../spikes/s6-audio-clock/REPLAY.md) (commit `9b21fe8`; per-run results in `spikes/s6-audio-clock/data/clock-replay/`), and the S6 report [docs/spikes/s6-audio-clock-accuracy.md](../spikes/s6-audio-clock-accuracy.md).
+
+**Accepted fallback (to be implemented in Phase 1 by `packages/music-engine`):**
+
+1. **Clock model:** an audio-anchored, interpolated playback clock (MUSIC_ENGINE.md §5.1). Each `playerPositionChanged` event is an anchor; between anchors the clock extrapolates with `performance.now()` at the playback speed.
+2. **Anchors:** score time = `currentTime × playbackSpeed` (milliseconds on alphaTab's timeline; alphaTab rescales `currentTime` on a speed change and emits a seek, the product stays continuous). `currentTick` is tracked separately: it is an integer, truncated and offset by one tick, and converting between ticks and time needs the tempo map, so the two are not interchangeable.
+3. **Corrections:** a new anchor that differs from the displayed clock by less than **30 ms** (playback time) is **slewed** at **10 %** of elapsed playback time; a difference of 30 ms or more **snaps**.
+4. **Update interval:** `positionUpdateIntervalInMilliseconds = 0` for WebKit/Safari; `10` (the alphaTab default, the validated configuration) for Chromium and other browsers.
+5. **No extrapolation before a valid anchor:** after play, resume or a seek (`isSeek`, including alphaTab's pause reset, stop reset, loop restart and speed change), the clock holds its position until the first valid main-playback anchor arrives.
+
+**Accepted limitations (not resolved by this decision):**
+
+- No physical audio-output loopback was performed.
+- No real Safari, Firefox, mobile or other hardware testing was performed; Playwright WebKit is not Safari.
+- The offline replay uses historical browser-clock data against the player's own audio-frame timeline, not sound at the output.
+- WebKit p99 at the 0 ms interval reached 9.54 ms in the worst recorded run, 0.46 ms below the 10 ms target; only three WebKit runs exist at the 0 ms interval.
+- The CPU and message overhead of the 0 ms interval was not measured.
+- Speed changes, pauses during playback, loops and count-in are covered by 17 synthetic lifecycle tests of the model, not by the recorded runs.
+- Physical output latency is unknown; calibration (Phase 2) remains unverified.
+- The S6 clock model is research code. Phase 1 must implement this policy in `music-engine` and verify it there.
 
