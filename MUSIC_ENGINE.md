@@ -10,6 +10,8 @@
 > - Added §5.2 (playback-score variants) and spike S7.
 > - MIDI devices moved to `midi-engine`.
 >
+> **Changelog v0.2.5:** S5 owner decisions (2026‑11‑25, ADR-0002 Amendment 5, A10–A15): §3.2 gets *Repeats and navigation* ([CONV] rules 1–3 adopted; D1 kept with an implicit Playback Score `repeatStart`, not yet verified), the half-open hi-hat key rule (timeline reports the MHD GM key) and the open default dynamic; §3.3 gets invariants 14 (skipped closing bar rejected, D2) and 15 (at most one segno and one coda); §10 S5 row updated. No `schemaVersion` change (§3.4). The S5 pass criterion is not met by these decisions.
+>
 > **Changelog v0.2.4:** Decisions Q-D and Q-E after the S2-05 review. `Bar.ottava` is a display-only octave line over the current bar (not carried forward, not a clef ottava; pitch stays sounding). `MasterBar.fermata: true` is replaced by positioned `fermatas: { position; type?: 'short'|'long' }[]`; fermata positions join invariant 11; new warnings `fermata-not-on-beat` and `ottava-not-displayed`. Fermata playback length belongs to the timeline. No `schemaVersion` bump (pre-release rule, §3.4).
 >
 > **Changelog v0.2.3:** D1: the percussion articulation vocabulary (`drumArticulation`, 9 ids) is replaced by the orthogonal `drumTechnique` (`halfOpen`, `rimshot`, `edge`, `choke`) next to the GM `pitch`. MHD v1 is unreleased, so `schemaVersion` stays 1 (§3.4).
@@ -244,6 +246,14 @@ type DrumTechnique = 'halfOpen' | 'rimshot' | 'edge' | 'choke';
 - **Optional flags** are `true` or absent; `false` is rejected so a state has one spelling. Required booleans (`rest`, `percussion`, `mute`, `solo`, `display.*`) keep `true`/`false`.
 - **Keyboard tracks** are the families `piano` and `synth`: only they may use `hand` and `sustainPedal`, with one or two staves.
 - **Percussion:** `pitch` is always the General MIDI percussion key; it selects the instrument and sound. `drumTechnique` is optional and adds only what GM has no key for. Each technique is allowed for these GM keys: `halfOpen` 42/46, `rimshot` 38/40, `edge` 51/59, `choke` 49/52/55/57 (crash 1, china, splash, crash 2). Absent means the plain GM sound (e.g. 42 closed hi-hat, 46 open hi-hat, 37 side stick, 53 ride bell need no technique). A `drums` track has `percussion: true`; other families may also be percussion tracks.
+- **Half-open hi-hat key** (owner decision 2026‑11‑25, ADR-0002 A12): the timeline reports the GM key stored in `pitch`; a note with `pitch: 42` and `drumTechnique: 'halfOpen'` is reported as 42 and never rewritten to 46. Known alphaTab 1.9.0 limitation: its single half-open articulation sounds as GM 46 and cannot tell 42 + `halfOpen` from 46 + `halfOpen`, so audio plays 46 and a GP7 export cannot keep the distinction (S2 report §5.3, §9). Timeline parity tests keep this as a documented exception.
+- **Repeats and navigation** (playback order; owner decisions 2026‑11‑25, ADR-0002 A10, A13). `repeatEnd.count` is the total number of plays; an ending bar is played only in the passes it lists; D.C. jumps to the start, D.S. to the segno, "al Fine" stops at Fine, "al Coda" goes to the coda at To Coda; a `repeatEnd` without `repeatStart` follows §3.3 invariant 7. In addition:
+  1. After a D.C. or D.S. jump, repeats play only their final pass.
+  2. A jump inside a repeated section is taken on its last pass only.
+  3. To Coda and Fine are ignored before the jump.
+
+  Invariants 14 and 15 (§3.3) reject the cases these rules do not cover. For a `repeatEnd` without its own start after an earlier repeat, alphaTab 1.9.0 plays a different order (S5 finding D1); the adapter may set an implicit `repeatStart` in the **Playback Score only** to reproduce the MHD order, leaving the Render Score unchanged (§5.2). This approach is **not yet verified** against alphaTab; Phase 1 must verify it with a parity test and report a failure to the owner instead of changing these semantics.
+- **Default dynamic (open):** MHD v1 does not define the dynamic before the first `Beat.dynamic`, so `Note.velocity`'s "default from dynamic" is undefined there. The adapter currently assumes *f*; that is not an MHD rule. Decided during Phase 1 MHD v1 finalisation (ADR-0002 A15): *f* as the MHD default, or the default stays with the adapter. Velocity parity with alphaTab (velocity from dynamics) depends on it.
 - **Brush** duration is an MHD `Duration`, so it does not depend on PPQ or an engine.
 - **Ottava** (`Bar.ottava`, decision Q-D): an octave line over every beat of every voice of the current bar on that staff. It applies to this bar only and never carries into the next bar; drawing consecutive bars as one continuous line is a rendering choice, not MHD semantics. Display only: `Note.pitch`, and the pitch derived from string and fret, is always the sounding pitch and is never rewritten by `ottava`; only the written position moves. It is distinct from a clef ottava (MHD has none; a written-octave instrument uses `Staff.transpositionPitch`). The adapter maps it to alphaTab `Beat.ottava` on every beat, including grace beats, never to `Bar.clefOttava`; alphaTab plays the stored pitch unchanged.
 - **Fermatas** (`MasterBar.fermatas`, decision Q-E): a fermata belongs to the master bar and applies to every track and staff at its `position`. Positions use the same coordinate system as tempo changes and pedal positions: a reduced fraction of the nominal bar length of the time signature in `[0, 1)`, also in a pickup bar. Several fermatas per bar are allowed. A missing `type` is a standard (medium) fermata. MHD stores no playback duration or multiplier; the adapter never rounds or moves a fermata whose position is not an integer alphaTab tick or not a beat start, it reports a diagnostic instead.
@@ -267,6 +277,10 @@ Each invariant has stable issue codes (`ISSUE_CODES`); see `packages/music-model
 11. Tempo change, pedal and fermata positions strictly increase within a bar; the pedal alternates down/up across the staff (it may stay down to the end).
 12. A tie on a stringed staff keeps the same `string` and `fret`.
 13. Percussion notes have no `string` or `fret`; `drumTechnique` only on percussion tracks and only with a GM key allowed for it.
+14. Every pass before the final pass of a repeat reaches a played repeat end of its ending group: the closing bar's `alternateEndings`, if present, list every pass from 1 to count − 1. Rejected example: `|: 1 |1. 2 :|(3×) |2.3. 3 | 4` (owner decision D2-a 2026‑11‑25, ADR-0002 A11; the pattern is invalid, alphaTab's playback of it is not MHD semantics).
+15. A document has at most one `segno` and at most one `coda` direction (ADR-0002 A14). Documents with several are not supported; their navigation is untested.
+
+Invariants 14 and 15 are decided but not yet implemented in `validateDocument`; Phase 1 implements them and assigns their issue codes.
 
 Further checks: a `drums` track has `percussion: true`; a brush is not longer than its beat. Warnings: `fermata-not-on-beat` when no non-grace beat (rests count) of any voice, staff or track starts at a fermata position; `ottava-not-displayed` when `Bar.ottava` is set on a percussion staff or a staff without standard notation.
 
@@ -401,6 +415,7 @@ Because alphaTab mutes only whole Tracks and appears not to play sustain pedals,
 |---|---|---|
 | Hand split | Practice mode with one hand muted | Each keyboard staff becomes its own alphaTab Track with its own MIDI channel, so the hand can be muted with `changeTrackMute` |
 | Pedal | A keyboard staff has `sustainPedal` and S7 confirms no pedal playback | Notes under a pedal are lengthened until pedal-up (playback only; notation untouched) |
+| Implicit repeat start | A `repeatEnd` without its own `repeatStart` after an earlier repeat (§3.3 invariant 7, ADR-0002 A10) | `repeatStart` set on the bar after the previous repeat end (Playback Score only; not yet verified against alphaTab) |
 
 ## 6. Render controller & edit loop
 
@@ -453,7 +468,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 
 ## 10. Phase 0 spikes (must complete before Phase 1 code)
 
-**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. Open dispositions: S3, S4, S5, S7. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
+**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. Open dispositions: S3, S4, S7. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
 
 | ID | Question | Pass criteria |
 |---|---|---|
@@ -474,7 +489,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 | S2 | Done (Strategy A, decision A1) | ADR-0002 A1–A6, Amendment 4 |
 | S3 | Partly done: < 150 ms not met on 300 × 8, no fallback selected | ADR-0002 Amendment 3 (A9) |
 | S4 | Partly done: 14 synthetic MusicXML fixtures, GP3–GP8 not evaluated; criterion not met | ADR-0002 Amendment 4 |
-| S5 | Done for defined semantics (17 of 19 scenarios at 100 %); D1, D2, half-open hi-hat key, [CONV] open | ADR-0002 Amendment 4 |
+| S5 | Done for defined semantics (17 of 19 scenarios at 100 %). Owner decisions 2026-11-25: D1 kept with implicit Playback Score start (unverified), D2 rejected by validation, hi-hat reports the MHD key, [CONV] 1–3 adopted, at most one segno and one coda; default dynamic open (Phase 1). Pass criterion not met until Phase 1 parity tests pass under these rules | ADR-0002 Amendment 4, Amendment 5 |
 | S6 | Pass criterion above not verified (no audio reference); fallback accepted by the owner on 2026-11-25 (§5.1), which meets ROADMAP Phase 0 exit criterion 3 | ADR-0004 Addendum, Addendum 2 |
 | S7 | Done (playback mechanism A7–A8); sustain pedal and hand split not covered | ADR-0002 Amendment 2 |
 
