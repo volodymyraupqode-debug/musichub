@@ -1,6 +1,6 @@
 # ADR-0002: Own canonical document model (MHD) instead of alphaTab Score/JSON
 
-- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) and the S3 acceptance criterion recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10) (criterion A9; S3 not met, no fallback selected); findings of spikes S2, S4 and S5 and an index of all Phase 0 spike results in [Amendment 4](#amendment-4-2026-11-24-phase-0-spike-findings-s2-12--status-deferred) (findings only); owner decisions on the open S5 timeline semantics (D1, D2, half-open hi-hat key, [CONV]) recorded 2026-11-25 in [Amendment 5](#amendment-5-2026-11-25-s5-timeline-semantics-owner-decisions) (decisions A10–A15; the S5 parity criterion is not yet established); the owner's S3 disposition under Q0 Option C (gap placed in Phase 3, Phase 1 architecture constraint) recorded 2026-11-25 in [Amendment 6](#amendment-6-2026-11-25-s3-owner-disposition-q0-option-c) (decision A16; A9 unchanged, S3 not met)
+- **Status:** Accepted. Amended 2026-11-24 with the adapter strategy from spike S2 (ROADMAP.md S2-05), see [Amendment 1](#amendment-1-2026-11-24-alphatab-adapter-strategy-spike-s2-s2-05); amended again 2026-11-24 with the playback mechanism from spike S7 (ROADMAP.md S2-07), see [Amendment 2](#amendment-2-2026-11-24-playback-score-substitution-spike-s7-s2-07); edit-loop measurements from spike S3 (ROADMAP.md S2-10) and the S3 acceptance criterion recorded in [Amendment 3](#amendment-3-2026-11-24-edit-loop-latency-spike-s3-s2-10) (criterion A9; S3 not met, no fallback selected); findings of spikes S2, S4 and S5 and an index of all Phase 0 spike results in [Amendment 4](#amendment-4-2026-11-24-phase-0-spike-findings-s2-12--status-deferred) (findings only); owner decisions on the open S5 timeline semantics (D1, D2, half-open hi-hat key, [CONV]) recorded 2026-11-25 in [Amendment 5](#amendment-5-2026-11-25-s5-timeline-semantics-owner-decisions) (decisions A10–A15; the S5 parity criterion is not yet established); the owner's S3 disposition under Q0 Option C (gap placed in Phase 3, Phase 1 architecture constraint) recorded 2026-11-25 in [Amendment 6](#amendment-6-2026-11-25-s3-owner-disposition-q0-option-c) (decision A16; A9 unchanged, S3 not met); the owner's S4 disposition under Q0 Option C (gap split between Phase 1 and Phase 7) recorded 2026-11-25 in [Amendment 7](#amendment-7-2026-11-25-s4-owner-disposition-q0-option-c) (decision A17; S4 criterion unchanged and not met)
 - **Date:** 2026-11-21
 - **Deciders:** project owner
 - **Spec sections:** MUSIC_ENGINE.md §1–4; ARCHITECTURE.md §1.2
@@ -324,3 +324,37 @@ The original decision, Amendments 1–5 and A1–A15 are unchanged; numbering co
 
 - Phase 1's `toAlphaTab`, render controller and Playback Score design (A1, A5, A7, A8) must keep three approaches feasible for later evaluation: (1) partial Render Score conversion for the displayed bars, (2) off-main-thread conversion, (3) MIDI regeneration when playback starts instead of on every edit.
 - These are **architectural options to keep feasible**, not approved implementations or proven optimisations. None has been measured, and no latency is claimed for any of them. Phase 1 does not have to implement them. Choosing one later needs its own measurement under A9 and, where it changes an approved decision, an ADR.
+
+## Amendment 7 (2026-11-25): S4 owner disposition (Q0 Option C)
+
+The original decision, Amendments 1–6 and A1–A16 are unchanged; numbering continues from A16. This amendment records the owner's disposition of spike S4 required by the Q0 rule (ROADMAP.md §Phase 0, owner decision 3), selected from the S4 decision brief as **Option 2** (split between Phase 1 and Phase 7). The S4 criterion of MUSIC_ENGINE.md §10 ("20 public-domain/own GP3–8 + MusicXML files → MHD → GP7 round-trip", coverage matrix drafted) is **unchanged and not met**. Evidence: [S4 report](../spikes/s4-import-fidelity.md) and Amendment 4; both are historical and unchanged. The fixture rules OQ2 and OQ3 (ROADMAP.md §Sprint 2) are unchanged.
+
+### A17. S4 disposition (owner decision 2026-11-25, approved)
+
+> **S4 disposition (owner, 2026-11-25):** S4 remains technically not met; the original criterion is unchanged.
+>
+> Phase 1 owns the production importer, coverage matrix and golden round-trip tests using legally usable MusicXML fixtures; the three recorded import deviations; the MHD questions concerning tenuto, slur and transposing key signature; and the GP7 stringed-staff finding.
+>
+> Phase 7 (Hardening & Web v1.0 launch) owns independent GP3–GP8 import evidence using legally usable fixtures under OQ2/OQ3, before v1.0. If no such fixtures are available by then, the owner will decide how Guitar Pro import is presented at launch.
+>
+> Missing GP evidence is not evidence of incompatibility. The spike converter is not production code.
+
+**What stays as evidence.** The S4 spike evaluated 14 original, hand-authored MusicXML fixtures (13 distinct contents plus one `.mxl`) with alphaTab 1.9.0 against an independently written intent, and converted them with a research converter (`spikes/s2-mhd-to-alphatab/src/import/from-alphatab.ts`). This is spike evidence on synthetic files, not a production importer and not a claim about real-world editor output. The GP7 round trip used alphaTab on both sides (`Gp7Exporter` → `Gp7To8Importer`); it is **not** independent GP7 or GP8 compatibility evidence. GP3, GP4, GP5, GP6/GPX, GP7 and GP8 were **not evaluated**: no legally usable independent fixtures exist, and that is a test-data gap, not evidence of incompatibility.
+
+**Phase 1 responsibilities** (ROADMAP.md §Phase 1; none is implemented yet):
+
+- the production `fromAlphaTab` importer in `packages/music-engine` (the spike converter is research code and is not promoted as is);
+- the coverage matrix `music-engine/COVERAGE.md` (MUSIC_ENGINE.md §4.2);
+- golden round-trip tests on legally usable MusicXML fixtures;
+- handling of the three recorded import deviations: D.S. al Coda arriving as Dal Segno, spaces in part names arriving as U+00A0, and an unslashed `steal-time-previous` grace arriving on the beat;
+- MHD decisions on tenuto, slur (both not representable in MHD v1) and the key signature of a transposing staff (written or concert key);
+- investigation and handling of the GP7 stringed-staff finding (non-guitar, non-percussion staves return as stringed staves from the alphaTab GP7 round trip; cause not isolated).
+
+**Phase 7 responsibilities** (ROADMAP.md §Phase 7):
+
+- independent GP3–GP8 import evidence from legally usable fixtures under OQ2/OQ3, before v1.0;
+- the availability of such fixtures is not guaranteed. If none are available by then, the owner decides how Guitar Pro import is presented at launch.
+
+**Not part of this decision.** The Phase 4 client-side import flow and import-warnings UI (ROADMAP.md §Phase 4) keep their scope. The Phase 1 exit criterion "GP7 and MIDI exports open in third-party apps" is unchanged and not verified; PROJECT_SPEC.md §2.1 states that the GP7 export opens in GP7/GP8 only, and under OQ2 no Guitar Pro is purchased, so how it will be verified is an **open verification risk**, not decided here.
+
+Under Q0 Option C this records S4's owner disposition. It does not meet the S4 pass criterion.
