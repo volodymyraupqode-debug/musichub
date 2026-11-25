@@ -10,7 +10,7 @@
 > - Added §5.2 (playback-score variants) and spike S7.
 > - MIDI devices moved to `midi-engine`.
 >
-> **Changelog v0.2.9:** Phase 0 declared complete by the owner (2026‑11‑25, ROADMAP.md §Phase 0) under the Q0 rule; §10 Q0 note and results header updated. No pass criterion or spike status changes; Phase 1 is not approved.
+> **Changelog v0.2.9:** Phase 0 declared complete by the owner (2026‑11‑25, ROADMAP.md §Phase 0) under the Q0 Option C rule; §10 Q0 note and results header updated. No pass criterion or spike status changes; Phase 1 is not approved or started.
 >
 > **Changelog v0.2.8:** S7 owner disposition (2026‑11‑25, ADR-0002 Amendment 8, A18; Option B1): S7 stays not met; Phase 1 owns sustain-pedal playback (audible check, §5.2 pedal variant if needed), Phase 2 owns the hand-split playback score and its audible verification (§5.2, §10). Every unmet §10 spike now has a recorded disposition.
 >
@@ -481,7 +481,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 
 ## 10. Phase 0 spikes (must complete before Phase 1 code)
 
-**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. No open disposition; Phase 0 was declared complete by the owner on 2026-11-25 (ROADMAP.md §Phase 0). Phase 1 is not approved. S7's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 8: sustain pedal in Phase 1, hand split in Phase 2); its pass criterion is not met. S4's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 7: Phase 1 importer and MusicXML work, Phase 7 independent GP3–GP8 evidence); its pass criterion is not met. S3's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 6: gap placed in Phase 3, Phase 1 architecture constraint); its pass criterion is not met. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
+**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. No open disposition: every required owner disposition is recorded, and the owner declared Phase 0 complete on 2026-11-25 under Q0 Option C (ROADMAP.md §Phase 0). Dispositions do not pass any criterion: the S3, S4, S5 and S7 pass criteria remain not met, and S6's remains unverified (fallback accepted). Phase 1 is not approved or started. S7's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 8: sustain pedal in Phase 1, hand split in Phase 2); its pass criterion is not met. S4's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 7: Phase 1 importer and MusicXML work, Phase 7 independent GP3–GP8 evidence); its pass criterion is not met. S3's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 6: gap placed in Phase 3, Phase 1 architecture constraint); its pass criterion is not met. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
 
 | ID | Question | Pass criteria |
 |---|---|---|
@@ -494,7 +494,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 | S7 | Playback-score variants: can the player play a Score that differs from the rendered one? Is the sustain pedal audible? Hand split via separate tracks/channels | Decision recorded; one-hand practice audible correctly |
 | S8 | **Runs in Phase 2, not Phase 0** (needs `midi-engine` + `practice-core`). MIDI guitar (optional, needs hardware; Q21): does `midi-engine` + `practice-core` give reliable correctness with common MIDI guitar systems? | Report: per-device compatibility, latency, error rate. **Owner decision** whether MIDI-guitar checking enters v1 |
 
-**Results (recorded 2026-11-24, S2-12; owner dispositions added through 2026-11-25; pass criteria above unchanged).** Index with sources: ADR-0002 Amendment 4.
+**Results (recorded 2026-11-25, S2-12; pass criteria above unchanged).** Index with sources: ADR-0002 Amendment 4.
 
 | ID | Status | Recorded in |
 |---|---|---|
