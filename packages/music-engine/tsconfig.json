@@ -1,0 +1,3 @@
+{
+  "extends": "@musichub/config/tsconfig/library.json"
+}
