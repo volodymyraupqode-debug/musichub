@@ -10,6 +10,8 @@
 > - Added §5.2 (playback-score variants) and spike S7.
 > - MIDI devices moved to `midi-engine`.
 >
+> **Changelog v0.2.8:** S7 owner disposition (2026‑11‑25, ADR-0002 Amendment 8, A18; Option B1): S7 stays not met; Phase 1 owns sustain-pedal playback (audible check, §5.2 pedal variant if needed), Phase 2 owns the hand-split playback score and its audible verification (§5.2, §10). Every unmet §10 spike now has a recorded disposition.
+>
 > **Changelog v0.2.7:** S4 owner disposition (2026‑11‑25, ADR-0002 Amendment 7, A17; Option 2): the S4 criterion is unchanged and not met; Phase 1 owns the production importer, `COVERAGE.md`, golden round-trip tests on legally usable MusicXML fixtures, the three recorded import deviations, the tenuto/slur/transposing-key MHD questions and the GP7 stringed-staff finding; Phase 7 owns independent GP3–GP8 evidence before v1.0 (§4.2, §10).
 >
 > **Changelog v0.2.6:** S3 owner disposition (2026‑11‑25, ADR-0002 Amendment 6, A16; Option B + D): the S3 gap is placed in Phase 3 (Editor) with the real `editor-core` and RenderScheduler measured under the unchanged A9; Phase 1's `toAlphaTab`, render-controller and Playback Score design must keep a partial Render Score, off-main-thread conversion and MIDI regeneration on play feasible (§6). §10 S3 row and Q0 note updated. S3 remains not met.
@@ -422,6 +424,8 @@ Because alphaTab mutes only whole Tracks and appears not to play sustain pedals,
 | Pedal | A keyboard staff has `sustainPedal` and S7 confirms no pedal playback | Notes under a pedal are lengthened until pedal-up (playback only; notation untouched) |
 | Implicit repeat start | A `repeatEnd` without its own `repeatStart` after an earlier repeat (§3.3 invariant 7, ADR-0002 A10) | `repeatStart` set on the bar after the previous repeat end (Playback Score only; not yet verified against alphaTab) |
 
+S7 answered the first question (A7: not natively, through the `midiLoad` hook). The pedal and hand-split variants are untested; by owner decision 2026‑11‑25 (ADR-0002 A18) Phase 1 checks audibly whether alphaTab plays the sustain pedal and implements the pedal variant if it does not, and Phase 2 builds the hand-split variant and verifies one-hand practice audibly.
+
 ## 6. Render controller & edit loop
 
 ```
@@ -475,7 +479,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 
 ## 10. Phase 0 spikes (must complete before Phase 1 code)
 
-**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. Open disposition: S7. S4's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 7: Phase 1 importer and MusicXML work, Phase 7 independent GP3–GP8 evidence); its pass criterion is not met. S3's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 6: gap placed in Phase 3, Phase 1 architecture constraint); its pass criterion is not met. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
+**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. No open disposition. S7's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 8: sustain pedal in Phase 1, hand split in Phase 2); its pass criterion is not met. S4's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 7: Phase 1 importer and MusicXML work, Phase 7 independent GP3–GP8 evidence); its pass criterion is not met. S3's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 6: gap placed in Phase 3, Phase 1 architecture constraint); its pass criterion is not met. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
 
 | ID | Question | Pass criteria |
 |---|---|---|
@@ -498,7 +502,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 | S4 | Partly done: 14 synthetic MusicXML fixtures, GP3–GP8 not evaluated; criterion not met. Owner disposition 2026-11-25 (Option 2): Phase 1 owns the production importer, coverage matrix, MusicXML golden round-trip tests and the recorded findings; Phase 7 owns independent GP3–GP8 evidence before v1.0 (§4.2). Pass criterion not met | ADR-0002 Amendment 4, Amendment 7 (A17) |
 | S5 | Done for defined semantics (17 of 19 scenarios at 100 %). Owner decisions 2026-11-25: D1 kept with implicit Playback Score start (unverified), D2 rejected by validation, hi-hat reports the MHD key, [CONV] 1–3 adopted, at most one segno and one coda; default dynamic open (Phase 1). Pass criterion not met until Phase 1 parity tests pass under these rules | ADR-0002 Amendment 4, Amendment 5 |
 | S6 | Pass criterion above not verified (no audio reference); fallback accepted by the owner on 2026-11-25 (§5.1), which meets ROADMAP Phase 0 exit criterion 3 | ADR-0004 Addendum, Addendum 2 |
-| S7 | Done (playback mechanism A7–A8); sustain pedal and hand split not covered | ADR-0002 Amendment 2 |
+| S7 | Done (playback mechanism A7–A8); sustain pedal and hand split not covered. Owner disposition 2026-11-25 (Option B1): Phase 1 verifies sustain-pedal playback (§5.2 pedal variant if needed), Phase 2 builds and audibly verifies the hand split. Pass criterion not met | ADR-0002 Amendment 2, Amendment 8 (A18) |
 
 Spikes run in Sprint 2 (ROADMAP.md). Spike code lives in `spikes/` (never imported by apps) and is deleted or promoted after the ADR is written.
 
