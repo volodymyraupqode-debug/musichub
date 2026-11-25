@@ -10,6 +10,8 @@
 > - Added §5.2 (playback-score variants) and spike S7.
 > - MIDI devices moved to `midi-engine`.
 >
+> **Changelog v0.2.7:** S4 owner disposition (2026‑11‑25, ADR-0002 Amendment 7, A17; Option 2): the S4 criterion is unchanged and not met; Phase 1 owns the production importer, `COVERAGE.md`, golden round-trip tests on legally usable MusicXML fixtures, the three recorded import deviations, the tenuto/slur/transposing-key MHD questions and the GP7 stringed-staff finding; Phase 7 owns independent GP3–GP8 evidence before v1.0 (§4.2, §10).
+>
 > **Changelog v0.2.6:** S3 owner disposition (2026‑11‑25, ADR-0002 Amendment 6, A16; Option B + D): the S3 gap is placed in Phase 3 (Editor) with the real `editor-core` and RenderScheduler measured under the unchanged A9; Phase 1's `toAlphaTab`, render-controller and Playback Score design must keep a partial Render Score, off-main-thread conversion and MIDI regeneration on play feasible (§6). §10 S3 row and Q0 note updated. S3 remains not met.
 >
 > **Changelog v0.2.5:** S5 owner decisions (2026‑11‑25, ADR-0002 Amendment 5, A10–A15): §3.2 gets *Repeats and navigation* ([CONV] rules 1–3 adopted; D1 kept with an implicit Playback Score `repeatStart`, not yet verified), the half-open hi-hat key rule (timeline reports the MHD GM key) and the open default dynamic; §3.3 gets invariants 14 (skipped closing bar rejected, D2) and 15 (at most one segno and one coda); §10 S5 row updated. No `schemaVersion` change (§3.4). The S5 pass criterion is not met by these decisions.
@@ -349,6 +351,7 @@ Options: `toAlphaTab(doc, { purpose: 'render' | 'playback' | 'export', tracks, p
 - Percussion is mapped in `music-engine`: the pair (GM `pitch`, `drumTechnique`) ↔ an alphaTab articulation (`DRUM_TECHNIQUES` lists the valid pairs). An alphaTab articulation that no pair represents keeps the GM `pitch`, stores the original alphaTab data in `extensions['alphatab.unmapped']` keyed by the note id, and produces an `ImportWarning`.
 - The original uploaded file is retained server-side (DATABASE.md §3.11).
 - Golden tests: for each fixture `x.gp`: `import → MHD → export GP7 → import → MHD'`, assert `MHD ≈ MHD'` (ids excluded).
+- **S4 disposition** (owner decision 2026‑11‑25, ADR-0002 A17): Phase 1 owns the production `fromAlphaTab` importer, `music-engine/COVERAGE.md` and golden round-trip tests on legally usable MusicXML fixtures; handling of the three recorded import deviations (D.S. al Coda → Dal Segno, U+00A0 in part names, `steal-time-previous` grace timing); MHD decisions on tenuto, slur and the transposing-staff key signature; investigation and handling of the GP7 stringed-staff finding. Phase 7 owns independent GP3–GP8 import evidence from legally usable fixtures (OQ2/OQ3) before v1.0; if none are available, the owner decides how Guitar Pro import is presented at launch. The S4 spike converter is research code, its MusicXML evidence is synthetic, and its GP7 round trip used alphaTab on both sides (not independent compatibility evidence). GP3–GP8 are not evaluated; missing GP evidence is not evidence of incompatibility.
 
 ### 4.3 Export features in UI
 
@@ -472,7 +475,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 
 ## 10. Phase 0 spikes (must complete before Phase 1 code)
 
-**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. Open dispositions: S4, S7. S3's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 6: gap placed in Phase 3, Phase 1 architecture constraint); its pass criterion is not met. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
+**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. Open disposition: S7. S4's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 7: Phase 1 importer and MusicXML work, Phase 7 independent GP3–GP8 evidence); its pass criterion is not met. S3's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 6: gap placed in Phase 3, Phase 1 architecture constraint); its pass criterion is not met. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
 
 | ID | Question | Pass criteria |
 |---|---|---|
@@ -492,7 +495,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 | S1 | Done | ADR-0004 |
 | S2 | Done (Strategy A, decision A1) | ADR-0002 A1–A6, Amendment 4 |
 | S3 | Partly done: < 150 ms not met on 300 × 8, no fallback selected. Owner disposition 2026-11-25: gap placed in Phase 3 (real `editor-core` + RenderScheduler, measured under the unchanged A9 on 300 × 8); Phase 1 must keep a partial Render Score, off-main-thread conversion and MIDI regeneration on play feasible (§6). Pass criterion not met | ADR-0002 Amendment 3 (A9), Amendment 6 (A16) |
-| S4 | Partly done: 14 synthetic MusicXML fixtures, GP3–GP8 not evaluated; criterion not met | ADR-0002 Amendment 4 |
+| S4 | Partly done: 14 synthetic MusicXML fixtures, GP3–GP8 not evaluated; criterion not met. Owner disposition 2026-11-25 (Option 2): Phase 1 owns the production importer, coverage matrix, MusicXML golden round-trip tests and the recorded findings; Phase 7 owns independent GP3–GP8 evidence before v1.0 (§4.2). Pass criterion not met | ADR-0002 Amendment 4, Amendment 7 (A17) |
 | S5 | Done for defined semantics (17 of 19 scenarios at 100 %). Owner decisions 2026-11-25: D1 kept with implicit Playback Score start (unverified), D2 rejected by validation, hi-hat reports the MHD key, [CONV] 1–3 adopted, at most one segno and one coda; default dynamic open (Phase 1). Pass criterion not met until Phase 1 parity tests pass under these rules | ADR-0002 Amendment 4, Amendment 5 |
 | S6 | Pass criterion above not verified (no audio reference); fallback accepted by the owner on 2026-11-25 (§5.1), which meets ROADMAP Phase 0 exit criterion 3 | ADR-0004 Addendum, Addendum 2 |
 | S7 | Done (playback mechanism A7–A8); sustain pedal and hand split not covered | ADR-0002 Amendment 2 |
