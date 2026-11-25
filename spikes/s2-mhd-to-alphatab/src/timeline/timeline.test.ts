@@ -2,7 +2,7 @@
 // MidiFileGenerator on the Playback Score.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { validateDocument, type MhdDocument } from '@musichub/music-model';
+import { ISSUE_CODES, validateDocument, type MhdDocument } from '@musichub/music-model';
 import { describe, expect, it } from 'vitest';
 import { allDocuments } from '../fixtures.ts';
 import { newSettings } from '../run.ts';
@@ -52,12 +52,30 @@ const PARITY = new Set(
     .map((s) => s.name),
 );
 
+/**
+ * Scenarios that MHD rejects. `ending-closing-skipped` was valid MHD with undefined meaning when S5
+ * ran (2026-11-24); invariant 14 (ADR-0002 A11, A19) has rejected it since 2026-11-25. It stays as
+ * historical evidence of alphaTab's behaviour, which is not MHD semantics.
+ */
+const INVALID_MHD: Record<string, string> = {
+  'ending-closing-skipped': ISSUE_CODES.repeatPassWithoutRepeatEnd,
+};
+
 describe.each(scenarios())('scenario $name', (s) => {
   const { reference, prototype, comparison } = run(s.doc);
+  const rejectedWith = INVALID_MHD[s.name];
 
-  it('is valid MHD v1', () => {
-    expect(validateDocument(s.doc).valid).toBe(true);
-  });
+  if (rejectedWith === undefined) {
+    it('is valid MHD v1', () => {
+      expect(validateDocument(s.doc).valid).toBe(true);
+    });
+  } else {
+    it(`is invalid MHD v1 (${rejectedWith})`, () => {
+      const result = validateDocument(s.doc);
+      expect(result.valid).toBe(false);
+      expect(result.issues.map((issue) => issue.code)).toEqual([rejectedWith]);
+    });
+  }
 
   it.skipIf(s.expectedOrder === null)(
     'the prototype plays the bars in the order MHD defines',
@@ -104,10 +122,11 @@ describe('documented divergences', () => {
     expect(comparison.noteOnParity.exact).toBeLessThan(comparison.noteOnParity.comparable);
   });
 
-  it('skipped closing bar: undefined in MHD; alphaTab repeats from it', () => {
+  it('skipped closing bar: invalid MHD (invariant 14); alphaTab repeats from it', () => {
     const s = scenarios().find((x) => x.name === 'ending-closing-skipped');
     if (!s) throw new Error('scenario missing');
     expect(s.expectedOrder).toBeNull();
+    expect(validateDocument(s.doc).valid).toBe(false);
     expect(referenceBarOrder(s.doc, run(s.doc).reference)).toEqual([0, 1, 2, 1, 1, 3, 4]);
   });
 });
@@ -133,7 +152,9 @@ describe('S2 corpus (S2-05 documents)', () => {
         (x) => x.type === 'noteOn' && x.category !== 'exact',
       )) {
         if (f.category === 'unsupported') continue; // constructs the prototype does not model (listed below)
-        if (name === 'repeats') continue; // contains a skipped closing bar (undefined, see scenario ending-closing-skipped)
+        // Its 12-pass ending group has several repeat ends (adapted to invariant 14); their playback
+        // order is not defined in MHD yet, so the order differences are not evaluated.
+        if (name === 'repeats') continue;
         // The only other allowed difference: alphaTab plays half-open hi-hats as GM 46.
         const note = f.prototype?.noteId ? notes.get(f.prototype.noteId) : undefined;
         expect([f.category, note?.drumTechnique, f.reference?.key]).toEqual([
