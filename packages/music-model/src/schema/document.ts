@@ -81,6 +81,7 @@ export const TimeSignatureSchema = z
   })
   .meta({ id: 'TimeSignature' });
 
+/** A key signature. On `MasterBar` it is always the concert (sounding) key (ADR-0002 A22). */
 export const KeySignatureSchema = z
   .strictObject({
     fifths: z.int().min(-7).max(7),
@@ -180,6 +181,8 @@ export const NoteEffectsSchema = z
     ghost: flag,
     staccato: flag,
     accent: z.enum(['normal', 'heavy']).optional(),
+    /** Tenuto, independent of `accent` and `staccato` (ADR-0002 A20). */
+    tenuto: flag,
     harmonic: z
       .strictObject({
         type: z.enum(['natural', 'artificial', 'pinch', 'tap', 'semi', 'feedback']),
@@ -226,8 +229,9 @@ export const NoteSchema = z
     /** 1 = highest string. */
     string: z.int().min(1).max(10).optional(),
     fret: fret.optional(),
-    /** MIDI pitch 0–127. */
+    /** MIDI pitch 0–127, always the sounding pitch (also on transposing staves). */
     pitch: z.int().min(0).max(127).optional(),
+    /** Spelling of the sounding pitch; the written spelling is derived (ADR-0002 A22). */
     spelling: z
       .strictObject({
         step: z.enum(['C', 'D', 'E', 'F', 'G', 'A', 'B']),
@@ -333,7 +337,11 @@ export const StaffSchema = z
         fretCount: z.int().min(1).max(36),
       })
       .optional(),
-    /** Written-to-sounding transposition in semitones, e.g. -12 for guitar. */
+    /**
+     * Written-to-sounding transposition in semitones: sounding = written + transpositionPitch,
+     * e.g. -12 for guitar, -2 for a B♭ clarinet. Written keys and spellings are derived from it
+     * (ADR-0002 A22).
+     */
     transpositionPitch: z.int().min(-48).max(48).optional(),
     /** Keyboard staves only. Default for a 2-staff keyboard track: upper = right, lower = left. */
     hand: z.enum(['left', 'right']).optional(),
@@ -376,6 +384,20 @@ export const TRACK_COLORS = [
   'track.12',
 ] as const;
 
+/**
+ * A slur from one note to a later note of the same track (any staff, voice or bar). Overlapping,
+ * nested and chained slurs are valid; slurs have no playback meaning (invariant 16, ADR-0002 A21).
+ */
+export const SlurSchema = z
+  .strictObject({
+    id: MhdIdSchema,
+    /** Id of the first note. */
+    from: MhdIdSchema,
+    /** Id of the last note. */
+    to: MhdIdSchema,
+  })
+  .meta({ id: 'Slur' });
+
 export const TrackSchema = z
   .strictObject({
     id: MhdIdSchema,
@@ -396,6 +418,7 @@ export const TrackSchema = z
       solo: z.boolean(),
     }),
     staves: z.array(StaffSchema).min(1),
+    slurs: z.array(SlurSchema).min(1).optional(),
   })
   .meta({ id: 'Track' });
 
@@ -437,6 +460,7 @@ export type KeySignature = z.infer<typeof KeySignatureSchema>;
 export type TempoChange = z.infer<typeof TempoChangeSchema>;
 export type Position = z.infer<typeof PositionSchema>;
 export type Track = z.infer<typeof TrackSchema>;
+export type Slur = z.infer<typeof SlurSchema>;
 export type InstrumentFamily = (typeof INSTRUMENT_FAMILIES)[number];
 export type Staff = z.infer<typeof StaffSchema>;
 export type Bar = z.infer<typeof BarSchema>;

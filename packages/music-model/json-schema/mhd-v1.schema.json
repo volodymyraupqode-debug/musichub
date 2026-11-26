@@ -437,6 +437,13 @@
           "items": {
             "$ref": "#/$defs/Staff"
           }
+        },
+        "slurs": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Slur"
+          }
         }
       },
       "required": [
@@ -875,6 +882,10 @@
             "heavy"
           ]
         },
+        "tenuto": {
+          "type": "boolean",
+          "const": true
+        },
         "harmonic": {
           "type": "object",
           "properties": {
@@ -1049,6 +1060,26 @@
           ]
         }
       },
+      "additionalProperties": false
+    },
+    "Slur": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/MhdId"
+        },
+        "from": {
+          "$ref": "#/$defs/MhdId"
+        },
+        "to": {
+          "$ref": "#/$defs/MhdId"
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to"
+      ],
       "additionalProperties": false
     },
     "Extensions": {

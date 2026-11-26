@@ -39,6 +39,7 @@ export {
   NoteEffectsSchema,
   NoteSchema,
   PositionSchema,
+  SlurSchema,
   StaffSchema,
   SustainPedalSchema,
   TRACK_COLORS,
@@ -60,6 +61,7 @@ export {
   type MhdDocument,
   type Note,
   type Position,
+  type Slur,
   type Staff,
   type SustainPedal,
   type TempoChange,
@@ -67,6 +69,15 @@ export {
   type Track,
   type Voice,
 } from './schema/document.js';
+export { DEFAULT_DYNAMIC, effectiveDynamics, type Dynamic } from './derive/dynamics.js';
+export {
+  concertKeyAt,
+  writtenKeyAt,
+  writtenKeyShift,
+  writtenKeySignature,
+  writtenPitch,
+  writtenSpelling,
+} from './derive/transposition.js';
 export { createMhdJsonSchema } from './schema/json-schema.js';
 export {
   ISSUE_CODES,

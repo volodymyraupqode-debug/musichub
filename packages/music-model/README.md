@@ -7,7 +7,7 @@ The MusicHub Document (MHD) is the only persisted music format (ADR-0002). This 
 ```
 MhdDocument  format 'musichub', schemaVersion 1, id (UUIDv7), meta, masterBars[1..5000], tracks[1..64], extensions?
 ├─ MasterBar   bar data shared by all tracks: time/key signature, tempo changes, repeats, endings, section, direction, fermatas
-└─ Track       name, color (track.1…track.12), instrument, mixer, staves[1..]
+└─ Track       name, color (track.1…track.12), instrument, mixer, staves[1..], slurs?
    └─ Staff    display, stringed? (tuning, capo, fretCount), transpositionPitch?, hand?, bars[one per master bar]
       └─ Bar   clef?, ottava?, sustainPedal?, voices[1..4]
          └─ Voice → Beat (duration, rest, notes, grace, dynamic, effects, text, lyrics) → Note
@@ -18,6 +18,17 @@ MhdDocument  format 'musichub', schemaVersion 1, id (UUIDv7), meta, masterBars[1
 - `rest: true` ⇔ `notes` is empty. A beat that is not a rest has at least one note.
 - Optional flags (`repeatStart`, `isAnacrusis`, `tiedFromPrevious`, note and beat effect flags) are `true` or absent; `false` is rejected so every state has one spelling. Required booleans (`rest`, `percussion`, `mute`, `solo`, `display.*`) keep `true`/`false`.
 - Keyboard tracks are `piano` and `synth` (`KEYBOARD_FAMILIES`): only they may use `hand` and the sustain pedal, with one or two staves.
+
+### Tenuto, slurs, transposition and dynamics (ADR-0002 A20–A23)
+
+- **Tenuto:** `Note.effects.tenuto` is a flag of its own, independent of `accent` and `staccato`.
+- **Slurs:** `Track.slurs` is a list of `{ id, from, to }` with note ids. A slur goes from a note to a strictly later note of the same track (any staff, voice or bar); overlapping, nested and chained slurs and several slurs per note are valid (invariant 16). Slurs have no playback meaning; ties and hammer-ons are separate.
+- **Transposing staves:** `MasterBar.keySignature` is the concert key; `Note.pitch` and `Note.spelling` are sounding; `Staff.transpositionPitch` follows sounding = written + transpositionPitch. `writtenKeySignature`, `writtenKeyAt`, `writtenSpelling` and `writtenPitch` derive the written notation (fewest accidentals; at a ±6 tie the concert key's sign, sharps for C; spellings shifted by the same fifths step as the key). They never change the document.
+- **Dynamics:** before the first mark of a voice the dynamic is `f` (`DEFAULT_DYNAMIC`); a mark carries in score order for the same voice number on the same staff, across bars and through bars where the voice is absent. `effectiveDynamics(staff)` returns the dynamic of every beat.
+
+```json
+"slurs": [{ "id": "NS0000000081", "from": "NS0000000004", "to": "NS0000000008" }]
+```
 
 ### Ottava and fermatas
 
@@ -77,7 +88,7 @@ const { valid, issues, document } = validateDocument(json);
 
 | # | Invariant | Codes |
 |---|---|---|
-| 1 | Element ids are unique in the document | `duplicate-id` |
+| 1 | Element ids, slur ids included, are unique in the document | `duplicate-id` |
 | 2 | Every staff has one bar per master bar | `bar-count-mismatch` |
 | 3 | Voices may be incomplete (warning), never overfull. Grace beats take no time; empty secondary voices and a pickup bar 0 are not incomplete | `voice-overfull`, `voice-incomplete` |
 | 4 | Stringed notes: string ∈ [1, strings], fret ∈ [0, fretCount], one note per string per beat; capo ≤ fretCount; one pitch authority | `string-out-of-range`, `fret-out-of-range`, `duplicate-string-in-beat`, `capo-out-of-range`, `note-pitch-missing`, `note-pitch-conflict` |
@@ -92,6 +103,7 @@ const { valid, issues, document } = validateDocument(json);
 | 13 | Percussion notes have no string or fret; `drumTechnique` only on percussion tracks, with a GM key allowed for it | `percussion-note-with-string`, `drum-technique-*` |
 | 14 | Every pass before the last of a repeat reaches a played repeat end of its ending group: for each pass 1…count − 1, at least one repeat-end bar of the group has no alternate endings or lists that pass (several repeat ends per group allowed; ADR-0002 A11, A19). Checks pass coverage only, not the playback order | `repeat-pass-without-repeat-end` |
 | 15 | At most one `segno` and one `coda` direction per document (`segnoSegno` and `doubleCoda` are not counted; ADR-0002 A14) | `navigation-marker-duplicate` |
+| 16 | Slurs: both endpoints are notes of the slur's track; `to` is strictly after `from` in score order (bar, onset, grace before main beat, grace runs by position; a trailing grace beat at the voice end); no two slurs with the same endpoints (ADR-0002 A21) | `slur-endpoint-missing`, `slur-endpoint-other-track`, `slur-order-invalid`, `slur-duplicate` |
 | — | A `drums` track has `percussion: true`; a brush is not longer than its beat | `drums-not-percussion`, `brush-longer-than-beat` |
 | — | Warning: no non-grace beat (rests count) of any voice, staff or track starts at a fermata position | `fermata-not-on-beat` |
 | — | Warning: an ottava on a percussion staff or a staff without standard notation is not shown | `ottava-not-displayed` |
@@ -128,9 +140,12 @@ Canonical MHD v1 fixtures live in `fixtures/v1/` (details: `fixtures/v1/README.m
 - `guitar-basic.mhd.json`: stringed model, tablature and guitar techniques.
 - `piano-grand-staff.mhd.json`: grand staff with hands and the sustain pedal.
 - `band-repeats.mhd.json`: four tracks, pickup, repeat with two endings, D.S. al Coda, drum techniques.
+- `notation-semantics.mhd.json`: B♭ clarinet (transposing, concert keys F → D major) and piano grand staff with tenuto, overlapping, nested, chained, cross-voice and cross-staff slurs and per-voice dynamics.
 
 Each fixture has a `<name>.expected.json` sidecar with its validation result and structural counts (no playback data). `src/fixtures.test.ts` imports both as JSON modules, requires zero validation issues, compares the counts and runs negative mutations on in-memory copies. Run them with `pnpm --filter @musichub/music-model test`.
 
 ## Versioning
 
 `schemaVersion` is an integer. Every change to the schema structure increments it, including a new optional field or enum value: the schemas are strict, so older clients would otherwise reject new documents with a schema error instead of the update prompt (MUSIC_ENGINE.md §3.4). Until the first public release of MHD v1, while no saved documents exist, v1 may still change without a bump. Each version bump adds a migration (`migrations/vN_to_vN+1`, not implemented in v1). Golden fixtures per version live in `fixtures/v<N>/`.
+
+Stability boundary (ADR-0002 A24): repository fixtures and tests are not saved documents. The first user-accessible external `.mhd.json`, IndexedDB draft or server revision marks the boundary; production user saving stays unavailable until the owner declares MHD v1 stable (not declared yet). After that declaration, structural and semantic breaking changes both need a `schemaVersion` bump and a migration.

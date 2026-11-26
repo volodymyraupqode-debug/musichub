@@ -10,6 +10,8 @@
 > - Added §5.2 (playback-score variants) and spike S7.
 > - MIDI devices moved to `midi-engine`.
 >
+> **Changelog v0.2.12:** MHD v1 notation semantics (owner decisions 2026‑11‑25, ADR-0002 Amendment 10, A20–A24): `Note.effects.tenuto`; `Track.slurs` with invariant 16; master-bar keys are concert keys, `pitch` and `spelling` are sounding, written keys and spellings are derived; default dynamic *f* carried per staff and voice number in score order; §3.4 stability boundary (no production saving before the owner declares MHD v1 stable; structural and semantic breaking changes after it need a version bump and a migration). Phase 1 PR 3a implements them in `music-model`. §10 Q0 note status updated.
+>
 > **Changelog v0.2.11:** §3.3 invariant 14 stated as the group-level pass-coverage rule (owner decision C2, ADR-0002 A19): an ending group may hold several repeat ends; their playback order is deferred to the Phase 1 timeline work. Invariants 14 and 15 implemented in `validateDocument` (`repeat-pass-without-repeat-end`, `navigation-marker-duplicate`). §10 Q0 note: PR 1 merged, PR 2 in progress. No criterion or spike status changes.
 >
 > **Changelog v0.2.10:** §10 Q0 note aligned with the owner's incremental Phase 1 approval (2026‑11‑25, ROADMAP.md §Phase 1 status): PR 1 implemented locally, not yet reviewed or merged; no later PR authorised. No criterion, spike status or risk changes.
@@ -178,7 +180,7 @@ type MhdDocument = {
 type MasterBar = {
   id: MhdId;
   timeSignature?: { numerator: number /* 1..32 */; denominator: 1|2|4|8|16|32 }; // only when it changes
-  keySignature?: { fifths: number /* -7..7 */; mode: 'major' | 'minor' };
+  keySignature?: { fifths: number /* -7..7 */; mode: 'major' | 'minor' }; // concert key (A22)
   tempoChanges?: { position: Position; bpm: number /* quarter notes, 20..400 */; label?: string }[];
   tripletFeel?: 'none' | '8th' | '16th' | 'dotted8th' | 'dotted16th' | 'scottish8th' | 'scottish16th';
   repeatStart?: true;
@@ -197,13 +199,14 @@ type Track = {
   instrument: { family: InstrumentFamily; midiProgram: number /*0-127*/; bank?: number /*0-16383*/; percussion: boolean };
   mixer: { volume: number /*0..1*/; pan: number /*-1..1*/; mute: boolean; solo: boolean };
   staves: Staff[];                    // 1 for guitar, 2 for piano grand staff, …
+  slurs?: Slur[];                     // ≥ 1 entry; invariant 16
 };
 
 type Staff = {
   id: MhdId;
   display: { standard: boolean; tab: boolean; slash: boolean; numbered: boolean };
   stringed?: { tuning: number[] /* 4..10 MIDI pitches, highest string first */; capo: number; fretCount: number };
-  transpositionPitch?: number;        // e.g. -12 for guitar written an octave higher
+  transpositionPitch?: number;        // sounding = written + transpositionPitch, e.g. -12 guitar, -2 B♭ clarinet
   hand?: 'left' | 'right';            // keyboard staves; default for a 2-staff keyboard track: upper = right, lower = left
   bars: Bar[];                        // length === masterBars.length (invariant)
 };
@@ -235,17 +238,19 @@ type Note = {
   // Pitch: exactly one authority. Stringed staves: string+fret is authoritative, pitch derived from tuning+capo.
   string?: number;                    // 1 = highest string
   fret?: number;                      // 0..36
-  pitch?: number;                     // MIDI 0-127; authoritative on non-stringed staves; GM percussion key on percussion tracks
-  spelling?: { step: 'C'|'D'|'E'|'F'|'G'|'A'|'B'; alter: -2|-1|0|1|2 }; // optional, for notation accidentals
+  pitch?: number;                     // MIDI 0-127, sounding; authoritative on non-stringed staves; GM percussion key on percussion tracks
+  spelling?: { step: 'C'|'D'|'E'|'F'|'G'|'A'|'B'; alter: -2|-1|0|1|2 }; // optional, sounding spelling for notation accidentals
   drumTechnique?: DrumTechnique;     // percussion only; must be allowed for pitch (see below)
   velocity?: number;                  // 1..127, default from dynamic
   hand?: 'left' | 'right';            // overrides Staff.hand (cross-staff passages)
   tiedFromPrevious?: true;            // continues the previous note of the same pitch (tie destination)
   effects?: { bend?: BendPoint[]; slideOut?: 'shift'|'legato'|'outUp'|'outDown'; slideIn?: 'intoFromBelow'|'intoFromAbove';
               hammerPullOrigin?: true; palmMute?: true; letRing?: true; deadNote?: true; ghost?: true;
-              staccato?: true; accent?: 'normal'|'heavy'; harmonic?: { type: 'natural'|'artificial'|'pinch'|'tap'|'semi'|'feedback'; fret?: number };
+              staccato?: true; accent?: 'normal'|'heavy'; tenuto?: true; harmonic?: { type: 'natural'|'artificial'|'pinch'|'tap'|'semi'|'feedback'; fret?: number };
               vibrato?: 'slight'|'wide'; trill?: { fret: number; speed: 16|32|64 }; fingering?: { left?: number; right?: 'p'|'i'|'m'|'a'|'c' } };
 };
+
+type Slur = { id: MhdId; from: MhdId /* first note */; to: MhdId /* last note */ }; // no playback meaning
 
 type MhdId = string;                  // 12 characters base62, unique in the document
 type DocumentId = string;             // lowercase UUIDv7
@@ -265,7 +270,10 @@ type DrumTechnique = 'halfOpen' | 'rimshot' | 'edge' | 'choke';
   3. To Coda and Fine are ignored before the jump.
 
   Invariants 14 and 15 (§3.3) reject the cases these rules do not cover. For a `repeatEnd` without its own start after an earlier repeat, alphaTab 1.9.0 plays a different order (S5 finding D1); the adapter may set an implicit `repeatStart` in the **Playback Score only** to reproduce the MHD order, leaving the Render Score unchanged (§5.2). This approach is **not yet verified** against alphaTab; Phase 1 must verify it with a parity test and report a failure to the owner instead of changing these semantics.
-- **Default dynamic (open):** MHD v1 does not define the dynamic before the first `Beat.dynamic`, so `Note.velocity`'s "default from dynamic" is undefined there. The adapter currently assumes *f*; that is not an MHD rule. Decided during Phase 1 MHD v1 finalisation (ADR-0002 A15): *f* as the MHD default, or the default stays with the adapter. Velocity parity with alphaTab (velocity from dynamics) depends on it.
+- **Default dynamic** (owner decision B1 2026‑11‑25, ADR-0002 A23; replaces the open question of A15): before the first `Beat.dynamic` of a voice the dynamic is *f*. A mark applies from its beat onwards in **score order** (repeats and jumps do not rewind it) for the same voice number on the same staff, across bars; a voice absent from some bars keeps its state, and staves are independent. Rests and grace beats carry it; a mark on a rest applies onwards. `music-model` derives it (`effectiveDynamics`); `Note.velocity` defaults from it.
+- **Tenuto** (A20): `Note.effects.tenuto` is independent of `accent` and `staccato`. alphaTab 1.9.0 has one accentuation per note: the adapter keeps the accent and reports the tenuto as a conversion loss (A2 diagnostics).
+- **Slurs** (A21, invariant 16): `Track.slurs` holds slurs as objects from one note to a later note of the same track. Overlapping, nested, chained, cross-voice, cross-staff and cross-bar slurs and several slurs per note are valid, also on percussion tracks. Ties (`tiedFromPrevious`) and hammer-ons stay separate concepts. Slurs have no playback meaning. alphaTab 1.9.0 has one slur origin and one destination per note: slurs that share an endpoint cannot all be represented, and the adapter reports each one it drops as a conversion loss.
+- **Transposing instruments** (A22): `MasterBar.keySignature` is the concert key; `Note.pitch` and `Note.spelling` are sounding. The written key of a staff is derived (`writtenKeySignature`): shift by −`transpositionPitch` semitones, take the enharmonic key with the fewest accidentals, at a ±6 tie follow the concert key's sign (sharps for C). The written spelling is shifted by the same fifths step as the written key, so key and notes agree; beyond a double accidental the same pitch class closest to the written key is used. Derivation never changes `pitch` or `spelling`. alphaTab's internal key-transposition table is not MHD semantics.
 - **Brush** duration is an MHD `Duration`, so it does not depend on PPQ or an engine.
 - **Ottava** (`Bar.ottava`, decision Q-D): an octave line over every beat of every voice of the current bar on that staff. It applies to this bar only and never carries into the next bar; drawing consecutive bars as one continuous line is a rendering choice, not MHD semantics. Display only: `Note.pitch`, and the pitch derived from string and fret, is always the sounding pitch and is never rewritten by `ottava`; only the written position moves. It is distinct from a clef ottava (MHD has none; a written-octave instrument uses `Staff.transpositionPitch`). The adapter maps it to alphaTab `Beat.ottava` on every beat, including grace beats, never to `Bar.clefOttava`; alphaTab plays the stored pitch unchanged.
 - **Fermatas** (`MasterBar.fermatas`, decision Q-E): a fermata belongs to the master bar and applies to every track and staff at its `position`. Positions use the same coordinate system as tempo changes and pedal positions: a reduced fraction of the nominal bar length of the time signature in `[0, 1)`, also in a pickup bar. Several fermatas per bar are allowed. A missing `type` is a standard (medium) fermata. MHD stores no playback duration or multiplier; the adapter never rounds or moves a fermata whose position is not an integer alphaTab tick or not a beat start, it reports a diagnostic instead.
@@ -276,7 +284,7 @@ type DrumTechnique = 'halfOpen' | 'rimshot' | 'edge' | 'choke';
 
 Each invariant has stable issue codes (`ISSUE_CODES`); see `packages/music-model/README.md`.
 
-1. All element `id`s (12 characters base62, generated with `crypto.getRandomValues`) are unique within the document. The document `id` is a UUIDv7 (§3.2).
+1. All element `id`s (12 characters base62, generated with `crypto.getRandomValues`), slur ids included, are unique within the document. The document `id` is a UUIDv7 (§3.2).
 2. Every staff has `bars.length === masterBars.length`.
 3. A bar's voices may be *incomplete* (sum < time signature) while editing; overfull voices are invalid. Incompleteness is reported as a warning, playback fills with rests. Grace beats take no time of their own; empty secondary voices (index ≥ 1) produce no warning; a pickup bar 0 (`isAnacrusis`) is not incomplete.
 4. Stringed staff notes have `string` ∈ [1, tuning.length] and `fret` ∈ [0, fretCount]; no two notes on the same string in one beat; `capo` ≤ `fretCount`; every note has exactly one pitch authority.
@@ -292,7 +300,9 @@ Each invariant has stable issue codes (`ISSUE_CODES`); see `packages/music-model
 14. Every pass before the final pass of a repeat reaches a played repeat end of its ending group: for each pass p from 1 to count − 1, at least one repeat-end bar of the group is played on pass p (it has no `alternateEndings`, or they list p). A group may hold several repeat ends that cover different passes (invariant 9 allows them; owner decision C2, ADR-0002 A19). This rule checks pass coverage only: the playback order of a group with several repeat ends is **not defined yet** and is left to the Phase 1 timeline work. Rejected example: `|: 1 |1. 2 :|(3×) |2.3. 3 | 4` (owner decision D2-a 2026‑11‑25, ADR-0002 A11; the pattern is invalid, alphaTab's playback of it is not MHD semantics).
 15. A document has at most one `segno` and at most one `coda` direction (ADR-0002 A14). Documents with several are not supported; their navigation is untested.
 
-Invariants 14 and 15 are implemented in `validateDocument` (issue codes `repeat-pass-without-repeat-end` and `navigation-marker-duplicate`; Phase 1 PR 2).
+16. Slurs (A21): `from` and `to` are ids of notes (not beats, bars or other elements) of the slur's own track; `to` comes strictly after `from` in score order, ordered by master bar, onset in the bar, then a grace beat before the non-grace beat at its onset, and grace beats of one run in one voice by their position. A trailing grace beat with no following non-grace beat has the voice's end onset (Q4). Repeats are ignored. No two slurs of a track have the same `from` and `to`. Deleting a referenced note makes the document invalid.
+
+Invariants 14 and 15 are implemented in `validateDocument` (issue codes `repeat-pass-without-repeat-end` and `navigation-marker-duplicate`; Phase 1 PR 2). Invariant 16 uses `slur-endpoint-missing`, `slur-endpoint-other-track`, `slur-order-invalid` and `slur-duplicate` (Phase 1 PR 3a).
 
 Further checks: a `drums` track has `percussion: true`; a brush is not longer than its beat. Warnings: `fermata-not-on-beat` when no non-grace beat (rests count) of any voice, staff or track starts at a fermata position; `ottava-not-displayed` when `Bar.ottava` is set on a percussion staff or a staff without standard notation.
 
@@ -300,6 +310,7 @@ Further checks: a `drums` track has `percussion: true`; a brush is not longer th
 
 - `schemaVersion` is an integer. **Every change to the schema structure increments it, including a new optional field or enum value.** MHD schemas are strict and clients reject unknown keys, so an "additive" change without a new version would make older clients fail with a schema error instead of the update prompt.
 - **Before the first public release of MHD v1**, while no saved documents exist, the v1 schema may still change without a version bump. From the first public release (or the first saved document, whichever comes first) the rule above applies to every structural change.
+- **Stability boundary** (owner decision C1 2026‑11‑25, ADR-0002 A24): repository fixtures and tests are not saved documents. The first user-accessible external `.mhd.json`, IndexedDB draft or server revision marks the boundary, and production user saving stays unavailable until the owner explicitly declares MHD v1 stable. After that declaration, **structural and semantic** breaking changes both need a `schemaVersion` bump and a migration. Not declared yet.
 - `music-model/migrations/vN_to_vN+1.ts` pure functions; `migrate(doc)` upgrades step-by-step on load. Downgrades are not supported; older clients receive `422 unsupported_schema_version` style errors locally and are prompted to update.
 - `extensions` are preserved verbatim through load/save by every client.
 - Golden fixtures for each schema version live in `music-model/fixtures/v<N>/`.
@@ -365,7 +376,7 @@ Options: `toAlphaTab(doc, { purpose: 'render' | 'playback' | 'export', tracks, p
 
 | Export | Phase | Implementation |
 |---|---|---|
-| `.mhd.json` | 1 | native |
+| `.mhd.json` | 1 (not offered to users before the owner declares MHD v1 stable, §3.4) | native |
 | Guitar Pro `.gp` | 1 | `Gp7Exporter` |
 | MIDI `.mid` | 1 | `MidiFileGenerator` + `MidiFile.toBinary()` |
 | alphaTex `.atex` | 1 | `AlphaTexExporter` |
@@ -485,7 +496,7 @@ The canonical model is **notation-first** (beats with rhythmic values). The pian
 
 ## 10. Phase 0 spikes (must complete before Phase 1 code)
 
-**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. No open disposition: every required owner disposition is recorded, and the owner declared Phase 0 complete on 2026-11-25 under Q0 Option C (ROADMAP.md §Phase 0). Dispositions do not pass any criterion: the S3, S4, S5 and S7 pass criteria remain not met, and S6's remains unverified (fallback accepted). Phase 1 was approved to begin by a separate owner decision on 2026-11-25, through an incremental, owner-reviewed pull-request workflow (ROADMAP.md §Phase 1 status). PR 1 (`packages/music-engine` alphaTab integration boundary) is merged (PR #27). PR 2 (MHD invariants 14 and 15 in `packages/music-model`) is authorised and implemented locally, not yet reviewed or merged; it is not ready for merge until the separate S5 fixture adaptation task is done (ROADMAP.md §Phase 1 status). No later Phase 1 PR may begin until PR 2 is reviewed and merged and the owner explicitly authorizes the next step. This approval does not mean any Phase 1 exit criterion is met, and it resolves no Phase 0 technical gap, open decision or risk. S7's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 8: sustain pedal in Phase 1, hand split in Phase 2); its pass criterion is not met. S4's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 7: Phase 1 importer and MusicXML work, Phase 7 independent GP3–GP8 evidence); its pass criterion is not met. S3's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 6: gap placed in Phase 3, Phase 1 architecture constraint); its pass criterion is not met. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
+**Q0 (owner decision 2026-11-25, Option C; ROADMAP.md §Phase 0).** "Complete" means that each spike either meets its pass criterion below or has a disposition recorded by the owner: an accepted alternative (S3 only under ADR-0002 A9) or an explicit placement of the gap in a named later phase. A disposition does not mean the criterion was met; the pass criteria below are unchanged. No open disposition: every required owner disposition is recorded, and the owner declared Phase 0 complete on 2026-11-25 under Q0 Option C (ROADMAP.md §Phase 0). Dispositions do not pass any criterion: the S3, S4, S5 and S7 pass criteria remain not met, and S6's remains unverified (fallback accepted). Phase 1 was approved to begin by a separate owner decision on 2026-11-25, through an incremental, owner-reviewed pull-request workflow (ROADMAP.md §Phase 1 status). PR 1 (`packages/music-engine` alphaTab integration boundary) is merged (PR #27). PR 2 (MHD invariants 14 and 15) and the separate S5 fixture adaptation are merged together (PR #28). PR 3a (MHD v1 schema and validation per ADR-0002 Amendment 10) is authorised and implemented locally, not yet reviewed or merged; no later Phase 1 PR may begin until it is merged and the owner explicitly authorizes the next step. This approval does not mean any Phase 1 exit criterion is met, and it resolves no Phase 0 technical gap, open decision or risk. S7's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 8: sustain pedal in Phase 1, hand split in Phase 2); its pass criterion is not met. S4's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 7: Phase 1 importer and MusicXML work, Phase 7 independent GP3–GP8 evidence); its pass criterion is not met. S3's disposition was recorded on 2026-11-25 (ADR-0002 Amendment 6: gap placed in Phase 3, Phase 1 architecture constraint); its pass criterion is not met. S5's open semantics were decided on 2026-11-25 (ADR-0002 Amendment 5); its pass criterion still needs the Phase 1 parity tests. S6 is decided through the accepted fallback (§5.1), its pass criterion unverified.
 
 | ID | Question | Pass criteria |
 |---|---|---|

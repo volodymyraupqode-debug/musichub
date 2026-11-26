@@ -94,6 +94,131 @@ function checkDocument(doc: MhdDocument, issues: Collector): void {
     checkTrack(doc, track, ['tracks', trackIndex], timeSignatures, issues);
   });
   checkFermataOnsets(doc, timeSignatures, issues);
+  checkSlurs(doc, issues);
+}
+
+// ── Invariant 16: slurs ──────────────────────────────────────────────────────
+
+/**
+ * Score position of a note (ADR-0002 A21): master bar, onset in the bar, and whether the
+ * beat is a grace beat. A grace beat takes the onset of the next non-grace beat of its voice and
+ * comes before that beat; a trailing grace beat with no following non-grace beat takes the
+ * voice's end onset (Q4). Repeats and jumps are ignored: this is score order, not playback order.
+ */
+type ScorePosition = {
+  track: number;
+  bar: number;
+  onset: Rational;
+  grace: boolean;
+  /** Identity of the voice in this bar and the beat's index in it, to order grace runs. */
+  voiceKey: string;
+  beat: number;
+};
+
+function notePositions(doc: MhdDocument): Map<string, ScorePosition> {
+  const positions = new Map<string, ScorePosition>();
+  doc.tracks.forEach((track, t) => {
+    track.staves.forEach((staff, s) => {
+      staff.bars.forEach((bar, b) => {
+        bar.voices.forEach((voice, v) => {
+          // Onset of every beat; grace beats get the onset of the next non-grace beat.
+          const onsets: Rational[] = [];
+          let start = ZERO;
+          let pendingGrace: number[] = [];
+          voice.beats.forEach((beat, index) => {
+            if (beat.grace !== undefined) {
+              pendingGrace.push(index);
+              return;
+            }
+            for (const grace of pendingGrace) onsets[grace] = start;
+            pendingGrace = [];
+            onsets[index] = start;
+            start = add(start, durationTicks(beat.duration));
+          });
+          for (const grace of pendingGrace) onsets[grace] = start; // trailing grace beats
+          voice.beats.forEach((beat, index) => {
+            const onset = onsets[index] ?? ZERO;
+            for (const note of beat.notes) {
+              positions.set(note.id, {
+                track: t,
+                bar: b,
+                onset,
+                grace: beat.grace !== undefined,
+                voiceKey: `${s}/${b}/${v}`,
+                beat: index,
+              });
+            }
+          });
+        });
+      });
+    });
+  });
+  return positions;
+}
+
+/** Negative when `a` comes before `b` in score order, 0 when neither does. */
+function compareScorePositions(a: ScorePosition, b: ScorePosition): number {
+  if (a.bar !== b.bar) return a.bar - b.bar;
+  const byOnset = compare(a.onset, b.onset);
+  if (byOnset !== 0) return byOnset;
+  if (a.grace !== b.grace) return a.grace ? -1 : 1; // a grace beat precedes its main beat
+  // Grace beats of one run in one voice are ordered by their position in the voice.
+  if (a.grace && a.voiceKey === b.voiceKey) return a.beat - b.beat;
+  return 0;
+}
+
+/**
+ * Invariant 16 (ADR-0002 A21): every slur goes from a note to a strictly later note of the same
+ * track (any staff, voice or bar); its endpoints must be note ids; no two slurs of a track share
+ * both endpoints. Overlapping, nested and chained slurs and several slurs per note are valid.
+ */
+function checkSlurs(doc: MhdDocument, issues: Collector): void {
+  const positions = notePositions(doc);
+  doc.tracks.forEach((track, t) => {
+    const pairs = new Set<string>();
+    track.slurs?.forEach((slur, l) => {
+      const path = ['tracks', t, 'slurs', l];
+      const from = positions.get(slur.from);
+      const to = positions.get(slur.to);
+      let resolved = true;
+      for (const [end, position] of [
+        ['from', from],
+        ['to', to],
+      ] as const) {
+        if (position === undefined) {
+          resolved = false;
+          issues.error(
+            ISSUE_CODES.slurEndpointMissing,
+            [...path, end],
+            `Slur ${end} "${slur[end]}" is not the id of a note`,
+          );
+        } else if (position.track !== t) {
+          resolved = false;
+          issues.error(
+            ISSUE_CODES.slurEndpointOtherTrack,
+            [...path, end],
+            `Slur ${end} "${slur[end]}" is a note of another track`,
+          );
+        }
+      }
+      if (resolved && from && to && compareScorePositions(from, to) >= 0) {
+        issues.error(
+          ISSUE_CODES.slurOrderInvalid,
+          path,
+          'A slur must end on a note that comes strictly after its first note',
+        );
+      }
+      const pair = `${slur.from}>${slur.to}`;
+      if (pairs.has(pair)) {
+        issues.error(
+          ISSUE_CODES.slurDuplicate,
+          path,
+          'Another slur of this track has the same first and last note',
+        );
+      }
+      pairs.add(pair);
+    });
+  });
 }
 
 // ── Invariant 1: unique ids ──────────────────────────────────────────────────
@@ -133,6 +258,7 @@ function checkUniqueIds(doc: MhdDocument, issues: Collector): void {
         });
       });
     });
+    track.slurs?.forEach((slur, l) => visit(slur.id, ['tracks', t, 'slurs', l, 'id']));
   });
 }
 

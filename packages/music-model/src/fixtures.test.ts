@@ -3,8 +3,12 @@ import bandExpected from '../fixtures/v1/band-repeats.expected.json' with { type
 import band from '../fixtures/v1/band-repeats.mhd.json' with { type: 'json' };
 import guitarExpected from '../fixtures/v1/guitar-basic.expected.json' with { type: 'json' };
 import guitar from '../fixtures/v1/guitar-basic.mhd.json' with { type: 'json' };
+import notationExpected from '../fixtures/v1/notation-semantics.expected.json' with { type: 'json' };
+import notation from '../fixtures/v1/notation-semantics.mhd.json' with { type: 'json' };
 import pianoExpected from '../fixtures/v1/piano-grand-staff.expected.json' with { type: 'json' };
 import piano from '../fixtures/v1/piano-grand-staff.mhd.json' with { type: 'json' };
+import { effectiveDynamics } from './derive/dynamics.js';
+import { writtenKeyAt, writtenSpelling, concertKeyAt } from './derive/transposition.js';
 import type { MhdDocument } from './schema/document.js';
 import { FixtureExpectationSchema, countStructure } from './test-support/fixture-stats.js';
 import { ISSUE_CODES } from './validate/issues.js';
@@ -15,6 +19,7 @@ const FIXTURES: readonly { file: string; source: unknown; expected: unknown }[] 
   { file: 'guitar-basic.mhd.json', source: guitar, expected: guitarExpected },
   { file: 'piano-grand-staff.mhd.json', source: piano, expected: pianoExpected },
   { file: 'band-repeats.mhd.json', source: band, expected: bandExpected },
+  { file: 'notation-semantics.mhd.json', source: notation, expected: notationExpected },
 ];
 
 function must<T>(value: T | undefined): T {
@@ -232,5 +237,82 @@ describe('fixture C (band) negative mutations', () => {
 describe('canonical fixtures stay untouched by mutations', () => {
   it('still validates every imported fixture without issues', () => {
     for (const { source } of FIXTURES) expect(validateDocument(source).issues).toEqual([]);
+  });
+});
+
+describe('fixture D (notation semantics)', () => {
+  const doc = must(validateDocument(notation).document);
+  const clarinet = must(doc.tracks[0]);
+  const piano = must(doc.tracks[1]);
+  const clarinetStaff = must(clarinet.staves[0]);
+  const beatsOf = (staff: number, bar: number, voice = 0, track = clarinet) =>
+    must(must(must(track.staves[staff]).bars[bar]).voices[voice]).beats;
+
+  it('holds overlapping, nested, chained, cross-voice and cross-staff slurs', () => {
+    expect(clarinet.slurs).toHaveLength(4);
+    expect(piano.slurs).toHaveLength(2);
+  });
+
+  it('holds tenuto alone, with an accent and with staccato', () => {
+    const effects = doc.tracks
+      .flatMap((t) => t.staves)
+      .flatMap((s) => s.bars)
+      .flatMap((b) => b.voices)
+      .flatMap((v) => v.beats)
+      .flatMap((b) => b.notes)
+      .map((n) => n.effects)
+      .filter((e) => e?.tenuto === true);
+    expect(effects).toEqual([
+      { tenuto: true },
+      { tenuto: true, accent: 'normal' },
+      { tenuto: true, staccato: true },
+    ]);
+  });
+
+  it('derives the written keys of the B♭ clarinet from the concert keys', () => {
+    expect([0, 1, 2].map((bar) => concertKeyAt(doc.masterBars, bar).fifths)).toEqual([-1, -1, 2]);
+    expect([0, 1, 2].map((bar) => writtenKeyAt(doc.masterBars, bar, clarinetStaff).fifths)).toEqual(
+      [1, 1, 4],
+    );
+    expect(writtenKeyAt(doc.masterBars, 2, must(piano.staves[0])).fifths).toBe(2);
+    const fSharp = must(must(beatsOf(0, 2)[0]).notes[0]);
+    expect(writtenSpelling(must(fSharp.spelling), concertKeyAt(doc.masterBars, 2), -2)).toEqual({
+      step: 'G',
+      alter: 1,
+    });
+  });
+
+  it('carries dynamics per voice from the default f', () => {
+    const clarinetDynamics = effectiveDynamics(clarinetStaff);
+    expect([...beatsOf(0, 0), ...beatsOf(0, 2)].map((b) => clarinetDynamics.get(b.id))).toEqual([
+      'p',
+      'p',
+      'p',
+      'p',
+      'mf',
+      'mf',
+      'mf',
+    ]);
+    const upper = effectiveDynamics(must(piano.staves[0]));
+    expect(beatsOf(0, 1, 0, piano).map((b) => upper.get(b.id))).toEqual(['mp', 'mp']);
+    expect(beatsOf(0, 1, 1, piano).map((b) => upper.get(b.id))).toEqual(['f', 'f']);
+    expect(beatsOf(0, 2, 0, piano).map((b) => upper.get(b.id))).toEqual(['mp', 'mp', 'mp']);
+  });
+
+  it('reports a slur whose note was deleted', () => {
+    const changed = mutate(notation, (d) => {
+      const beat = must(must(must(must(must(d.tracks[0]).staves[0]).bars[0]).voices[0]).beats[2]);
+      beat.rest = true;
+      beat.notes = [];
+    });
+    expectIssue(changed, ISSUE_CODES.slurEndpointMissing, ['tracks', 0, 'slurs', 0, 'to']);
+  });
+
+  it('reports a slur that runs backwards', () => {
+    const changed = mutate(notation, (d) => {
+      const slur = must(must(d.tracks[0]).slurs?.[0]);
+      [slur.from, slur.to] = [slur.to, slur.from];
+    });
+    expectIssue(changed, ISSUE_CODES.slurOrderInvalid, ['tracks', 0, 'slurs', 0]);
   });
 });

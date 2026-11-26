@@ -1,0 +1,17 @@
+{
+  "fixture": "notation-semantics.mhd.json",
+  "schemaVersion": 1,
+  "validation": { "valid": true, "issueCodes": [] },
+  "counts": {
+    "tracks": 2,
+    "staves": 3,
+    "masterBars": 3,
+    "voices": 10,
+    "beats": 27,
+    "rests": 0,
+    "notes": 27,
+    "graceBeats": 0,
+    "tiedNotes": 0,
+    "sustainPedalEvents": 0
+  }
+}
