@@ -78,6 +78,12 @@ export {
   writtenPitch,
   writtenSpelling,
 } from './derive/transposition.js';
+export {
+  migrate,
+  type MigrationError,
+  type MigrationErrorCode,
+  type MigrationResult,
+} from './migrations/index.js';
 export { createMhdJsonSchema } from './schema/json-schema.js';
 export {
   ISSUE_CODES,
