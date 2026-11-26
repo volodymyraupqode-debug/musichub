@@ -427,12 +427,98 @@ export const TrackSchema = z
 /** `vendor.name`, e.g. `alphatab.unmapped`. */
 export const EXTENSION_KEY_PATTERN = /^[a-z][a-z0-9-]*\.[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
-/** JSON-compatible extension data, preserved verbatim by every client. */
-export const ExtensionsSchema = z
+/** A JSON value (finite numbers, plain objects and arrays). */
+export type JsonValue =
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+/**
+ * Structure-only description of `extensions` for the JSON Schema (`createMhdJsonSchema`).
+ * `z.record` and `z.json` drop an own `"__proto__"` key when parsing, so documents are parsed
+ * with `ExtensionsSchema` below; this schema is never used to parse.
+ */
+export const ExtensionsJsonSchemaShape = z
   .record(
     z.string().regex(EXTENSION_KEY_PATTERN, 'Extension keys use the form vendor.name'),
     z.json().meta({ id: 'JsonValue' }),
   )
+  .meta({ id: 'Extensions' });
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function isJsonValue(value: unknown, ancestors: Set<object> = new Set()): boolean {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return true;
+  if (typeof value === 'number') return Number.isFinite(value);
+  const isArray = Array.isArray(value);
+  if (!isArray && !isPlainObject(value)) return false;
+  const container = value as object;
+  if (ancestors.has(container)) return false; // cycles are not JSON
+  ancestors.add(container);
+  const items = isArray ? (value as unknown[]) : Object.values(value as Record<string, unknown>);
+  // Array holes are not JSON values.
+  const valid =
+    (!isArray || (value as unknown[]).length === Object.keys(container).length) &&
+    items.every((item) => isJsonValue(item, ancestors));
+  ancestors.delete(container);
+  return valid;
+}
+
+/**
+ * Deep copy of a validated JSON value. `Object.fromEntries` defines own data properties, so a key
+ * such as `"__proto__"` stays an ordinary key and no prototype changes.
+ */
+function copyJson(value: JsonValue): JsonValue {
+  if (Array.isArray(value)) return value.map(copyJson);
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, copyJson(item)]));
+  }
+  return value;
+}
+
+/**
+ * JSON-compatible extension data, preserved verbatim by every client (MUSIC_ENGINE.md §3.4),
+ * including own `"__proto__"` keys at any depth. Keys use the form `vendor.name`. Issues match the
+ * record schema: `invalid_type` for a non-object, `invalid_key` for a key, `invalid_union` for a
+ * value that is not JSON.
+ */
+export const ExtensionsSchema = z
+  .custom<Record<string, JsonValue>>(() => true)
+  .superRefine((value, ctx) => {
+    if (!isPlainObject(value)) {
+      const received = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
+      ctx.addIssue({
+        code: 'invalid_type',
+        expected: 'record',
+        input: value,
+        message: `Invalid input: expected record, received ${received}`,
+      });
+      return;
+    }
+    for (const [key, item] of Object.entries(value)) {
+      if (!EXTENSION_KEY_PATTERN.test(key)) {
+        ctx.addIssue({
+          code: 'invalid_key',
+          origin: 'record',
+          issues: [],
+          input: key,
+          path: [key],
+          message: 'Invalid key in record',
+        });
+      } else if (!isJsonValue(item)) {
+        ctx.addIssue({
+          code: 'invalid_union',
+          errors: [],
+          input: item,
+          path: [key],
+          message: 'Invalid input',
+        });
+      }
+    }
+  })
+  .transform((value) => copyJson(value) as Record<string, JsonValue>)
   .meta({ id: 'Extensions' });
 
 /** Limits shared with the API (API.md §5). */
@@ -470,4 +556,4 @@ export type Beat = z.infer<typeof BeatSchema>;
 export type Duration = z.infer<typeof DurationSchema>;
 export type Note = z.infer<typeof NoteSchema>;
 export type BendPoint = z.infer<typeof BendPointSchema>;
-export type Extensions = z.infer<typeof ExtensionsSchema>;
+export type Extensions = z.output<typeof ExtensionsSchema>;

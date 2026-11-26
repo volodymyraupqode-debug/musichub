@@ -121,7 +121,7 @@ An alternative split was proposed: `music-core`, `music-types`, `music-serializa
 
 | Proposed | Decision | Reason |
 |---|---|---|
-| `music-types` + `music-core` + `music-serialization` | **Merged as `music-model`** with subpath exports (`/schema`, `/timeline`, `/migrations`) | Types, schema and migrations change together in every schema version. Separate packages would force lock-step releases with no consumer that needs only one part. Non-TS consumers (Laravel, a possible Swift app) use the generated JSON Schema. |
+| `music-types` + `music-core` + `music-serialization` | **Merged as `music-model`**; subpath exports (`/schema`, `/timeline`, `/migrations`) are planned and decided together later (ADR-0002 A25), and today everything is exported from the package root | Types, schema and migrations change together in every schema version. Separate packages would force lock-step releases with no consumer that needs only one part. Non-TS consumers (Laravel, a possible Swift app) use the generated JSON Schema. |
 | `editor-commands` | **`editor-core`** (commands + undo + selection + input mapping) | Selection and input mapping are needed by every command; splitting them gains nothing. |
 | `editor-ui` | **Not a package yet.** The studio UI lives in `apps/web/src/features/studio` | It has a single consumer. Mobile will not embed the web editor (MOBILE.md §2). Extract it only if a second web consumer appears. |
 | `audio-engine` | **Part of `music-engine`** | In alphaTab, audio (alphaSynth) and rendering share the same API object, Score and MIDI generation. They cannot be separated without re-implementing either side. |

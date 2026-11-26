@@ -71,7 +71,7 @@ Stored: structure, notes, rhythmic values, mixer, metadata, `extensions`. Never 
 
 ## Extensions
 
-`extensions` is the only open part of a document: keys `vendor.name` (e.g. `alphatab.unmapped`), JSON values. Every other object is strict: an unknown key is an error, nothing is stripped. Clients preserve extensions verbatim.
+`extensions` is the only open part of a document: keys `vendor.name` (e.g. `alphatab.unmapped`), JSON values. Every other object is strict: an unknown key is an error, nothing is stripped. Clients preserve extensions verbatim; parsing keeps own `"__proto__"` keys at any depth as ordinary data keys and returns an independent copy (ADR-0002 A25).
 
 ## Validation
 
@@ -149,3 +149,22 @@ Each fixture has a `<name>.expected.json` sidecar with its validation result and
 `schemaVersion` is an integer. Every change to the schema structure increments it, including a new optional field or enum value: the schemas are strict, so older clients would otherwise reject new documents with a schema error instead of the update prompt (MUSIC_ENGINE.md §3.4). Until the first public release of MHD v1, while no saved documents exist, v1 may still change without a bump. Each version bump adds a migration (`migrations/vN_to_vN+1`, not implemented in v1). Golden fixtures per version live in `fixtures/v<N>/`.
 
 Stability boundary (ADR-0002 A24): repository fixtures and tests are not saved documents. The first user-accessible external `.mhd.json`, IndexedDB draft or server revision marks the boundary; production user saving stays unavailable until the owner declares MHD v1 stable (not declared yet). After that declaration, structural and semantic breaking changes both need a `schemaVersion` bump and a migration.
+
+### Loading documents: `migrate()`
+
+Load every document through `migrate()` (ADR-0002 A25). It never throws for JSON-compatible input and never changes it:
+
+```ts
+import { migrate } from '@musichub/music-model';
+
+const result = migrate(JSON.parse(text));
+if (result.ok) {
+  open(result.document); // current schema version, validated; result.issues holds warnings
+} else if (result.error.code === 'unsupported-schema-version') {
+  promptToUpdate(); // the document is newer than this MusicHub version
+} else {
+  showError(result.error.message); // user-safe text
+}
+```
+
+Error codes: `not-an-mhd-document`, `invalid-schema-version`, `unsupported-schema-version`, `invalid-document` (with the validator's `issues`) and `migration-failed`. A current-version document runs no step and comes back as a deep-equal copy. Future steps are pure functions in `src/migrations/vN_to_vN+1.ts`, registered by source version in `src/migrations/registry.ts`; MHD v1 has none.
